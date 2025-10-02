@@ -250,6 +250,10 @@
             border-radius: 4px;
             font-family: monospace;
         }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -308,6 +312,49 @@
                 <a href="#" onclick="showLogin()" style="color: #667eea; font-weight: 600;">Login</a>
             </p>
         </div>
+        <!-- Deposit Section -->
+<div id="depositSection" class="hidden">
+    <div class="card">
+        <h2>Deposit Funds</h2>
+        <p style="margin-bottom: 20px;">Add money to your wallet</p>
+        
+        <input type="number" id="depositAmount" placeholder="Enter Amount (Min: 10,000 UGX)" min="10000" />
+        
+        <select id="depositMethod">
+            <option value="">Select Payment Method</option>
+            <option value="mtn">MTN Mobile Money</option>
+            <option value="airtel">Airtel Money</option>
+        </select>
+
+        <div id="paymentInstructions" class="hidden" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <h4>Payment Instructions:</h4>
+            <p><strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span></p>
+            <p><strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX</p>
+            <p style="margin-top: 10px;">After sending, upload a screenshot of the transaction below:</p>
+        </div>
+
+        <input type="file" id="depositScreenshot" accept="image/*" class="hidden" style="margin: 10px 0;" />
+        
+        <button class="btn btn-success" id="submitDepositBtn" onclick="submitDepositRequest()" class="hidden">
+            Submit Deposit Request
+        </button>
+
+        <h3 style="margin-top: 40px;">Deposit History</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="depositHistoryBody">
+                <tr><td colspan="4" style="text-align: center;">No deposits yet</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
         <!-- Login Page -->
         <div id="loginPage" class="card hidden">
@@ -335,6 +382,7 @@
                     <div class="nav-link" onclick="showSection('vault')">Vault Plans</div>
                     <div class="nav-link" onclick="showSection('referrals')">Referrals</div>
                     <div class="nav-link" onclick="showSection('withdraw')">Withdraw</div>
+                    <div class="nav-link" onclick="showSection('deposit')">Deposit</div>
                     <div class="nav-link" onclick="logout()">Logout</div>
                 </div>
             </div>
@@ -540,6 +588,7 @@
                     <div class="nav-link" onclick="showAdminSection('stats')">Statistics</div>
                     <div class="nav-link" onclick="showAdminSection('users')">Users</div>
                     <div class="nav-link" onclick="showAdminSection('transactions')">Transactions</div>
+                    <div class="nav-link" onclick="showAdminSection('deposits')">Deposits</div>
                     <div class="nav-link" onclick="logout()">Logout</div>
                 </div>
             </div>
@@ -634,6 +683,27 @@
             </div>
         </div>
     </div>
+    <!-- Admin Deposits Section -->
+<div id="adminDepositsSection" class="hidden">
+    <div class="card">
+        <h2>Pending Deposit Requests</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Screenshot</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="adminDepositsBody">
+                <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -912,26 +982,29 @@
         }
 
         function showSection(section) {
-            ['overview', 'vault', 'referrals', 'withdraw'].forEach(s => {
+            ['overview', 'vault', 'referrals', 'withdraw', 'deposit'].forEach(s => {
                 document.getElementById(s + 'Section').classList.add('hidden');
             });
             document.getElementById(section + 'Section').classList.remove('hidden');
-
+        
             if (section === 'referrals') {
                 updateReferralsSection();
             } else if (section === 'withdraw') {
                 updateWithdrawSection();
+            } else if (section === 'deposit') {
+                updateDepositSection();
             }
         }
 
         function showAdminSection(section) {
-            ['Stats', 'Users', 'Transactions'].forEach(s => {
+            ['Stats', 'Users', 'Transactions', 'Deposits'].forEach(s => {
                 document.getElementById('admin' + s + 'Section').classList.add('hidden');
             });
             document.getElementById('admin' + section.charAt(0).toUpperCase() + section.slice(1) + 'Section').classList.remove('hidden');
-
+        
             if (section === 'users') updateAdminUsers();
             if (section === 'transactions') updateAdminTransactions();
+            if (section === 'deposits') updateAdminDeposits();
         }
 
         // ==================== USER DASHBOARD ====================
@@ -1256,7 +1329,128 @@
                 console.error("Error loading withdrawal history:", error);
             }
         }
-
+        // ==================== DEPOSITS ====================
+        async function updateDepositSection() {
+            document.getElementById('depositAmount').addEventListener('input', showPaymentInstructions);
+            document.getElementById('depositMethod').addEventListener('change', showPaymentInstructions);
+            updateDepositHistory();
+        }
+        
+        function showPaymentInstructions() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const method = document.getElementById('depositMethod').value;
+        
+            if (amount >= 10000 && method) {
+                document.getElementById('displayDepositAmount').textContent = amount.toLocaleString();
+                document.getElementById('paymentInstructions').classList.remove('hidden');
+                document.getElementById('depositScreenshot').classList.remove('hidden');
+                document.getElementById('submitDepositBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('paymentInstructions').classList.add('hidden');
+                document.getElementById('depositScreenshot').classList.add('hidden');
+                document.getElementById('submitDepositBtn').classList.add('hidden');
+            }
+        }
+        
+        async function submitDepositRequest() {
+            try {
+                const amount = parseFloat(document.getElementById('depositAmount').value);
+                const method = document.getElementById('depositMethod').value;
+                const screenshotFile = document.getElementById('depositScreenshot').files[0];
+        
+                if (!amount || amount < 10000) {
+                    alert('Minimum deposit is 10,000 UGX');
+                    return;
+                }
+        
+                if (!method) {
+                    alert('Please select a payment method');
+                    return;
+                }
+        
+                if (!screenshotFile) {
+                    alert('Please upload payment screenshot');
+                    return;
+                }
+        
+                // Convert screenshot to base64
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const screenshotBase64 = e.target.result;
+        
+                    // Create deposit request
+                    await db.collection('depositRequests').add({
+                        userId: currentUser.id,
+                        userName: currentUser.fullName,
+                        userEmail: currentUser.email,
+                        amount: amount,
+                        method: method,
+                        screenshot: screenshotBase64,
+                        status: 'pending',
+                        requestDate: new Date().toISOString()
+                    });
+        
+                    alert('Deposit request submitted! Waiting for admin approval.');
+                    
+                    // Reset form
+                    document.getElementById('depositAmount').value = '';
+                    document.getElementById('depositMethod').value = '';
+                    document.getElementById('depositScreenshot').value = '';
+                    document.getElementById('paymentInstructions').classList.add('hidden');
+                    document.getElementById('depositScreenshot').classList.add('hidden');
+                    document.getElementById('submitDepositBtn').classList.add('hidden');
+                    
+                    updateDepositHistory();
+                };
+                reader.readAsDataURL(screenshotFile);
+        
+            } catch (error) {
+                console.error("Deposit request error:", error);
+                alert('Failed to submit deposit request: ' + error.message);
+            }
+        }
+        
+        async function updateDepositHistory() {
+            try {
+                const depositsSnapshot = await db.collection('depositRequests')
+                    .where('userId', '==', currentUser.id)
+                    .get();
+        
+                const deposits = depositsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+        
+                const tbody = document.getElementById('depositHistoryBody');
+                if (deposits.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No deposits yet</td></tr>';
+                    return;
+                }
+        
+                tbody.innerHTML = deposits.map(d => {
+                    let statusClass = 'status-pending';
+                    let statusText = 'Pending';
+                    if (d.status === 'approved') {
+                        statusClass = 'status-active';
+                        statusText = 'Approved';
+                    } else if (d.status === 'rejected') {
+                        statusClass = 'status-error';
+                        statusText = 'Rejected';
+                    }
+        
+                    return `
+                        <tr>
+                            <td>${new Date(d.requestDate).toLocaleDateString()}</td>
+                            <td>${d.amount.toLocaleString()} UGX</td>
+                            <td>${d.method.toUpperCase()}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error("Error loading deposit history:", error);
+            }
+        }
         // ==================== ADMIN DASHBOARD ====================
         async function updateAdminStats() {
             try {
@@ -1348,6 +1542,91 @@
                 `).join('');
             } catch (error) {
                 console.error("Error updating admin transactions:", error);
+            }
+        }
+        async function updateAdminDeposits() {
+    try {
+        const depositsSnapshot = await db.collection('depositRequests')
+            .where('status', '==', 'pending')
+            .get();
+
+        const deposits = depositsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        const tbody = document.getElementById('adminDepositsBody');
+
+        if (deposits.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No pending deposits</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = deposits.map(d => `
+            <tr>
+                <td>${new Date(d.requestDate).toLocaleDateString()}</td>
+                <td>${d.userName}<br><small>${d.userEmail}</small></td>
+                <td>${d.amount.toLocaleString()} UGX</td>
+                <td>${d.method.toUpperCase()}</td>
+                <td><a href="${d.screenshot}" target="_blank" class="btn" style="padding: 5px 10px; font-size: 12px;">View</a></td>
+                <td>
+                    <button class="btn btn-success" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;" onclick="approveDeposit('${d.id}', ${d.amount}, '${d.userId}')">Approve</button>
+                    <button class="btn" style="padding: 5px 10px; font-size: 12px; background: #dc3545;" onclick="rejectDeposit('${d.id}')">Reject</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error("Error updating admin deposits:", error);
+    }
+}
+
+        async function approveDeposit(depositId, amount, userId) {
+            try {
+                // Update user balance
+                const userDoc = await db.collection('users').doc(userId).get();
+                const currentBalance = userDoc.data().balance || 0;
+                await db.collection('users').doc(userId).update({
+                    balance: currentBalance + amount
+                });
+        
+                // Update deposit request status
+                await db.collection('depositRequests').doc(depositId).update({
+                    status: 'approved',
+                    approvedDate: new Date().toISOString()
+                });
+        
+                // Create transaction record (admin earns 10%)
+                const adminFee = amount * 0.10;
+                await db.collection('transactions').add({
+                    userId: userId,
+                    userName: userDoc.data().fullName,
+                    type: 'deposit',
+                    amount: amount,
+                    adminFee: adminFee,
+                    date: new Date().toISOString()
+                });
+        
+                alert('Deposit approved successfully!');
+                updateAdminDeposits();
+                updateAdminStats();
+            } catch (error) {
+                console.error("Approval error:", error);
+                alert('Failed to approve deposit: ' + error.message);
+            }
+        }
+        
+        async function rejectDeposit(depositId) {
+            try {
+                await db.collection('depositRequests').doc(depositId).update({
+                    status: 'rejected',
+                    rejectedDate: new Date().toISOString()
+                });
+        
+                alert('Deposit rejected');
+                updateAdminDeposits();
+            } catch (error) {
+                console.error("Rejection error:", error);
+                alert('Failed to reject deposit: ' + error.message);
             }
         }
 
