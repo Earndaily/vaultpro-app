@@ -130,6 +130,18 @@
             color: white;
         }
 
+        .plan-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .plan-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
         .referral-link {
             background: #f5f5f5;
             padding: 15px;
@@ -312,49 +324,6 @@
                 <a href="#" onclick="showLogin()" style="color: #667eea; font-weight: 600;">Login</a>
             </p>
         </div>
-        <!-- Deposit Section -->
-<div id="depositSection" class="hidden">
-    <div class="card">
-        <h2>Deposit Funds</h2>
-        <p style="margin-bottom: 20px;">Add money to your wallet</p>
-        
-        <input type="number" id="depositAmount" placeholder="Enter Amount (Min: 10,000 UGX)" min="10000" />
-        
-        <select id="depositMethod">
-            <option value="">Select Payment Method</option>
-            <option value="mtn">MTN Mobile Money</option>
-            <option value="airtel">Airtel Money</option>
-        </select>
-
-        <div id="paymentInstructions" class="hidden" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <h4>Payment Instructions:</h4>
-            <p><strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span></p>
-            <p><strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX</p>
-            <p style="margin-top: 10px;">After sending, upload a screenshot of the transaction below:</p>
-        </div>
-
-        <input type="file" id="depositScreenshot" accept="image/*" class="hidden" style="margin: 10px 0;" />
-        
-        <button class="btn btn-success" id="submitDepositBtn" onclick="submitDepositRequest()" class="hidden">
-            Submit Deposit Request
-        </button>
-
-        <h3 style="margin-top: 40px;">Deposit History</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Method</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="depositHistoryBody">
-                <tr><td colspan="4" style="text-align: center;">No deposits yet</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 
         <!-- Login Page -->
         <div id="loginPage" class="card hidden">
@@ -410,6 +379,11 @@
                             <div class="stat-value" id="referralEarnings">0</div>
                             <div>UGX</div>
                         </div>
+                        <div class="stat-card">
+                            <div>Total Deposits</div>
+                            <div class="stat-value" id="totalDeposits">0</div>
+                            <div>UGX</div>
+                        </div>
                     </div>
                 </div>
 
@@ -437,6 +411,9 @@
                 <div class="card">
                     <h2>Choose Your Vault Plan</h2>
                     <p style="margin-bottom: 20px;">Select a plan and watch your investment grow!</p>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                        <strong>Your Current Balance: <span id="vaultBalance" style="color: #667eea;">0</span> UGX</strong>
+                    </div>
                     
                     <div class="plan-grid">
                         <div class="plan-card" onclick="selectPlan('bronze')">
@@ -574,6 +551,50 @@
                         </thead>
                         <tbody id="withdrawHistoryBody">
                             <tr><td colspan="5" style="text-align: center;">No withdrawals yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Deposit Section -->
+            <div id="depositSection" class="hidden">
+                <div class="card">
+                    <h2>Deposit Funds</h2>
+                    <p style="margin-bottom: 20px;">Add money to your wallet</p>
+                    
+                    <input type="number" id="depositAmount" placeholder="Enter Amount (Min: 10,000 UGX)" min="10000" />
+                    
+                    <select id="depositMethod">
+                        <option value="">Select Payment Method</option>
+                        <option value="mtn">MTN Mobile Money</option>
+                        <option value="airtel">Airtel Money</option>
+                    </select>
+
+                    <div id="paymentInstructions" class="hidden" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <h4>Payment Instructions:</h4>
+                        <p><strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span></p>
+                        <p><strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX</p>
+                        <p style="margin-top: 10px;">After sending, upload a screenshot of the transaction below:</p>
+                    </div>
+
+                    <input type="file" id="depositScreenshot" accept="image/*" class="hidden" style="margin: 10px 0;" />
+                    
+                    <button class="btn btn-success hidden" id="submitDepositBtn" onclick="submitDepositRequest()">
+                        Submit Deposit Request
+                    </button>
+
+                    <h3 style="margin-top: 40px;">Deposit History</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="depositHistoryBody">
+                            <tr><td colspan="4" style="text-align: center;">No deposits yet</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -993,6 +1014,8 @@
                 updateWithdrawSection();
             } else if (section === 'deposit') {
                 updateDepositSection();
+            } else if (section === 'vault') {
+                updateVaultSection();
             }
         }
 
@@ -1022,6 +1045,14 @@
                 const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
                 const referrals = referralsSnapshot.docs.map(doc => doc.data());
 
+                // Get approved deposits
+                const depositsSnapshot = await db.collection('depositRequests')
+                    .where('userId', '==', currentUser.id)
+                    .where('status', '==', 'approved')
+                    .get();
+                const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
+                const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
+
                 const totalBalance = currentUser.balance || 0;
                 const activeVaults = vaults.length;
                 const totalReferrals = referrals.length;
@@ -1031,6 +1062,7 @@
                 document.getElementById('activeVaults').textContent = activeVaults;
                 document.getElementById('totalReferrals').textContent = totalReferrals;
                 document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+                document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
 
                 // Update referral link
                 const baseUrl = window.location.href.split('?')[0];
@@ -1038,6 +1070,11 @@
 
                 // Update vault table
                 updateVaultTable(vaults);
+                
+                // Update vault section if it's currently visible
+                if (!document.getElementById('vaultSection').classList.contains('hidden')) {
+                    updateVaultSection();
+                }
             } catch (error) {
                 console.error("Error updating user stats:", error);
             }
@@ -1061,8 +1098,72 @@
             `).join('');
         }
 
+        async function updateVaultSection() {
+            try {
+                // Get user's current balance
+                const userDoc = await db.collection('users').doc(currentUser.id).get();
+                const currentBalance = userDoc.data().balance || 0;
+                
+                // Update balance display
+                document.getElementById('vaultBalance').textContent = currentBalance.toLocaleString();
+                
+                // Update plan cards based on balance
+                const planCards = document.querySelectorAll('.plan-card');
+                planCards.forEach(card => {
+                    const planName = card.querySelector('h3').textContent.toLowerCase();
+                    let planKey = '';
+                    let planAmount = 0;
+                    
+                    if (planName.includes('bronze')) {
+                        planKey = 'bronze';
+                        planAmount = 50000;
+                    } else if (planName.includes('silver')) {
+                        planKey = 'silver';
+                        planAmount = 100000;
+                    } else if (planName.includes('gold')) {
+                        planKey = 'gold';
+                        planAmount = 250000;
+                    } else if (planName.includes('platinum')) {
+                        planKey = 'platinum';
+                        planAmount = 500000;
+                    }
+                    
+                    if (currentBalance < planAmount) {
+                        card.classList.add('disabled');
+                        card.onclick = null;
+                        // Add insufficient funds message
+                        const amountDiv = card.querySelector('div[style*="font-size: 28px"]');
+                        if (amountDiv && !amountDiv.nextElementSibling?.classList?.contains('insufficient-funds')) {
+                            const insufficientMsg = document.createElement('div');
+                            insufficientMsg.className = 'insufficient-funds';
+                            insufficientMsg.style.cssText = 'color: #dc3545; font-size: 12px; margin-top: 5px; font-weight: bold;';
+                            insufficientMsg.textContent = 'Insufficient Funds';
+                            amountDiv.parentNode.insertBefore(insufficientMsg, amountDiv.nextSibling);
+                        }
+                    } else {
+                        card.classList.remove('disabled');
+                        card.onclick = () => selectPlan(planKey);
+                        // Remove insufficient funds message
+                        const insufficientMsg = card.querySelector('.insufficient-funds');
+                        if (insufficientMsg) {
+                            insufficientMsg.remove();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error updating vault section:", error);
+            }
+        }
+
         // ==================== VAULT PLANS ====================
         function selectPlan(plan) {
+            // Check if the plan is disabled
+            const planCard = event.target.closest('.plan-card');
+            if (planCard && planCard.classList.contains('disabled')) {
+                alert('This plan requires more funds than you currently have. Please deposit more money to your account first.');
+                return;
+            }
+            
             selectedPlan = plan;
             const planData = vaultPlans[plan];
             const profit = planData.amount * planData.profit;
@@ -1080,7 +1181,7 @@
             document.querySelectorAll('.plan-card').forEach(card => {
                 card.classList.remove('selected');
             });
-            event.target.closest('.plan-card').classList.add('selected');
+            planCard.classList.add('selected');
         }
 
         async function purchaseVault() {
@@ -1096,21 +1197,19 @@
                 const planData = vaultPlans[selectedPlan];
                 const profit = planData.amount * planData.profit;
 
-                // Check balance if using wallet
-                if (paymentMethod === 'balance') {
-                    const userDoc = await db.collection('users').doc(currentUser.id).get();
-                    const currentBalance = userDoc.data().balance || 0;
-                    
-                    if (currentBalance < planData.amount) {
-                        alert('Insufficient balance. Please use another payment method.');
-                        return;
-                    }
-
-                    // Deduct from balance
-                    await db.collection('users').doc(currentUser.id).update({
-                        balance: currentBalance - planData.amount
-                    });
+                // Always check user balance first
+                const userDoc = await db.collection('users').doc(currentUser.id).get();
+                const currentBalance = userDoc.data().balance || 0;
+                
+                if (currentBalance < planData.amount) {
+                    alert(`Insufficient balance. You need ${planData.amount.toLocaleString()} UGX but only have ${currentBalance.toLocaleString()} UGX. Please deposit more funds first.`);
+                    return;
                 }
+
+                // Deduct from balance for all payment methods
+                await db.collection('users').doc(currentUser.id).update({
+                    balance: currentBalance - planData.amount
+                });
 
                 // Add vault to user's subcollection
                 await db.collection('users').doc(currentUser.id).collection('vaults').add({
@@ -1172,6 +1271,7 @@
                     card.classList.remove('selected');
                 });
                 updateUserStats();
+                updateVaultSection(); // Update vault section to reflect new balance
                 showSection('overview');
 
             } catch (error) {
