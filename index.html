@@ -52,6 +52,11 @@
             transform: translateY(-2px);
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn-secondary {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
@@ -133,6 +138,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            word-break: break-all;
         }
 
         table {
@@ -177,11 +183,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-links {
             display: flex;
             gap: 20px;
+            flex-wrap: wrap;
         }
 
         .nav-link {
@@ -220,12 +228,59 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 20px;
+        }
+
+        .firebase-setup {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .firebase-setup code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="loading">
+            <h2>Loading VaultPro...</h2>
+            <p>Connecting to database...</p>
+        </div>
+
+        <!-- Firebase Setup Instructions -->
+        <div id="firebaseSetup" class="card hidden">
+            <h1>🔧 Firebase Setup Required</h1>
+            <div class="firebase-setup">
+                <h3>Follow these steps to activate your platform:</h3>
+                <ol style="line-height: 2;">
+                    <li>Go to <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
+                    <li>Create a new project (name it "VaultPro")</li>
+                    <li>Click on "Web" icon to add a web app</li>
+                    <li>Copy the <code>firebaseConfig</code> object</li>
+                    <li>Replace the config in the code (line ~750)</li>
+                    <li>In Firebase Console, go to <strong>Build → Firestore Database</strong></li>
+                    <li>Click "Create database" → Start in <strong>test mode</strong></li>
+                    <li>Refresh this page</li>
+                </ol>
+                <p style="margin-top: 20px;"><strong>Note:</strong> This is a one-time setup. After configuration, your platform will work perfectly!</p>
+            </div>
+        </div>
+
         <!-- Registration Page -->
-        <div id="registerPage" class="card">
+        <div id="registerPage" class="card hidden">
             <h1>Welcome to VaultPro</h1>
             <p style="margin-bottom: 20px;">Join our exclusive refer and earn platform</p>
             <div id="registerAlert"></div>
@@ -244,7 +299,7 @@
                 <option value="bank">Bank Transfer</option>
             </select>
             
-            <button class="btn" onclick="register()" style="margin-top: 20px; width: 100%;">
+            <button class="btn" id="registerBtn" onclick="register()" style="margin-top: 20px; width: 100%;">
                 Register & Pay 20,000 UGX
             </button>
             
@@ -261,12 +316,13 @@
             <input type="email" id="loginEmail" placeholder="Email Address" />
             <input type="password" id="loginPassword" placeholder="Password" />
             
-            <button class="btn" onclick="login()" style="margin-top: 20px; width: 100%;">
+            <button class="btn" id="loginBtn" onclick="login()" style="margin-top: 20px; width: 100%;">
                 Login
             </button>
             
             <p style="margin-top: 20px; text-align: center;">
-                Need an invitation? Contact an existing member.
+                Need an invitation? 
+                <a href="#" onclick="showRegister()" style="color: #667eea; font-weight: 600;">Register with invite code</a>
             </p>
         </div>
 
@@ -582,28 +638,36 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <script>
-        // Firebase configuration
+        // ==================== FIREBASE CONFIGURATION ====================
+        // REPLACE THIS WITH YOUR FIREBASE CONFIG FROM FIREBASE CONSOLE
         const firebaseConfig = {
-            apiKey: "your-api-key-here",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-app-id"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        let db;
+        let firebaseInitialized = false;
 
-        // Data storage
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                console.log("Firebase initialized successfully");
+            }
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+
+        // ==================== GLOBAL VARIABLES ====================
         let currentUser = null;
-        let users = [];
-        let transactions = [];
         let selectedPlan = null;
 
         const vaultPlans = {
@@ -613,199 +677,216 @@
             platinum: { name: 'Platinum Vault', amount: 500000, days: 180, profit: 1.20 }
         };
 
-        // Helper function to generate unique referral code
-        function generateUniqueReferralCode() {
-            let code;
-            do {
-                code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            } while (users.some(u => u.referralCode === code));
-            return code;
-        }
-
-        // Firebase database functions
-        async function loadUsers() {
-            try {
-                const snapshot = await db.collection('users').get();
-                users = [];
-                snapshot.forEach(doc => {
-                    users.push({ id: doc.id, ...doc.data() });
-                });
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
-
-        async function loadTransactions() {
-            try {
-                const snapshot = await db.collection('transactions').get();
-                transactions = [];
-                snapshot.forEach(doc => {
-                    transactions.push({ id: doc.id, ...doc.data() });
-                });
-            } catch (error) {
-                console.error('Error loading transactions:', error);
-            }
-        }
-
-        async function saveUser(user) {
-            try {
-                if (user.id === 'admin') {
-                    await db.collection('users').doc('admin').set(user);
-                } else {
-                    await db.collection('users').add(user);
-                }
-            } catch (error) {
-                console.error('Error saving user:', error);
-            }
-        }
-
-        async function saveTransaction(transaction) {
-            try {
-                await db.collection('transactions').add(transaction);
-            } catch (error) {
-                console.error('Error saving transaction:', error);
-            }
-        }
-
-        async function updateUser(userId, updates) {
-            try {
-                const userDoc = users.find(u => u.id === userId);
-                if (userDoc) {
-                    await db.collection('users').doc(userId).update(updates);
-                    // Update local array
-                    Object.assign(userDoc, updates);
-                }
-            } catch (error) {
-                console.error('Error updating user:', error);
-            }
-        }
-
-        // Initialize with admin account
+        // ==================== INITIALIZATION ====================
         async function init() {
-            await loadUsers();
-            await loadTransactions();
+            document.getElementById('loadingScreen').classList.remove('hidden');
             
-            if (!users.some(u => u.email === 'admin@vaultpro.com')) {
-                const adminUser = {
-                    id: 'admin',
-                    email: 'admin@vaultpro.com',
-                    password: 'admin123',
-                    isAdmin: true,
-                    name: 'Administrator',
-                    referralCode: 'ADMIN2024',
-                    balance: 0,
-                    referrals: []
-                };
-                users.push(adminUser);
-                await saveUser(adminUser);
+            if (!firebaseInitialized) {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                document.getElementById('firebaseSetup').classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // Check if admin exists
+                const adminDoc = await db.collection('users').doc('admin').get();
+                
+                if (!adminDoc.exists) {
+                    // Create admin account
+                    await db.collection('users').doc('admin').set({
+                        id: 'admin',
+                        email: 'admin@vaultpro.com',
+                        password: 'admin123',
+                        isAdmin: true,
+                        name: 'Administrator',
+                        referralCode: 'ADMIN2024',
+                        balance: 0,
+                        joinedDate: new Date().toISOString()
+                    });
+                    console.log("Admin account created");
+                }
+
+                document.getElementById('loadingScreen').classList.add('hidden');
+                
+                // Check for referral code in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const refCode = urlParams.get('ref');
+                if (refCode) {
+                    document.getElementById('inviteCode').value = refCode;
+                    showRegister();
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                console.error("Initialization error:", error);
+                document.getElementById('loadingScreen').innerHTML = `
+                    <h2>Error</h2>
+                    <p>Failed to connect to database. Please check your Firebase configuration.</p>
+                    <p style="color: #f5576c;">${error.message}</p>
+                `;
             }
         }
 
+        // ==================== AUTHENTICATION ====================
         async function register() {
-            const inviteCode = document.getElementById('inviteCode').value;
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const paymentMethod = document.getElementById('paymentMethod').value;
-
-            if (!inviteCode || !fullName || !email || !phone || !password || !paymentMethod) {
-                showAlert('registerAlert', 'Please fill all fields', 'error');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showAlert('registerAlert', 'Passwords do not match', 'error');
-                return;
-            }
-
-            const referrer = users.find(u => u.referralCode === inviteCode);
-            if (!referrer) {
-                showAlert('registerAlert', 'Invalid invitation code', 'error');
-                return;
-            }
-
-            // Check if email already exists
-            const existingUser = users.find(u => u.email === email);
-            if (existingUser) {
-                showAlert('registerAlert', 'Email already registered', 'error');
-                return;
-            }
-
-            const newUser = {
-                fullName,
-                email,
-                phone,
-                password,
-                balance: 0,
-                vaults: [],
-                referrals: [],
-                referredBy: referrer.id,
-                referralCode: generateUniqueReferralCode(),
-                joinedDate: new Date().toISOString()
-            };
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
 
             try {
-                // Save user to Firebase
-                const userRef = await db.collection('users').add(newUser);
-                newUser.id = userRef.id;
-                users.push(newUser);
+                const inviteCode = document.getElementById('inviteCode').value.trim();
+                const fullName = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const paymentMethod = document.getElementById('paymentMethod').value;
 
-                // Add to referrer's referrals
-                const referralEntry = {
-                    userId: newUser.id,
-                    name: fullName,
+                if (!inviteCode || !fullName || !email || !phone || !password || !paymentMethod) {
+                    showAlert('registerAlert', 'Please fill all fields', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showAlert('registerAlert', 'Passwords do not match', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    return;
+                }
+
+                // Check if email exists
+                const emailCheck = await db.collection('users').where('email', '==', email).get();
+                if (!emailCheck.empty) {
+                    showAlert('registerAlert', 'Email already registered', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    return;
+                }
+
+                // Find referrer
+                const referrerQuery = await db.collection('users').where('referralCode', '==', inviteCode).get();
+                if (referrerQuery.empty) {
+                    showAlert('registerAlert', 'Invalid invitation code', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    return;
+                }
+
+                const referrerDoc = referrerQuery.docs[0];
+                const referrerId = referrerDoc.id;
+
+                // Create new user
+                const userId = 'user_' + Date.now();
+                const newUser = {
+                    id: userId,
+                    fullName,
                     email,
+                    phone,
+                    password,
+                    balance: 0,
+                    referredBy: referrerId,
+                    referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    joinedDate: new Date().toISOString(),
+                    isAdmin: false
+                };
+
+                await db.collection('users').doc(userId).set(newUser);
+
+                // Add to referrer's referrals subcollection
+                await db.collection('users').doc(referrerId).collection('referrals').doc(userId).set({
+                    userId: userId,
+                    name: fullName,
+                    email: email,
                     date: new Date().toISOString(),
                     earnings: 0
-                };
-                
-                referrer.referrals.push(referralEntry);
-                await updateUser(referrer.id, { referrals: referrer.referrals });
+                });
 
-                // Process subscription payment (20,000 UGX)
+                // Create subscription transaction
                 const adminFee = 20000 * 0.10;
-                const transaction = {
-                    userId: newUser.id,
+                await db.collection('transactions').add({
+                    userId: userId,
+                    userName: fullName,
                     type: 'subscription',
                     amount: 20000,
                     adminFee: adminFee,
-                    date: new Date().toISOString()
-                };
-                
-                await saveTransaction(transaction);
-                transactions.push(transaction);
+                    date: new Date().toISOString(),
+                    paymentMethod: paymentMethod
+                });
 
                 showAlert('registerAlert', 'Registration successful! Logging you in...', 'success');
                 setTimeout(() => {
                     currentUser = newUser;
                     showUserDashboard();
                 }, 1500);
+
             } catch (error) {
-                console.error('Registration error:', error);
-                showAlert('registerAlert', 'Registration failed. Please try again.', 'error');
+                console.error("Registration error:", error);
+                showAlert('registerAlert', 'Registration failed: ' + error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Register & Pay 20,000 UGX';
             }
         }
 
-        function login() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+        async function login() {
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
 
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (!user) {
-                showAlert('loginAlert', 'Invalid email or password', 'error');
-                return;
-            }
+            try {
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
 
-            currentUser = user;
-            
-            if (user.isAdmin) {
-                showAdminDashboard();
-            } else {
-                showUserDashboard();
+                if (!email || !password) {
+                    showAlert('loginAlert', 'Please enter email and password', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Login';
+                    return;
+                }
+
+                const userQuery = await db.collection('users').where('email', '==', email).where('password', '==', password).get();
+
+                if (userQuery.empty) {
+                    showAlert('loginAlert', 'Invalid email or password', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Login';
+                    return;
+                }
+
+                const userDoc = userQuery.docs[0];
+                currentUser = userDoc.data();
+
+                if (currentUser.isAdmin) {
+                    showAdminDashboard();
+                } else {
+                    showUserDashboard();
+                }
+
+            } catch (error) {
+                console.error("Login error:", error);
+                showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Login';
             }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('userDashboard').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            showLogin();
+        }
+
+        // ==================== NAVIGATION ====================
+        function showRegister() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('registerPage').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerPage').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
         }
 
         function showUserDashboard() {
@@ -826,18 +907,6 @@
             
             updateAdminStats();
             showAdminSection('stats');
-        }
-
-        function showLogin() {
-            document.getElementById('registerPage').classList.add('hidden');
-            document.getElementById('loginPage').classList.remove('hidden');
-        }
-
-        function logout() {
-            currentUser = null;
-            document.getElementById('userDashboard').classList.add('hidden');
-            document.getElementById('adminDashboard').classList.add('hidden');
-            document.getElementById('loginPage').classList.remove('hidden');
         }
 
         function showSection(section) {
@@ -863,34 +932,50 @@
             if (section === 'transactions') updateAdminTransactions();
         }
 
-        function updateUserStats() {
-            const totalBalance = currentUser.balance;
-            const activeVaults = currentUser.vaults?.length || 0;
-            const totalReferrals = currentUser.referrals?.length || 0;
-            const referralEarnings = currentUser.referrals?.reduce((sum, r) => sum + (r.earnings || 0), 0) || 0;
+        // ==================== USER DASHBOARD ====================
+        async function updateUserStats() {
+            try {
+                // Get user's latest data
+                const userDoc = await db.collection('users').doc(currentUser.id).get();
+                currentUser = userDoc.data();
 
-            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
-            document.getElementById('activeVaults').textContent = activeVaults;
-            document.getElementById('totalReferrals').textContent = totalReferrals;
-            document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+                // Get vaults
+                const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
+                const vaults = vaultsSnapshot.docs.map(doc => doc.data());
 
-            // Update referral link
-            const baseUrl = window.location.href.split('?')[0];
-            document.getElementById('userReferralLink').textContent = 
-                `${baseUrl}?ref=${currentUser.referralCode}`;
+                // Get referrals
+                const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+                const referrals = referralsSnapshot.docs.map(doc => doc.data());
 
-            // Update vault table
-            updateVaultTable();
+                const totalBalance = currentUser.balance || 0;
+                const activeVaults = vaults.length;
+                const totalReferrals = referrals.length;
+                const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
+
+                document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
+                document.getElementById('activeVaults').textContent = activeVaults;
+                document.getElementById('totalReferrals').textContent = totalReferrals;
+                document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+
+                // Update referral link
+                const baseUrl = window.location.href.split('?')[0];
+                document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
+
+                // Update vault table
+                updateVaultTable(vaults);
+            } catch (error) {
+                console.error("Error updating user stats:", error);
+            }
         }
 
-        function updateVaultTable() {
+        function updateVaultTable(vaults) {
             const tbody = document.getElementById('vaultTableBody');
-            if (!currentUser.vaults || currentUser.vaults.length === 0) {
+            if (!vaults || vaults.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No active vaults</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = currentUser.vaults.map(v => `
+            tbody.innerHTML = vaults.map(v => `
                 <tr>
                     <td>${v.planName}</td>
                     <td>${v.amount.toLocaleString()} UGX</td>
@@ -901,6 +986,7 @@
             `).join('');
         }
 
+        // ==================== VAULT PLANS ====================
         function selectPlan(plan) {
             selectedPlan = plan;
             const planData = vaultPlans[plan];
@@ -925,127 +1011,137 @@
         async function purchaseVault() {
             if (!selectedPlan) return;
 
-            const paymentMethod = document.getElementById('vaultPaymentMethod').value;
-            if (!paymentMethod) {
-                alert('Please select a payment method');
-                return;
-            }
-
-            const planData = vaultPlans[selectedPlan];
-            const profit = planData.amount * planData.profit;
-
-            // Check balance if using wallet
-            if (paymentMethod === 'balance' && currentUser.balance < planData.amount) {
-                alert('Insufficient balance. Please use another payment method.');
-                return;
-            }
-
             try {
-                // Deduct from balance if using wallet
-                if (paymentMethod === 'balance') {
-                    currentUser.balance -= planData.amount;
-                    await updateUser(currentUser.id, { balance: currentUser.balance });
+                const paymentMethod = document.getElementById('vaultPaymentMethod').value;
+                if (!paymentMethod) {
+                    alert('Please select a payment method');
+                    return;
                 }
 
-                // Add vault to user
-                if (!currentUser.vaults) currentUser.vaults = [];
-                const newVault = {
+                const planData = vaultPlans[selectedPlan];
+                const profit = planData.amount * planData.profit;
+
+                // Check balance if using wallet
+                if (paymentMethod === 'balance') {
+                    const userDoc = await db.collection('users').doc(currentUser.id).get();
+                    const currentBalance = userDoc.data().balance || 0;
+                    
+                    if (currentBalance < planData.amount) {
+                        alert('Insufficient balance. Please use another payment method.');
+                        return;
+                    }
+
+                    // Deduct from balance
+                    await db.collection('users').doc(currentUser.id).update({
+                        balance: currentBalance - planData.amount
+                    });
+                }
+
+                // Add vault to user's subcollection
+                await db.collection('users').doc(currentUser.id).collection('vaults').add({
                     planName: planData.name,
                     amount: planData.amount,
                     duration: planData.days,
                     expectedProfit: profit,
                     startDate: new Date().toISOString(),
                     status: 'active'
-                };
-                currentUser.vaults.push(newVault);
-                await updateUser(currentUser.id, { vaults: currentUser.vaults });
+                });
 
                 // Admin earns 10% on deposits
                 const adminFee = planData.amount * 0.10;
-                const transaction = {
+                await db.collection('transactions').add({
                     userId: currentUser.id,
                     userName: currentUser.fullName,
                     type: 'deposit',
                     amount: planData.amount,
                     adminFee: adminFee,
                     date: new Date().toISOString()
-                };
-                
-                await saveTransaction(transaction);
-                transactions.push(transaction);
+                });
 
-                // Update referrer earnings (they get a commission, admin gets 2% of that)
+                // Update referrer earnings
                 if (currentUser.referredBy) {
-                    const referrer = users.find(u => u.id === currentUser.referredBy);
-                    if (referrer) {
-                        const referralCommission = planData.amount * 0.05; // 5% to referrer
-                        const adminReferralFee = referralCommission * 0.02; // 2% of commission to admin
-                        const netReferralEarning = referralCommission - adminReferralFee;
+                    const referralCommission = planData.amount * 0.05;
+                    const adminReferralFee = referralCommission * 0.02;
+                    const netReferralEarning = referralCommission - adminReferralFee;
 
-                        referrer.balance = (referrer.balance || 0) + netReferralEarning;
-                        
-                        const refEntry = referrer.referrals.find(r => r.userId === currentUser.id);
-                        if (refEntry) {
-                            refEntry.earnings = (refEntry.earnings || 0) + netReferralEarning;
-                        }
+                    // Update referrer balance
+                    const referrerDoc = await db.collection('users').doc(currentUser.referredBy).get();
+                    const referrerBalance = referrerDoc.data().balance || 0;
+                    await db.collection('users').doc(currentUser.referredBy).update({
+                        balance: referrerBalance + netReferralEarning
+                    });
 
-                        await updateUser(referrer.id, { 
-                            balance: referrer.balance,
-                            referrals: referrer.referrals 
-                        });
+                    // Update referral earnings
+                    const refDoc = await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).get();
+                    const currentEarnings = refDoc.data().earnings || 0;
+                    await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).update({
+                        earnings: currentEarnings + netReferralEarning
+                    });
 
-                        const referralTransaction = {
-                            userId: referrer.id,
-                            userName: referrer.fullName,
-                            type: 'referral',
-                            amount: referralCommission,
-                            adminFee: adminReferralFee,
-                            date: new Date().toISOString()
-                        };
-                        
-                        await saveTransaction(referralTransaction);
-                        transactions.push(referralTransaction);
-                    }
+                    // Record referral transaction
+                    await db.collection('transactions').add({
+                        userId: currentUser.referredBy,
+                        userName: referrerDoc.data().fullName,
+                        type: 'referral',
+                        amount: referralCommission,
+                        adminFee: adminReferralFee,
+                        date: new Date().toISOString()
+                    });
                 }
 
                 alert('Vault purchased successfully!');
                 document.getElementById('selectedPlanDetails').classList.add('hidden');
                 document.getElementById('vaultPaymentMethod').value = '';
                 selectedPlan = null;
+                document.querySelectorAll('.plan-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
                 updateUserStats();
                 showSection('overview');
+
             } catch (error) {
-                console.error('Vault purchase error:', error);
-                alert('Purchase failed. Please try again.');
+                console.error("Purchase error:", error);
+                alert('Purchase failed: ' + error.message);
             }
         }
 
-        function updateReferralsSection() {
-            const referrals = currentUser.referrals || [];
-            
-            document.getElementById('refCount').textContent = referrals.length;
-            document.getElementById('activeRefCount').textContent = referrals.filter(r => {
-                const user = users.find(u => u.id === r.userId);
-                return user && user.vaults && user.vaults.length > 0;
-            }).length;
-            document.getElementById('refEarnings').textContent = 
-                referrals.reduce((sum, r) => sum + (r.earnings || 0), 0).toLocaleString();
+        // ==================== REFERRALS ====================
+        async function updateReferralsSection() {
+            try {
+                const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+                const referrals = referralsSnapshot.docs.map(doc => doc.data());
 
-            const tbody = document.getElementById('referralsTableBody');
-            if (referrals.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No referrals yet</td></tr>';
-                return;
+                document.getElementById('refCount').textContent = referrals.length;
+                
+                // Count active referrals (those with vaults)
+                let activeCount = 0;
+                for (const ref of referrals) {
+                    const vaultsSnapshot = await db.collection('users').doc(ref.userId).collection('vaults').get();
+                    if (!vaultsSnapshot.empty) activeCount++;
+                }
+                document.getElementById('activeRefCount').textContent = activeCount;
+
+                const totalEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
+                document.getElementById('refEarnings').textContent = totalEarnings.toLocaleString();
+
+                const tbody = document.getElementById('referralsTableBody');
+                if (referrals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No referrals yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = referrals.map(r => `
+                    <tr>
+                        <td>${r.name}</td>
+                        <td>${r.email}</td>
+                        <td>${new Date(r.date).toLocaleDateString()}</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>${(r.earnings || 0).toLocaleString()} UGX</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error("Error updating referrals:", error);
             }
-
-            tbody.innerHTML = referrals.map(r => `
-                <tr>
-                    <td>${r.name}</td>
-                    <td>${r.email}</td>
-                    <td>${new Date(r.date).toLocaleDateString()}</td>
-                    <td><span class="status-badge status-active">Active</span></td>
-                    <td>${(r.earnings || 0).toLocaleString()} UGX</td>
-                </tr>
-            `).join('');
         }
 
         function copyReferralLink() {
@@ -1055,160 +1151,205 @@
             });
         }
 
-        function updateWithdrawSection() {
-            document.getElementById('withdrawBalance').textContent = currentUser.balance.toLocaleString();
-            
+        // ==================== WITHDRAWALS ====================
+        async function updateWithdrawSection() {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const balance = userDoc.data().balance || 0;
+            document.getElementById('withdrawBalance').textContent = balance.toLocaleString();
+
             document.getElementById('withdrawAmount').addEventListener('input', (e) => {
                 const amount = parseFloat(e.target.value) || 0;
                 const fee = amount * 0.05;
                 const net = amount - fee;
                 document.getElementById('netWithdraw').textContent = net.toLocaleString();
             });
+
+            updateWithdrawHistory();
         }
 
         async function withdraw() {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const method = document.getElementById('withdrawMethod').value;
-            const account = document.getElementById('withdrawAccount').value;
-
-            if (!amount || !method || !account) {
-                alert('Please fill all fields');
-                return;
-            }
-
-            if (amount > currentUser.balance) {
-                alert('Insufficient balance');
-                return;
-            }
-
-            if (amount < 10000) {
-                alert('Minimum withdrawal amount is 10,000 UGX');
-                return;
-            }
-
-            const fee = amount * 0.05; // 5% withdrawal fee
-            const netAmount = amount - fee;
-
             try {
-                currentUser.balance -= amount;
-                await updateUser(currentUser.id, { balance: currentUser.balance });
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const method = document.getElementById('withdrawMethod').value;
+                const account = document.getElementById('withdrawAccount').value;
 
-                // Admin earns 5% on withdrawals
-                const transaction = {
+                if (!amount || !method || !account) {
+                    alert('Please fill all fields');
+                    return;
+                }
+
+                if (amount < 10000) {
+                    alert('Minimum withdrawal amount is 10,000 UGX');
+                    return;
+                }
+
+                const userDoc = await db.collection('users').doc(currentUser.id).get();
+                const currentBalance = userDoc.data().balance || 0;
+
+                if (amount > currentBalance) {
+                    alert('Insufficient balance');
+                    return;
+                }
+
+                const fee = amount * 0.05;
+                const netAmount = amount - fee;
+
+                // Deduct from balance
+                await db.collection('users').doc(currentUser.id).update({
+                    balance: currentBalance - amount
+                });
+
+                // Record transaction
+                await db.collection('transactions').add({
                     userId: currentUser.id,
                     userName: currentUser.fullName,
                     type: 'withdrawal',
                     amount: amount,
                     adminFee: fee,
-                    date: new Date().toISOString(),
+                    netAmount: netAmount,
                     method: method,
                     account: account,
-                    netAmount: netAmount
-                };
-                
-                await saveTransaction(transaction);
-                transactions.push(transaction);
+                    date: new Date().toISOString()
+                });
 
                 alert(`Withdrawal request submitted! You will receive ${netAmount.toLocaleString()} UGX`);
-                
+
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('withdrawMethod').value = '';
                 document.getElementById('withdrawAccount').value = '';
                 updateUserStats();
                 updateWithdrawHistory();
+
             } catch (error) {
-                console.error('Withdrawal error:', error);
-                alert('Withdrawal failed. Please try again.');
+                console.error("Withdrawal error:", error);
+                alert('Withdrawal failed: ' + error.message);
             }
         }
 
-        function updateWithdrawHistory() {
-            const withdrawals = transactions.filter(t => 
-                t.userId === currentUser.id && t.type === 'withdrawal'
-            );
+        async function updateWithdrawHistory() {
+            try {
+                const withdrawalsSnapshot = await db.collection('transactions')
+                    .where('userId', '==', currentUser.id)
+                    .where('type', '==', 'withdrawal')
+                    .get();
 
-            const tbody = document.getElementById('withdrawHistoryBody');
-            if (withdrawals.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No withdrawals yet</td></tr>';
-                return;
+                const withdrawals = withdrawalsSnapshot.docs.map(doc => doc.data());
+
+                const tbody = document.getElementById('withdrawHistoryBody');
+                if (withdrawals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No withdrawals yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = withdrawals.map(w => `
+                    <tr>
+                        <td>${new Date(w.date).toLocaleDateString()}</td>
+                        <td>${w.amount.toLocaleString()} UGX</td>
+                        <td>${w.adminFee.toLocaleString()} UGX</td>
+                        <td>${w.netAmount.toLocaleString()} UGX</td>
+                        <td><span class="status-badge status-pending">Processing</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error("Error loading withdrawal history:", error);
             }
-
-            tbody.innerHTML = withdrawals.map(w => `
-                <tr>
-                    <td>${new Date(w.date).toLocaleDateString()}</td>
-                    <td>${w.amount.toLocaleString()} UGX</td>
-                    <td>${w.adminFee.toLocaleString()} UGX</td>
-                    <td>${w.netAmount.toLocaleString()} UGX</td>
-                    <td><span class="status-badge status-pending">Processing</span></td>
-                </tr>
-            `).join('');
         }
 
-        function updateAdminStats() {
-            const totalUsers = users.filter(u => !u.isAdmin).length;
-            
-            const deposits = transactions.filter(t => t.type === 'deposit' || t.type === 'subscription');
-            const withdrawals = transactions.filter(t => t.type === 'withdrawal');
-            const referrals = transactions.filter(t => t.type === 'referral');
+        // ==================== ADMIN DASHBOARD ====================
+        async function updateAdminStats() {
+            try {
+                const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+                const totalUsers = usersSnapshot.size;
 
-            const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
-            const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
+                const transactionsSnapshot = await db.collection('transactions').get();
+                const transactions = transactionsSnapshot.docs.map(doc => doc.data());
 
-            const depositEarnings = deposits.reduce((sum, t) => sum + t.adminFee, 0);
-            const withdrawEarnings = withdrawals.reduce((sum, t) => sum + t.adminFee, 0);
-            const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
+                const deposits = transactions.filter(t => t.type === 'deposit' || t.type === 'subscription');
+                const withdrawals = transactions.filter(t => t.type === 'withdrawal');
+                const referrals = transactions.filter(t => t.type === 'referral');
 
-            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings;
+                const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
+                const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
 
-            document.getElementById('adminTotalUsers').textContent = totalUsers;
-            document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
-            document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
-            document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
+                const depositEarnings = deposits.reduce((sum, t) => sum + t.adminFee, 0);
+                const withdrawEarnings = withdrawals.reduce((sum, t) => sum + t.adminFee, 0);
+                const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
 
-            document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
-            document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
-            document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
-        }
+                const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings;
 
-        function updateAdminUsers() {
-            const regularUsers = users.filter(u => !u.isAdmin);
-            const tbody = document.getElementById('adminUsersBody');
+                document.getElementById('adminTotalUsers').textContent = totalUsers;
+                document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
+                document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
+                document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
 
-            if (regularUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No users yet</td></tr>';
-                return;
+                document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
+                document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
+                document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
+            } catch (error) {
+                console.error("Error updating admin stats:", error);
             }
-
-            tbody.innerHTML = regularUsers.map(u => `
-                <tr>
-                    <td>${u.fullName}</td>
-                    <td>${u.email}</td>
-                    <td>${(u.balance || 0).toLocaleString()} UGX</td>
-                    <td>${(u.referrals?.length || 0)}</td>
-                    <td>${new Date(u.joinedDate).toLocaleDateString()}</td>
-                </tr>
-            `).join('');
         }
 
-        function updateAdminTransactions() {
-            const tbody = document.getElementById('adminTransactionsBody');
+        async function updateAdminUsers() {
+            try {
+                const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+                const users = usersSnapshot.docs.map(doc => doc.data());
 
-            if (transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No transactions yet</td></tr>';
-                return;
+                const tbody = document.getElementById('adminUsersBody');
+
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No users yet</td></tr>';
+                    return;
+                }
+
+                const userRows = await Promise.all(users.map(async (u) => {
+                    const referralsSnapshot = await db.collection('users').doc(u.id).collection('referrals').get();
+                    const refCount = referralsSnapshot.size;
+
+                    return `
+                        <tr>
+                            <td>${u.fullName}</td>
+                            <td>${u.email}</td>
+                            <td>${(u.balance || 0).toLocaleString()} UGX</td>
+                            <td>${refCount}</td>
+                            <td>${new Date(u.joinedDate).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }));
+
+                tbody.innerHTML = userRows.join('');
+            } catch (error) {
+                console.error("Error updating admin users:", error);
             }
-
-            tbody.innerHTML = transactions.slice().reverse().map(t => `
-                <tr>
-                    <td>${new Date(t.date).toLocaleDateString()}</td>
-                    <td>${t.userName || 'N/A'}</td>
-                    <td>${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</td>
-                    <td>${t.amount.toLocaleString()} UGX</td>
-                    <td>${t.adminFee.toLocaleString()} UGX</td>
-                </tr>
-            `).join('');
         }
 
+        async function updateAdminTransactions() {
+            try {
+                const transactionsSnapshot = await db.collection('transactions').orderBy('date', 'desc').limit(50).get();
+                const transactions = transactionsSnapshot.docs.map(doc => doc.data());
+
+                const tbody = document.getElementById('adminTransactionsBody');
+
+                if (transactions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No transactions yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = transactions.map(t => `
+                    <tr>
+                        <td>${new Date(t.date).toLocaleDateString()}</td>
+                        <td>${t.userName || 'N/A'}</td>
+                        <td>${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</td>
+                        <td>${t.amount.toLocaleString()} UGX</td>
+                        <td>${t.adminFee.toLocaleString()} UGX</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error("Error updating admin transactions:", error);
+            }
+        }
+
+        // ==================== UTILITIES ====================
         function showAlert(elementId, message, type) {
             const alertDiv = document.getElementById(elementId);
             alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
@@ -1217,15 +1358,8 @@
             }, 5000);
         }
 
-        // Check for referral code in URL
-        window.addEventListener('load', async () => {
-            await init();
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
-            if (refCode) {
-                document.getElementById('inviteCode').value = refCode;
-            }
-        });
+        // ==================== START APPLICATION ====================
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
