@@ -1869,14 +1869,52 @@
 
         // Initialize Firebase
         let db;
+        let auth;
         let firebaseInitialized = false;
 
         try {
             if (firebaseConfig.apiKey !== "apikey") {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
+                auth = firebase.auth();
                 firebaseInitialized = true;
                 console.log("Firebase initialized successfully");
+                
+                // Listen for authentication state changes
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        console.log("User authenticated:", user.uid);
+                        // Load user data from Firestore
+                        try {
+                            const userDoc = await db.collection('users').doc(user.uid).get();
+                            if (userDoc.exists) {
+                                currentUser = userDoc.data();
+                                
+                                // Update user streak
+                                await updateUserStreak(user.uid, currentUser);
+                                
+                                if (currentUser.isAdmin) {
+                                    showAdminDashboard();
+                                } else {
+                                    showUserDashboard();
+                                    // Check if user has activated their account
+                                    if (!currentUser.isActivated) {
+                                        showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
+                                    }
+                                }
+                            } else {
+                                console.log("User document not found");
+                                auth.signOut();
+                            }
+                        } catch (error) {
+                            console.error("Error loading user data:", error);
+                        }
+                    } else {
+                        console.log("User not authenticated");
+                        currentUser = null;
+                        showLogin();
+                    }
+                });
             }
         } catch (error) {
             console.error("Firebase initialization error:", error);
@@ -1907,27 +1945,37 @@
                 const adminDoc = await db.collection('users').doc('admin').get();
                 
                 if (!adminDoc.exists) {
-                    await db.collection('users').doc('admin').set({
-                        id: 'admin',
-                        email: 'admin@vaultpro.com',
-                        password: 'admin123',
-                        isAdmin: true,
-                        name: 'Administrator',
-                        referralCode: 'ADMIN2024',
-                        balance: 0,
-                        joinedDate: new Date().toISOString(),
-                        currentStreak: 0,
-                        longestStreak: 0,
-                        lastLoginDate: null,
-                        totalPoints: 0,
-                        pointsBalance: 0,
-                        lastTaskReset: null,
-                        totalTaskEarnings: 0,
-                        monthlyWithdrawals: 0,
-                        isActivated: true,
-                        activationDate: new Date().toISOString(),
-                        canWithdraw: false
-                    });
+                    // Create admin user in Firebase Auth
+                    try {
+                        const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
+                        const adminId = adminCredential.user.uid;
+                        
+                        await db.collection('users').doc(adminId).set({
+                            id: adminId,
+                            email: 'admin@vaultpro.com',
+                            isAdmin: true,
+                            name: 'Administrator',
+                            referralCode: 'ADMIN2024',
+                            balance: 0,
+                            joinedDate: new Date().toISOString(),
+                            currentStreak: 0,
+                            longestStreak: 0,
+                            lastLoginDate: null,
+                            totalPoints: 0,
+                            pointsBalance: 0,
+                            lastTaskReset: null,
+                            totalTaskEarnings: 0,
+                            monthlyWithdrawals: 0,
+                            isActivated: true,
+                            activationDate: new Date().toISOString(),
+                            canWithdraw: false
+                        });
+                        
+                        // Sign out the admin user after creation
+                        await auth.signOut();
+                    } catch (error) {
+                        console.log('Admin user already exists in Firebase Auth or creation failed:', error);
+                    }
                 }
 
                 document.getElementById('loadingScreen').classList.add('hidden');
@@ -1961,7 +2009,7 @@
                 console.log('Starting registration process');
                 
                 // Check if Firebase is initialized
-                if (!firebaseInitialized || !db) {
+                if (!firebaseInitialized || !db || !auth) {
                     showAlert('registerAlert', 'Database not initialized. Please refresh the page.', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Register';
@@ -1998,6 +2046,7 @@
                     return;
                 }
 
+                // Check if email is already registered
                 const emailCheck = await db.collection('users').where('email', '==', email).get();
                 if (!emailCheck.empty) {
                     showAlert('registerAlert', 'Email already registered', 'error');
@@ -2006,6 +2055,7 @@
                     return;
                 }
 
+                // Validate invitation code
                 const referrerQuery = await db.collection('users').where('referralCode', '==', inviteCode).get();
                 if (referrerQuery.empty) {
                     showAlert('registerAlert', 'Invalid invitation code', 'error');
@@ -2017,13 +2067,16 @@
                 const referrerDoc = referrerQuery.docs[0];
                 const referrerId = referrerDoc.id;
 
-                const userId = 'user_' + Date.now();
+                // Create Firebase Auth user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userId = userCredential.user.uid;
+
+                // Create user document in Firestore
                 const newUser = {
                     id: userId,
                     fullName,
                     email,
                     phone,
-                    password,
                     balance: 0,
                     referredBy: referrerId,
                     referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -2044,6 +2097,7 @@
 
                 await db.collection('users').doc(userId).set(newUser);
 
+                // Add to referrer's referrals
                 await db.collection('users').doc(referrerId).collection('referrals').doc(userId).set({
                     userId: userId,
                     name: fullName,
@@ -2053,10 +2107,7 @@
                 });
 
                 showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
-                setTimeout(() => {
-                    currentUser = newUser;
-                    showUserDashboard();
-                }, 1500);
+                // The auth state change listener will handle showing the dashboard
 
             } catch (error) {
                 console.error("Registration error:", error);
@@ -2082,43 +2133,38 @@
                     return;
                 }
 
-                const userQuery = await db.collection('users').where('email', '==', email).where('password', '==', password).get();
-
-                if (userQuery.empty) {
-                    showAlert('loginAlert', 'Invalid email or password', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Login';
-                    return;
-                }
-
-                const userDoc = userQuery.docs[0];
-                currentUser = userDoc.data();
-
-                await updateUserStreak(userDoc.id, currentUser);
-
-                if (currentUser.isAdmin) {
-                    showAdminDashboard();
-                } else {
-                    showUserDashboard();
-                    // Check if user has activated their account
-                    if (!currentUser.isActivated) {
-                        showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
-                    }
-                }
+                // Sign in with Firebase Auth
+                await auth.signInWithEmailAndPassword(email, password);
+                // The auth state change listener will handle the rest
 
             } catch (error) {
                 console.error("Login error:", error);
-                showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
+                let errorMessage = 'Login failed';
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'No account found with this email';
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = 'Incorrect password';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Invalid email address';
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMessage = 'Too many failed attempts. Please try again later';
+                }
+                showAlert('loginAlert', errorMessage, 'error');
                 btn.disabled = false;
                 btn.textContent = 'Login';
             }
         }
 
         function logout() {
-            currentUser = null;
+            auth.signOut();
+            // The auth state change listener will handle the rest
+        }
+
+        function showLogin() {
+            document.getElementById('registerPage').classList.add('hidden');
             document.getElementById('userDashboard').classList.add('hidden');
             document.getElementById('adminDashboard').classList.add('hidden');
-            showLogin();
+            document.getElementById('loginPage').classList.remove('hidden');
         }
 
         // Streak system
