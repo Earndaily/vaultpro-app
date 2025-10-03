@@ -1902,7 +1902,6 @@
             platinum: { name: 'Platinum Vault', amount: 500000, days: 180, profit: 1.20 }
         };
 
-        // Initialize app
         async function init() {
             document.getElementById('loadingScreen').classList.remove('hidden');
             
@@ -1911,12 +1910,12 @@
                 document.getElementById('firebaseSetup').classList.remove('hidden');
                 return;
             }
-
+        
             try {
-                // Check if admin exists
-                const adminDoc = await db.collection('users').doc('admin').get();
+                // Check if ANY admin user exists
+                const adminQuery = await db.collection('users').where('isAdmin', '==', true).limit(1).get();
                 
-                if (!adminDoc.exists) {
+                if (adminQuery.empty) {
                     // Create admin auth user first
                     try {
                         const adminAuth = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
@@ -1924,7 +1923,7 @@
                             id: adminAuth.user.uid,
                             email: 'admin@vaultpro.com',
                             isAdmin: true,
-                            name: 'Administrator',
+                            fullName: 'Administrator',
                             referralCode: 'ADMIN2024',
                             balance: 0,
                             joinedDate: new Date().toISOString(),
@@ -1939,13 +1938,35 @@
                             firstDepositDate: null,
                             canWithdraw: false
                         });
+                        console.log('Admin user created successfully');
                     } catch (authError) {
-                        if (authError.code !== 'auth/email-already-in-use') {
+                        if (authError.code === 'auth/email-already-in-use') {
+                            console.log('Admin already exists in auth');
+                        } else {
                             console.error("Admin creation error:", authError);
                         }
                     }
                 }
-
+        
+                document.getElementById('loadingScreen').classList.add('hidden');
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const refCode = urlParams.get('ref');
+                if (refCode) {
+                    document.getElementById('inviteCode').value = refCode;
+                    showRegister();
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                console.error("Initialization error:", error);
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div class="spinner"></div>
+                    <h2>Error</h2>
+                    <p>Failed to connect to database: ${error.message}</p>
+                `;
+            }
+        }
         // Authentication functions
         async function register() {
             console.log('Registration function called');
