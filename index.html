@@ -452,6 +452,17 @@
         }
     }
 
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
     .alert-success {
         background: #d1fae5;
         color: #065f46;
@@ -1161,7 +1172,7 @@
                         <option value="momo">Mobile Money</option>
                         <option value="card">Credit/Debit Card</option>
                     </select>
-                    <button class="btn btn-block mt-2" onclick="purchaseVault()">
+                    <button class="btn btn-block mt-2" id="purchaseBtn" onclick="purchaseVault()">
                         Confirm Purchase
                     </button>
                 </div>
@@ -1860,10 +1871,85 @@
             <div class="bottom-nav-icon">💰</div>
             <div class="bottom-nav-label">Wallet</div>
         </div>
+        <div class="bottom-nav-item" onclick="showSection('profile')" data-section="profile">
+            <div class="bottom-nav-icon">👤</div>
+            <div class="bottom-nav-label">Profile</div>
+        </div>
+        </div>
     </div>
-</div>
 
-<!-- Firebase SDK -->
+    <!-- Profile Section -->
+    <div id="profileSection" class="hidden">
+        <div class="card">
+            <h2>👤 My Profile</h2>
+            <div id="profileAlert"></div>
+            
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
+                <div style="position: relative; margin-bottom: 1rem;">
+                    <div id="profilePicture" style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; border: 4px solid #e5e7eb; overflow: hidden;">
+                        <img id="profileImage" src="" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <span id="profileInitials">👤</span>
+                    </div>
+                    <input type="file" id="profilePictureInput" accept="image/*" style="display: none;" onchange="uploadProfilePicture(event)">
+                    <button class="btn" style="position: absolute; bottom: 0; right: 0; padding: 0.5rem; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('profilePictureInput').click()">
+                        📷
+                    </button>
+                </div>
+                
+                <h3 id="profileUserName" style="margin: 0; color: var(--text);">User</h3>
+                <p id="profileUserEmail" style="margin: 0.5rem 0; color: var(--gray);">user@example.com</p>
+                <p id="profileJoinedDate" style="margin: 0; color: var(--gray); font-size: 0.875rem;">Member since N/A</p>
+            </div>
+
+            <div class="grid grid-2" style="margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-label">Account Status</div>
+                    <div id="profileAccountStatus" class="stat-value">
+                        🔒 Pending
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Referral Code</div>
+                    <div id="profileReferralCode" class="stat-value" style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">
+                        N/A
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #f9fafb; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                <h3 style="margin: 0 0 1rem 0; color: var(--text);">Account Information</h3>
+                <div class="account-info" style="display: grid; gap: 1rem;">
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span class="info-label" style="font-weight: 600; color: var(--text);">Full Name:</span>
+                        <span class="info-value" style="color: var(--gray);">N/A</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span class="info-label" style="font-weight: 600; color: var(--text);">Email:</span>
+                        <span class="info-value" style="color: var(--gray);">N/A</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span class="info-label" style="font-weight: 600; color: var(--text);">Balance:</span>
+                        <span class="info-value" style="color: var(--success); font-weight: 700;">0 UGX</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span class="info-label" style="font-weight: 600; color: var(--text);">Joined Date:</span>
+                        <span class="info-value" style="color: var(--gray);">N/A</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="copyReferralCode()">
+                    📋 Copy Referral Code
+                </button>
+                <button class="btn" style="flex: 1; background: var(--error);" onclick="logout()">
+                    🚪 Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -3113,6 +3199,7 @@
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') updateTasksSection();
+        else if (section === 'profile') updateProfileSection();
     }
 
     function showWalletTab(tab) {
@@ -3482,23 +3569,38 @@
     async function purchaseVault() {
         if (!selectedPlan) return;
 
+        const purchaseBtn = document.getElementById('purchaseBtn');
+        const originalText = purchaseBtn.textContent;
+        
+        // Prevent multiple clicks and show immediate feedback
+        purchaseBtn.disabled = true;
+        purchaseBtn.textContent = 'Processing...';
+        purchaseBtn.style.background = '#6b7280';
+        purchaseBtn.style.cursor = 'not-allowed';
+
         try {
             const paymentMethod = document.getElementById('vaultPaymentMethod').value;
             if (!paymentMethod) {
-                alert('Please select a payment method');
+                showPurchaseError('Please select a payment method');
                 return;
             }
 
             const planData = vaultPlans[selectedPlan];
             const profit = planData.amount * planData.profit;
 
+            // Show processing message
+            purchaseBtn.textContent = 'Checking balance...';
+
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const currentBalance = userDoc.data().balance || 0;
             
             if (currentBalance < planData.amount) {
-                alert(`Insufficient balance. You need ${planData.amount.toLocaleString()} UGX.`);
+                showPurchaseError(`Insufficient balance. You need ${planData.amount.toLocaleString()} UGX.`);
                 return;
             }
+
+            // Show processing message
+            purchaseBtn.textContent = 'Creating vault...';
 
             // Check if this is the user's first vault purchase or an upgrade (BEFORE adding new vault)
             let isFirstPurchase = false;
@@ -3507,12 +3609,18 @@
                 isFirstPurchase = existingVaults.empty;
             }
 
+            // Show processing message
+            purchaseBtn.textContent = 'Updating balance...';
+
             await db.collection('users').doc(currentUser.id).update({
                 balance: currentBalance - planData.amount
             });
 
             const startDate = new Date();
             const maturityDate = new Date(startDate.getTime() + (planData.days * 24 * 60 * 60 * 1000));
+            
+            // Show processing message
+            purchaseBtn.textContent = 'Setting up vault...';
             
             await db.collection('users').doc(currentUser.id).collection('vaults').add({
                 planName: planData.name,
@@ -3538,6 +3646,8 @@
 
             // Handle referral bonuses for vault purchases
             if (currentUser.referredBy) {
+                // Show processing message
+                purchaseBtn.textContent = 'Processing referral rewards...';
                 
                 if (isFirstPurchase) {
                     // First vault purchase: 2% referrer bonus
@@ -3603,20 +3713,236 @@
                 }
             }
 
-            alert('Vault purchased successfully!');
-            document.getElementById('selectedPlanDetails').classList.add('hidden');
-            document.getElementById('vaultPaymentMethod').value = '';
-            selectedPlan = null;
-            document.querySelectorAll('.plan-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            updateUserStats();
-            updateVaultSection();
-            showSection('home');
+            // Show success message
+            purchaseBtn.textContent = '✅ Success!';
+            purchaseBtn.style.background = '#10b981';
+            
+            // Show success alert
+            showPurchaseSuccess(`🎉 Vault "${planData.name}" purchased successfully! Expected profit: ${profit.toLocaleString()} UGX`);
+
+            // Reset selection and update UI after a short delay
+            setTimeout(() => {
+                document.getElementById('selectedPlanDetails').classList.add('hidden');
+                document.getElementById('vaultPaymentMethod').value = '';
+                selectedPlan = null;
+                document.querySelectorAll('.plan-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                updateUserStats();
+                updateVaultSection();
+                showSection('home');
+                
+                // Reset button
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = originalText;
+                purchaseBtn.style.background = '';
+                purchaseBtn.style.cursor = '';
+            }, 2000);
 
         } catch (error) {
             console.error("Purchase error:", error);
-            alert('Purchase failed: ' + error.message);
+            showPurchaseError('Purchase failed: ' + error.message);
+        }
+    }
+
+    function showPurchaseSuccess(message) {
+        // Create success notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    function showPurchaseError(message) {
+        const purchaseBtn = document.getElementById('purchaseBtn');
+        
+        // Reset button
+        purchaseBtn.disabled = false;
+        purchaseBtn.textContent = 'Confirm Purchase';
+        purchaseBtn.style.background = '';
+        purchaseBtn.style.cursor = '';
+
+        // Create error notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Profile section
+    async function updateProfileSection() {
+        try {
+            // Update profile picture if exists
+            if (currentUser.profilePicture) {
+                const profileImage = document.getElementById('profileImage');
+                const profileInitials = document.getElementById('profileInitials');
+                
+                profileImage.src = currentUser.profilePicture;
+                profileImage.style.display = 'block';
+                profileInitials.style.display = 'none';
+            } else {
+                // Generate initials from name
+                const name = currentUser.fullName || 'User';
+                const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                const profileInitials = document.getElementById('profileInitials');
+                profileInitials.textContent = initials || '👤';
+                profileInitials.style.display = 'block';
+                document.getElementById('profileImage').style.display = 'none';
+            }
+
+            // Update profile information
+            document.getElementById('profileUserName').textContent = currentUser.fullName || 'User';
+            document.getElementById('profileUserEmail').textContent = currentUser.email || 'user@example.com';
+            document.getElementById('profileJoinedDate').textContent = `Member since ${currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A'}`;
+            
+            // Update account status
+            const statusElement = document.getElementById('profileAccountStatus');
+            statusElement.textContent = currentUser.isActivated ? '✅ Activated' : '🔒 Pending';
+            statusElement.style.color = currentUser.isActivated ? 'var(--success)' : 'var(--error)';
+            
+            // Update referral code
+            document.getElementById('profileReferralCode').textContent = currentUser.referralCode || 'N/A';
+            
+            // Update account information
+            const infoValues = document.querySelectorAll('#profileSection .info-value');
+            if (infoValues.length >= 4) {
+                infoValues[0].textContent = currentUser.fullName || 'N/A';
+                infoValues[1].textContent = currentUser.email || 'N/A';
+                infoValues[2].textContent = `${(currentUser.balance || 0).toLocaleString()} UGX`;
+                infoValues[3].textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
+            }
+
+        } catch (error) {
+            console.error("Error updating profile section:", error);
+        }
+    }
+
+    async function uploadProfilePicture(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('profileAlert', 'File size must be less than 5MB', 'error');
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showAlert('profileAlert', 'Please select an image file', 'error');
+            return;
+        }
+
+        try {
+            showAlert('profileAlert', 'Uploading profile picture...', 'info');
+
+            // Convert image to base64
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const base64Image = e.target.result;
+                    
+                    // Update user document with profile picture
+                    await db.collection('users').doc(currentUser.id).update({
+                        profilePicture: base64Image
+                    });
+
+                    // Update current user object
+                    currentUser.profilePicture = base64Image;
+
+                    // Update UI
+                    const profileImage = document.getElementById('profileImage');
+                    const profileInitials = document.getElementById('profileInitials');
+                    
+                    profileImage.src = base64Image;
+                    profileImage.style.display = 'block';
+                    profileInitials.style.display = 'none';
+
+                    showAlert('profileAlert', 'Profile picture updated successfully!', 'success');
+                    
+                    // Clear the input
+                    document.getElementById('profilePictureInput').value = '';
+
+                } catch (error) {
+                    console.error('Error uploading profile picture:', error);
+                    showAlert('profileAlert', 'Failed to upload profile picture', 'error');
+                }
+            };
+            
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            showAlert('profileAlert', 'Failed to upload profile picture', 'error');
+        }
+    }
+
+    function copyReferralCode() {
+        if (currentUser.referralCode) {
+            navigator.clipboard.writeText(currentUser.referralCode).then(() => {
+                showAlert('profileAlert', 'Referral code copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = currentUser.referralCode;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showAlert('profileAlert', 'Referral code copied to clipboard!', 'success');
+            });
+        } else {
+            showAlert('profileAlert', 'No referral code available', 'error');
+        }
+    }
+
+    async function logout() {
+        try {
+            if (confirm('Are you sure you want to logout?')) {
+                await auth.signOut();
+                currentUser = null;
+                showLogin();
+                showAlert('loginAlert', 'Logged out successfully', 'success');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            showAlert('profileAlert', 'Failed to logout', 'error');
         }
     }
 
@@ -4430,7 +4756,76 @@
                 updateData.activationDate = new Date().toISOString();
             }
             
-            await db.collection('users').doc(userId).update(updateData);
+            // Check if this is an activation fee payment
+            const depositRequest = await db.collection('depositRequests').doc(depositId).get();
+            const isActivationFee = depositRequest.data().type === 'activation_fee';
+            
+            if (isActivationFee) {
+                // For activation fees: Admin gets 16,000 UGX, Referrer gets 4,000 UGX
+                const adminAmount = 16000;
+                const referrerAmount = 4000;
+                
+                // Update user balance (they don't get the activation fee back)
+                await db.collection('users').doc(userId).update(updateData);
+                
+                // Give referrer their share if they exist
+                if (userData.referredBy) {
+                    const referrerDoc = await db.collection('users').doc(userData.referredBy).get();
+                    if (referrerDoc.exists) {
+                        const referrerData = referrerDoc.data();
+                        const referrerBalance = referrerData.balance || 0;
+                        
+                        await db.collection('users').doc(userData.referredBy).update({
+                            balance: referrerBalance + referrerAmount
+                        });
+                        
+                        // Update referral earnings
+                        const refDoc = await db.collection('users').doc(userData.referredBy).collection('referrals').doc(userId).get();
+                        const currentEarnings = refDoc.data().earnings || 0;
+                        await db.collection('users').doc(userData.referredBy).collection('referrals').doc(userId).update({
+                            earnings: currentEarnings + referrerAmount
+                        });
+                        
+                        // Record referrer transaction
+                        await db.collection('transactions').add({
+                            userId: userData.referredBy,
+                            userName: referrerData.fullName,
+                            type: 'referral',
+                            amount: referrerAmount,
+                            description: `Activation fee referral reward for ${userData.fullName}`,
+                            date: new Date().toISOString()
+                        });
+                        
+                        console.log('Activation fee referral reward: 4000 UGX given to', referrerData.fullName);
+                    }
+                }
+                
+                // Record admin transaction
+                await db.collection('transactions').add({
+                    userId: 'admin',
+                    userName: 'Administrator',
+                    type: 'admin_commission',
+                    amount: adminAmount,
+                    description: `Activation fee commission for ${userData.fullName}`,
+                    date: new Date().toISOString()
+                });
+                
+                console.log('Activation fee admin commission: 16000 UGX');
+                
+            } else {
+                // Regular deposit - user gets the full amount
+                await db.collection('users').doc(userId).update(updateData);
+                
+                const adminFee = amount * 0.10;
+                await db.collection('transactions').add({
+                    userId: userId,
+                    userName: userDoc.data().fullName,
+                    type: 'deposit',
+                    amount: amount,
+                    adminFee: adminFee,
+                    date: new Date().toISOString()
+                });
+            }
 
             await db.collection('depositRequests').doc(depositId).update({
                 status: 'approved',
@@ -4441,7 +4836,7 @@
             if (currentUser && currentUser.id === userId && !currentUser.isActivated) {
                 currentUser.isActivated = true;
                 currentUser.activationDate = new Date().toISOString();
-                currentUser.balance = (currentUser.balance || 0) + amount;
+                // Don't add the activation fee to user balance - it's distributed to admin and referrer
                 updateFeatureAccess();
                 updateUserStats();
                 
@@ -4450,16 +4845,6 @@
                     alert('🎉 Congratulations! Your account has been activated successfully! All features are now unlocked.');
                 }, 500);
             }
-
-            const adminFee = amount * 0.10;
-            await db.collection('transactions').add({
-                userId: userId,
-                userName: userDoc.data().fullName,
-                type: 'deposit',
-                amount: amount,
-                adminFee: adminFee,
-                date: new Date().toISOString()
-            });
 
             alert('Deposit approved successfully!');
             updateAdminDeposits();
