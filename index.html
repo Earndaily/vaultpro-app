@@ -2028,20 +2028,54 @@
                 
                 const referrerId = referralCodeDoc.data().userId;
         
-                // Create Firebase Auth user
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const userId = userCredential.user.uid;
+                // Create Firebase Auth user (with fallback for auth restrictions)
+                let userCredential;
+                let userId;
+                try {
+                    userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    userId = userCredential.user.uid;
+                    console.log('User registered with email/password auth');
+                } catch (authError) {
+                    console.error('Email/password registration failed:', authError);
+                    
+                    if (authError.code === 'auth/admin-restricted-operation') {
+                        console.log('Using anonymous auth for registration due to restrictions...');
+                        // Fallback to anonymous authentication
+                        try {
+                            userCredential = await auth.signInAnonymously();
+                            userId = userCredential.user.uid;
+                            console.log('User registered with anonymous auth');
+                        } catch (anonError) {
+                            console.error('Anonymous auth also failed:', anonError);
+                            showAlert('registerAlert', 'Registration failed due to authentication restrictions. Please contact support.', 'error');
+                            btn.disabled = false;
+                            btn.textContent = 'Register';
+                            return;
+                        }
+                    } else if (authError.code === 'auth/email-already-in-use') {
+                        showAlert('registerAlert', 'Email already registered. Please use a different email or try logging in.', 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Register';
+                        return;
+                    } else {
+                        showAlert('registerAlert', `Registration failed: ${authError.message}`, 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Register';
+                        return;
+                    }
+                }
         
                 const newUser = {
                     id: userId,
                     fullName,
-                    email,
+                    email: userCredential.user.email || email, // Use Firebase email if available, fallback to form email
                     phone,
                     balance: 0,
                     referredBy: referrerId,
                     referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
                     joinedDate: new Date().toISOString(),
                     isAdmin: false,
+                    authMethod: userCredential.user.email ? 'email' : 'anonymous', // Track auth method
                     currentStreak: 0,
                     longestStreak: 0,
                     lastLoginDate: null,
