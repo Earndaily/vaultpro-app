@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VaultPro - Refer & Earn</title>
@@ -1935,54 +1933,60 @@
                 document.getElementById('firebaseSetup').classList.remove('hidden');
                 return;
             }
-
-            // Setup authentication state listener
+        
+            // Setup authentication state listener FIRST
             setupAuthStateListener();
-
+        
             try {
-                // Create admin Firebase Auth account if it doesn't exist
-                try {
-                    console.log('Creating admin Firebase Auth account...');
-                    const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                    console.log('Admin Firebase Auth account created successfully');
+                // Check if admin already exists in Firestore
+                const adminQuery = await db.collection('users')
+                    .where('email', '==', 'admin@vaultpro.com')
+                    .where('isAdmin', '==', true)
+                    .get();
+                
+                if (adminQuery.empty) {
+                    console.log('Admin not found in Firestore, creating...');
                     
-                    // Create admin user document in Firestore
-                    await db.collection('users').doc(adminCredential.user.uid).set({
-                        id: adminCredential.user.uid,
-                        email: 'admin@vaultpro.com',
-                        isAdmin: true,
-                        name: 'Administrator',
-                        referralCode: 'ADMIN2024',
-                        balance: 0,
-                        joinedDate: new Date().toISOString(),
-                        currentStreak: 0,
-                        longestStreak: 0,
-                        lastLoginDate: null,
-                        totalPoints: 0,
-                        pointsBalance: 0,
-                        lastTaskReset: null,
-                        totalTaskEarnings: 0,
-                        monthlyWithdrawals: 0,
-                        isActivated: true,
-                        activationDate: new Date().toISOString(),
-                        canWithdraw: false,
-                        authMethod: 'email'
-                    });
-                    
-                    // Sign out the admin after creation
-                    await auth.signOut();
-                    console.log('Admin account created and signed out');
-                } catch (authError) {
-                    if (authError.code === 'auth/email-already-in-use') {
-                        console.log('Admin account already exists in Firebase Auth');
-                        // Check if admin document exists in Firestore
-                        const adminDoc = await db.collection('users').where('email', '==', 'admin@vaultpro.com').where('isAdmin', '==', true).get();
-                        if (adminDoc.empty) {
-                            console.log('Creating admin Firestore document...');
-                            // Get the existing Firebase Auth user
-                            const existingUser = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                            await db.collection('users').doc(existingUser.user.uid).set({
-                                id: existingUser.user.uid,
+                    try {
+                        // Try to create Firebase Auth account
+                        const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                        console.log('Admin Firebase Auth account created');
+                        
+                        // Create Firestore document
+                        await db.collection('users').doc(adminCredential.user.uid).set({
+                            id: adminCredential.user.uid,
+                            email: 'admin@vaultpro.com',
+                            isAdmin: true,
+                            name: 'Administrator',
+                            referralCode: 'ADMIN2024',
+                            balance: 0,
+                            joinedDate: new Date().toISOString(),
+                            currentStreak: 0,
+                            longestStreak: 0,
+                            lastLoginDate: null,
+                            totalPoints: 0,
+                            pointsBalance: 0,
+                            lastTaskReset: null,
+                            totalTaskEarnings: 0,
+                            monthlyWithdrawals: 0,
+                            isActivated: true,
+                            activationDate: new Date().toISOString(),
+                            canWithdraw: false,
+                            authMethod: 'email'
+                        });
+                        
+                        console.log('Admin Firestore document created');
+                        await auth.signOut();
+                        
+                    } catch (authError) {
+                        if (authError.code === 'auth/email-already-in-use') {
+                            console.log('Admin exists in Firebase Auth, syncing Firestore...');
+                            // Sign in to get the UID
+                            const existingAdmin = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                            
+                            // Create Firestore document
+                            await db.collection('users').doc(existingAdmin.user.uid).set({
+                                id: existingAdmin.user.uid,
                                 email: 'admin@vaultpro.com',
                                 isAdmin: true,
                                 name: 'Administrator',
@@ -2002,14 +2006,17 @@
                                 canWithdraw: false,
                                 authMethod: 'email'
                             });
+                            
+                            console.log('Admin Firestore document synced');
                             await auth.signOut();
-                            console.log('Admin Firestore document created');
+                        } else {
+                            console.error('Admin creation failed:', authError);
                         }
-                    } else {
-                        console.error('Admin creation failed:', authError);
                     }
+                } else {
+                    console.log('Admin account already exists in both Firebase Auth and Firestore');
                 }
-
+        
                 document.getElementById('loadingScreen').classList.add('hidden');
                 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -2025,12 +2032,10 @@
                 document.getElementById('loadingScreen').innerHTML = `
                     <div class="spinner"></div>
                     <h2>Error</h2>
-                    <p>Failed to connect to database</p>
+                    <p>Failed to connect to database: ${error.message}</p>
                 `;
             }
         }
-
-        // Admin login helper function (for development/testing)
         async function adminLogin() {
             try {
                 console.log('Logging in as admin...');
