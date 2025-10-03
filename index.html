@@ -1891,47 +1891,44 @@
     let selectedPlan = null;
 
     // Authentication state listener
-    function setupAuthStateListener() {
-        if (auth) {
-            auth.onAuthStateChanged(async (user) => {
-                // Don't override if we're processing a referral link
-                const urlParams = new URLSearchParams(window.location.search);
-                const refCode = urlParams.get('ref');
-                if (refCode && document.getElementById('registerPage').classList.contains('hidden') === false) {
-                    console.log('Referral registration in progress, skipping auth redirect');
-                    return;
-                }
-                
-                if (user) {
-                    console.log('User is signed in:', user.uid);
-                    // User is signed in, get their data from Firestore
-                    try {
-                        const userDoc = await db.collection('users').doc(user.uid).get();
-                        if (userDoc.exists) {
-                            currentUser = userDoc.data();
-                            await updateUserStreak(user.uid, currentUser);
-                            
-                            if (currentUser.isAdmin) {
-                                showAdminDashboard();
-                            } else {
-                                showUserDashboard();
-                            }
-                        } else {
-                            console.log('User document not found in Firestore');
-                            await auth.signOut();
-                        }
-                    } catch (error) {
-                        console.error('Error getting user data:', error);
-                        await auth.signOut();
-                    }
-                } else {
-                    console.log('User is signed out');
-                    currentUser = null;
-                    // Don't automatically show login - let the app decide based on URL params
-                }
-            });
-        }
-    }
+   function setupAuthStateListener() {
+       if (auth) {
+           auth.onAuthStateChanged(async (user) => {
+               // Skip if we're on the registration page with a referral
+               const registerPage = document.getElementById('registerPage');
+               if (registerPage && !registerPage.classList.contains('hidden')) {
+                   console.log('Registration page active, skipping auth redirect');
+                   return;
+               }
+               
+               if (user) {
+                   console.log('User is signed in:', user.uid);
+                   try {
+                       const userDoc = await db.collection('users').doc(user.uid).get();
+                       if (userDoc.exists) {
+                           currentUser = userDoc.data();
+                           await updateUserStreak(user.uid, currentUser);
+                           
+                           if (currentUser.isAdmin) {
+                               showAdminDashboard();
+                           } else {
+                               showUserDashboard();
+                           }
+                       } else {
+                           console.log('User document not found in Firestore');
+                           await auth.signOut();
+                       }
+                   } catch (error) {
+                       console.error('Error getting user data:', error);
+                       await auth.signOut();
+                   }
+               } else {
+                   console.log('User is signed out');
+                   currentUser = null;
+               }
+           });
+       }
+   }
 
     const vaultPlans = {
         bronze: { name: 'Bronze Vault', amount: 50000, days: 30, profit: 0.15 },
@@ -1941,176 +1938,162 @@
     };
 
     // Initialize app
-    async function init() {
-        document.getElementById('loadingScreen').classList.remove('hidden');
-        
-        if (!firebaseInitialized) {
-            document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('firebaseSetup').classList.remove('hidden');
-            return;
-        }
-    
-        // Setup authentication state listener FIRST
-        setupAuthStateListener();
-    
-        try {
-            // Check if admin already exists in Firestore
-            const adminQuery = await db.collection('users')
-                .where('email', '==', 'admin@vaultpro.com')
-                .where('isAdmin', '==', true)
-                .get();
-            
-            if (adminQuery.empty) {
-                console.log('Admin not found in Firestore, creating...');
-                
-                try {
-                    // Try to create Firebase Auth account
-                    const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                    console.log('Admin Firebase Auth account created');
-                    
-                    // Create Firestore document
-                    await db.collection('users').doc(adminCredential.user.uid).set({
-                        id: adminCredential.user.uid,
-                        email: 'admin@vaultpro.com',
-                        isAdmin: true,
-                        name: 'Administrator',
-                        referralCode: 'ADMIN2024',
-                        balance: 0,
-                        joinedDate: new Date().toISOString(),
-                        currentStreak: 0,
-                        longestStreak: 0,
-                        lastLoginDate: null,
-                        totalPoints: 0,
-                        pointsBalance: 0,
-                        lastTaskReset: null,
-                        totalTaskEarnings: 0,
-                        monthlyWithdrawals: 0,
-                        isActivated: true,
-                        activationDate: new Date().toISOString(),
-                        canWithdraw: false,
-                        authMethod: 'email'
-                    });
-                    
-                    console.log('Admin Firestore document created');
-                    await auth.signOut();
-                    
-                } catch (authError) {
-                    if (authError.code === 'auth/email-already-in-use') {
-                        console.log('Admin exists in Firebase Auth, syncing Firestore...');
-                        // Sign in to get the UID
-                        const existingAdmin = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                        
-                        // Create Firestore document
-                        await db.collection('users').doc(existingAdmin.user.uid).set({
-                            id: existingAdmin.user.uid,
-                            email: 'admin@vaultpro.com',
-                            isAdmin: true,
-                            name: 'Administrator',
-                            referralCode: 'ADMIN2024',
-                            balance: 0,
-                            joinedDate: new Date().toISOString(),
-                            currentStreak: 0,
-                            longestStreak: 0,
-                            lastLoginDate: null,
-                            totalPoints: 0,
-                            pointsBalance: 0,
-                            lastTaskReset: null,
-                            totalTaskEarnings: 0,
-                            monthlyWithdrawals: 0,
-                            isActivated: true,
-                            activationDate: new Date().toISOString(),
-                            canWithdraw: false,
-                            authMethod: 'email'
-                        });
-                        
-                        console.log('Admin Firestore document synced');
-                        await auth.signOut();
-                    } else {
-                        console.error('Admin creation failed:', authError);
-                    }
-                }
-            } else {
-                console.log('Admin account already exists in both Firebase Auth and Firestore');
-            }
-    
-            document.getElementById('loadingScreen').classList.add('hidden');
-
-            // Check for referral code in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
-
-            if (refCode) {
-                console.log('Referral code detected:', refCode);
-                
-                // Add a small delay to ensure Firebase is fully ready (especially on mobile)
-                const validateReferralCode = async (retries = 3) => {
-                    try {
-                        console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
-                        
-                        const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
-                        
-                        if (!referrerQuery.empty) {
-                            const referrerData = referrerQuery.docs[0].data();
-                            
-                            // Auto-fill the invite code
-                            document.getElementById('inviteCode').value = refCode;
-                            
-                            // Make the field look validated
-                            const inviteCodeField = document.getElementById('inviteCode');
-                            inviteCodeField.style.borderColor = 'var(--success)';
-                            inviteCodeField.style.background = '#f0fdf4';
-                            
-                            const lockIcon = document.getElementById('inviteCodeLock');
-                            if (lockIcon) lockIcon.style.display = 'block';
-                            
-                            // Show registration page
-                            showRegister();
-                            
-                            // Show welcome message
-                            showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
-                            
-                            // Clean up URL
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                        } else if (retries > 0) {
-                            // Retry if referral code not found and we have retries left
-                            console.log('Referral code not found, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1000);
-                        } else {
-                            // Invalid referral code after all retries
-                            console.log('Invalid referral code after all retries');
-                            showLogin();
-                            alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
-                        }
-                    } catch (error) {
-                        console.error('Error validating referral code:', error);
-                        
-                        if (retries > 0) {
-                            console.log('Error occurred, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1000);
-                        } else {
-                            showLogin();
-                            alert('Unable to validate referral code. Please check your internet connection and try again.');
-                        }
-                    }
-                };
-                
-                // Wait a bit for Firebase to be fully ready, then validate
-                setTimeout(() => validateReferralCode(), 500);
-                
-            } else {
-                // No referral code - show login
-                console.log('No referral code found, showing login...');
-                showLogin();
-            }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            document.getElementById('loadingScreen').innerHTML = `
-                <div class="spinner"></div>
-                <h2>Error</h2>
-                <p>Failed to connect to database: ${error.message}</p>
-            `;
-        }
-    }
+   async function init() {
+       document.getElementById('loadingScreen').classList.remove('hidden');
+       
+       if (!firebaseInitialized) {
+           document.getElementById('loadingScreen').classList.add('hidden');
+           document.getElementById('firebaseSetup').classList.remove('hidden');
+           return;
+       }
+   
+       try {
+           // Check if admin already exists in Firestore
+           const adminQuery = await db.collection('users')
+               .where('email', '==', 'admin@vaultpro.com')
+               .where('isAdmin', '==', true)
+               .get();
+           
+           if (adminQuery.empty) {
+               console.log('Admin not found in Firestore, creating...');
+               
+               try {
+                   const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                   console.log('Admin Firebase Auth account created');
+                   
+                   await db.collection('users').doc(adminCredential.user.uid).set({
+                       id: adminCredential.user.uid,
+                       email: 'admin@vaultpro.com',
+                       isAdmin: true,
+                       name: 'Administrator',
+                       referralCode: 'ADMIN2024',
+                       balance: 0,
+                       joinedDate: new Date().toISOString(),
+                       currentStreak: 0,
+                       longestStreak: 0,
+                       lastLoginDate: null,
+                       totalPoints: 0,
+                       pointsBalance: 0,
+                       lastTaskReset: null,
+                       totalTaskEarnings: 0,
+                       monthlyWithdrawals: 0,
+                       isActivated: true,
+                       activationDate: new Date().toISOString(),
+                       canWithdraw: false,
+                       authMethod: 'email'
+                   });
+                   
+                   console.log('Admin Firestore document created');
+                   await auth.signOut();
+                   
+               } catch (authError) {
+                   if (authError.code === 'auth/email-already-in-use') {
+                       console.log('Admin exists in Firebase Auth, syncing Firestore...');
+                       const existingAdmin = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                       
+                       await db.collection('users').doc(existingAdmin.user.uid).set({
+                           id: existingAdmin.user.uid,
+                           email: 'admin@vaultpro.com',
+                           isAdmin: true,
+                           name: 'Administrator',
+                           referralCode: 'ADMIN2024',
+                           balance: 0,
+                           joinedDate: new Date().toISOString(),
+                           currentStreak: 0,
+                           longestStreak: 0,
+                           lastLoginDate: null,
+                           totalPoints: 0,
+                           pointsBalance: 0,
+                           lastTaskReset: null,
+                           totalTaskEarnings: 0,
+                           monthlyWithdrawals: 0,
+                           isActivated: true,
+                           activationDate: new Date().toISOString(),
+                           canWithdraw: false,
+                           authMethod: 'email'
+                       });
+                       
+                       console.log('Admin Firestore document synced');
+                       await auth.signOut();
+                   } else {
+                       console.error('Admin creation failed:', authError);
+                   }
+               }
+           } else {
+               console.log('Admin account already exists');
+           }
+   
+           document.getElementById('loadingScreen').classList.add('hidden');
+           
+           // CRITICAL: Check for referral code BEFORE setting up auth listener
+           const urlParams = new URLSearchParams(window.location.search);
+           const refCode = urlParams.get('ref');
+           
+           if (refCode) {
+               console.log('Referral code detected in URL:', refCode);
+               
+               // Validate referral code
+               try {
+                   const referrerQuery = await db.collection('users')
+                       .where('referralCode', '==', refCode.toUpperCase())
+                       .get();
+                   
+                   if (!referrerQuery.empty) {
+                       const referrerData = referrerQuery.docs[0].data();
+                       console.log('Valid referral code from:', referrerData.fullName);
+                       
+                       // Show register page immediately
+                       document.getElementById('loginPage').classList.add('hidden');
+                       document.getElementById('registerPage').classList.remove('hidden');
+                       
+                       // Auto-fill the invite code
+                       document.getElementById('inviteCode').value = refCode.toUpperCase();
+                       
+                       // Style the field
+                       const inviteCodeField = document.getElementById('inviteCode');
+                       inviteCodeField.style.borderColor = 'var(--success)';
+                       inviteCodeField.style.background = '#f0fdf4';
+                       
+                       const lockIcon = document.getElementById('inviteCodeLock');
+                       if (lockIcon) lockIcon.style.display = 'block';
+                       
+                       // Show welcome message
+                       showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
+                       
+                       // Clean URL
+                       window.history.replaceState({}, document.title, window.location.pathname);
+                       
+                       // Setup auth listener AFTER showing registration
+                       setupAuthStateListener();
+                       return; // Exit early, don't show login
+                       
+                   } else {
+                       console.log('Invalid referral code');
+                       alert('Invalid referral code. Please contact the person who referred you.');
+                   }
+               } catch (error) {
+                   console.error('Error validating referral code:', error);
+               }
+           }
+           
+           // No referral code or invalid - setup normal auth flow
+           setupAuthStateListener();
+           
+           // Only show login if no user is logged in
+           const currentUser = auth.currentUser;
+           if (!currentUser) {
+               showLogin();
+           }
+           
+       } catch (error) {
+           console.error("Initialization error:", error);
+           document.getElementById('loadingScreen').innerHTML = `
+               <div class="spinner"></div>
+               <h2>Error</h2>
+               <p>Failed to connect to database: ${error.message}</p>
+           `;
+       }
+   }
     async function adminLogin() {
         try {
             console.log('Logging in as admin...');
