@@ -931,16 +931,8 @@
             <input type="password" id="password" placeholder="Password" />
             <input type="password" id="confirmPassword" placeholder="Confirm Password" />
             
-            <h3 class="mt-3">Subscription Fee: 20,000 UGX</h3>
-            <select id="paymentMethod">
-                <option value="">Select Payment Method</option>
-                <option value="momo">Mobile Money</option>
-                <option value="card">Credit/Debit Card</option>
-                <option value="bank">Bank Transfer</option>
-            </select>
-            
             <button class="btn btn-block mt-2" id="registerBtn" onclick="register()">
-                Register & Pay 20,000 UGX
+                Register
             </button>
             
             <p class="text-center mt-2" style="color: var(--gray);">
@@ -1932,7 +1924,8 @@
                         lastTaskReset: null,
                         totalTaskEarnings: 0,
                         monthlyWithdrawals: 0,
-                        firstDepositDate: null,
+                        isActivated: true,
+                        activationDate: new Date().toISOString(),
                         canWithdraw: false
                     });
                 }
@@ -1971,7 +1964,7 @@
                 if (!firebaseInitialized || !db) {
                     showAlert('registerAlert', 'Database not initialized. Please refresh the page.', 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    btn.textContent = 'Register';
                     return;
                 }
                 
@@ -1981,14 +1974,12 @@
                 const phone = document.getElementById('phone').value.trim();
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
-                const paymentMethod = document.getElementById('paymentMethod').value;
-                
-                console.log('Form values:', { inviteCode, fullName, email, phone, password, paymentMethod });
+                console.log('Form values:', { inviteCode, fullName, email, phone, password });
 
-                if (!inviteCode || !fullName || !email || !phone || !password || !paymentMethod) {
+                if (!inviteCode || !fullName || !email || !phone || !password) {
                     showAlert('registerAlert', 'Please fill all fields', 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    btn.textContent = 'Register';
                     return;
                 }
 
@@ -1996,14 +1987,14 @@
                 if (fullName.length < 2) {
                     showAlert('registerAlert', 'Please enter a valid full name', 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    btn.textContent = 'Register';
                     return;
                 }
 
                 if (password !== confirmPassword) {
                     showAlert('registerAlert', 'Passwords do not match', 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    btn.textContent = 'Register';
                     return;
                 }
 
@@ -2011,7 +2002,7 @@
                 if (!emailCheck.empty) {
                     showAlert('registerAlert', 'Email already registered', 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    btn.textContent = 'Register';
                     return;
                 }
 
@@ -2019,7 +2010,7 @@
                 if (referrerQuery.empty) {
                     showAlert('registerAlert', 'Invalid invitation code', 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
+                    btn.textContent = 'Register';
                     return;
                 }
 
@@ -2038,6 +2029,8 @@
                     referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
                     joinedDate: new Date().toISOString(),
                     isAdmin: false,
+                    isActivated: false,
+                    activationDate: null,
                     currentStreak: 0,
                     longestStreak: 0,
                     lastLoginDate: null,
@@ -2046,7 +2039,6 @@
                     lastTaskReset: null,
                     totalTaskEarnings: 0,
                     monthlyWithdrawals: 0,
-                    firstDepositDate: null,
                     canWithdraw: false
                 };
 
@@ -2060,57 +2052,7 @@
                     earnings: 0
                 });
 
-                const adminFee = 20000 * 0.10;
-                await db.collection('transactions').add({
-                    userId: userId,
-                    userName: fullName || 'Unknown User',
-                    type: 'subscription',
-                    amount: 20000,
-                    adminFee: adminFee,
-                    date: new Date().toISOString(),
-                    paymentMethod: paymentMethod
-                });
-
-                // Give referral bonus for registration fee payment
-                const referralCommission = 20000 * 0.20; // 20% of registration fee to referrer
-                const adminCommission = 20000 * 0.80; // 80% of registration fee to admin
-
-                // Update referrer's balance
-                const referrerData = await db.collection('users').doc(referrerId).get();
-                const referrerBalance = referrerData.data().balance || 0;
-                
-                console.log('Referrer data:', referrerData.data());
-                await db.collection('users').doc(referrerId).update({
-                    balance: referrerBalance + referralCommission
-                });
-
-                // Update referral earnings record
-                await db.collection('users').doc(referrerId).collection('referrals').doc(userId).update({
-                    earnings: referralCommission
-                });
-
-                // Record referral transaction
-                const referrerData_fullName = referrerData.data().fullName || 'Unknown Referrer';
-                await db.collection('transactions').add({
-                    userId: referrerId,
-                    userName: referrerData_fullName,
-                    type: 'referral',
-                    amount: referralCommission,
-                    description: 'Referral bonus from registration fee (20%)',
-                    date: new Date().toISOString()
-                });
-
-                // Record admin commission transaction
-                await db.collection('transactions').add({
-                    userId: 'admin',
-                    userName: 'Administrator',
-                    type: 'admin_commission',
-                    amount: adminCommission,
-                    description: 'Admin commission from registration fee (80%)',
-                    date: new Date().toISOString()
-                });
-
-                showAlert('registerAlert', 'Registration successful! Logging you in...', 'success');
+                showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
                 setTimeout(() => {
                     currentUser = newUser;
                     showUserDashboard();
@@ -2159,7 +2101,7 @@
                 } else {
                     showUserDashboard();
                     // Check if user has activated their account
-                    if (!currentUser.firstDepositDate) {
+                    if (!currentUser.isActivated) {
                         showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
                     }
                 }
@@ -2183,7 +2125,7 @@
         async function updateUserStreak(userId, user) {
             try {
                 // Only award streak points if user account is activated
-                if (!user.firstDepositDate) {
+                if (!user.isActivated) {
                     // Update last login date but don't award points
                     await db.collection('users').doc(userId).update({
                         lastLoginDate: new Date().toISOString()
@@ -2279,7 +2221,7 @@
         }
 
         function updateFeatureAccess() {
-            const isActivated = currentUser.firstDepositDate;
+            const isActivated = currentUser.isActivated;
             
             // Disable/enable all interactive elements
             const interactiveElements = document.querySelectorAll('button, input, select, textarea');
@@ -2305,6 +2247,8 @@
             
             // Show/hide activation payment section and message if not activated
             const activationSection = document.getElementById('activationPaymentSection');
+            const activationCard = document.getElementById('activationCard');
+            
             if (activationSection) {
                 if (!isActivated) {
                     activationSection.classList.remove('hidden');
@@ -2312,6 +2256,15 @@
                 } else {
                     activationSection.classList.add('hidden');
                     hideActivationMessage();
+                }
+            }
+            
+            // Show/hide activation card in home section
+            if (activationCard) {
+                if (!isActivated) {
+                    activationCard.style.display = 'block';
+                } else {
+                    activationCard.style.display = 'none';
                 }
             }
         }
@@ -2634,7 +2587,7 @@
                 
                 // Update user name and activation status in navbar
                 document.getElementById('userNameDisplay').textContent = currentUser.fullName;
-                if (currentUser.firstDepositDate) {
+                if (currentUser.isActivated) {
                     document.getElementById('activationStatus').style.display = 'inline';
                 } else {
                     document.getElementById('activationStatus').style.display = 'none';
@@ -3259,7 +3212,7 @@
 
         function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
             // Check if user has activated their account
-            if (!currentUser.firstDepositDate) {
+            if (!currentUser.isActivated) {
                 alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
                 return;
             }
@@ -3294,7 +3247,7 @@
         async function submitTask(taskId, reward, requiresProof) {
             try {
                 // Check if user has activated their account
-                if (!currentUser.firstDepositDate) {
+                if (!currentUser.isActivated) {
                     alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
                     return;
                 }
@@ -3413,15 +3366,15 @@
                     return;
                 }
 
-                // Check if user has made first deposit (activation fee)
-                if (!userData.firstDepositDate) {
-                    alert('You must make your first deposit (activation fee) before you can withdraw');
+                // Check if user has activated their account
+                if (!userData.isActivated) {
+                    alert('You must activate your account before you can withdraw');
                     return;
                 }
 
-                // Check 30-day waiting period
-                const firstDepositDate = new Date(userData.firstDepositDate);
-                const thirtyDaysLater = new Date(firstDepositDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+                // Check 30-day waiting period from activation
+                const activationDate = new Date(userData.activationDate || userData.joinedDate);
+                const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
                 const now = new Date();
 
                 if (now < thirtyDaysLater) {
@@ -3855,8 +3808,9 @@
                     balance: currentBalance + amount
                 };
                 
-                if (!userData.firstDepositDate) {
-                    updateData.firstDepositDate = new Date().toISOString();
+                if (!userData.isActivated) {
+                    updateData.isActivated = true;
+                    updateData.activationDate = new Date().toISOString();
                 }
                 
                 await db.collection('users').doc(userId).update(updateData);
@@ -3867,8 +3821,9 @@
                 });
 
                 // If this was an activation fee payment, update the current user's data
-                if (currentUser && currentUser.id === userId && !currentUser.firstDepositDate) {
-                    currentUser.firstDepositDate = new Date().toISOString();
+                if (currentUser && currentUser.id === userId && !currentUser.isActivated) {
+                    currentUser.isActivated = true;
+                    currentUser.activationDate = new Date().toISOString();
                     currentUser.balance = (currentUser.balance || 0) + amount;
                     updateFeatureAccess();
                     updateUserStats();
