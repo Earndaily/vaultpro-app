@@ -1907,35 +1907,27 @@
             }
         
             try {
-                // Wait for auth to be ready
-                await new Promise(resolve => {
-                    const unsubscribe = auth.onAuthStateChanged(() => {
-                        unsubscribe();
-                        resolve();
-                    });
-                });
-        
-                // Check if admin exists
-                const adminQuery = await db.collection('users').where('email', '==', 'admin@vaultpro.com').get();
+                // Check if admin exists (now allowed by security rules)
+                const adminQuery = await db.collection('users').where('email', '==', 'admin@vaultpro.com').limit(1).get();
                 
                 if (adminQuery.empty) {
                     console.log('Creating admin account...');
                     
-                    // Create admin auth account
-                    let adminCredential;
+                    // Create admin auth account and stay signed in
+                    let adminUid;
                     try {
-                        adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                        const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                        adminUid = adminCredential.user.uid;
                     } catch (authError) {
                         if (authError.code === 'auth/email-already-in-use') {
-                            adminCredential = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                            const adminCredential = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                            adminUid = adminCredential.user.uid;
                         } else {
                             throw authError;
                         }
                     }
                     
-                    const adminUid = adminCredential.user.uid;
-                    
-                    // Create admin Firestore document while signed in
+                    // Now we're authenticated, create Firestore docs
                     await db.collection('users').doc(adminUid).set({
                         id: adminUid,
                         email: 'admin@vaultpro.com',
@@ -1956,7 +1948,6 @@
                         canWithdraw: true
                     });
                     
-                    // Create referral code
                     await db.collection('referralCodes').doc('ADMIN2024').set({
                         userId: adminUid,
                         code: 'ADMIN2024',
@@ -1964,12 +1955,9 @@
                     });
                     
                     console.log('Admin created successfully');
-                    
-                    // Sign out admin
                     await auth.signOut();
                 }
                 
-                // Show appropriate page
                 document.getElementById('loadingScreen').classList.add('hidden');
                 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1984,8 +1972,8 @@
             } catch (error) {
                 console.error("Initialization error:", error);
                 document.getElementById('loadingScreen').innerHTML = `
-                    <h2 style="color: white;">Setup Error</h2>
-                    <p style="color: white;">${error.message}</p>
+                    <h2 style="color: white;">Error: ${error.message}</h2>
+                    <p style="color: white;">Please check Firebase setup</p>
                     <button class="btn" onclick="location.reload()">Retry</button>
                 `;
             }
