@@ -1883,6 +1883,7 @@
             if (firebaseConfig.apiKey !== "apikey") {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
+                const auth = firebase.auth();
                 firebaseInitialized = true;
                 console.log("Firebase initialized successfully");
             }
@@ -1912,50 +1913,38 @@
             }
 
             try {
+                // Check if admin exists
                 const adminDoc = await db.collection('users').doc('admin').get();
                 
                 if (!adminDoc.exists) {
-                    await db.collection('users').doc('admin').set({
-                        id: 'admin',
-                        email: 'admin@vaultpro.com',
-                        password: 'admin123',
-                        isAdmin: true,
-                        name: 'Administrator',
-                        referralCode: 'ADMIN2024',
-                        balance: 0,
-                        joinedDate: new Date().toISOString(),
-                        currentStreak: 0,
-                        longestStreak: 0,
-                        lastLoginDate: null,
-                        totalPoints: 0,
-                        pointsBalance: 0,
-                        lastTaskReset: null,
-                        totalTaskEarnings: 0,
-                        monthlyWithdrawals: 0,
-                        firstDepositDate: null,
-                        canWithdraw: false
-                    });
+                    // Create admin auth user first
+                    try {
+                        const adminAuth = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
+                        await db.collection('users').doc(adminAuth.user.uid).set({
+                            id: adminAuth.user.uid,
+                            email: 'admin@vaultpro.com',
+                            isAdmin: true,
+                            name: 'Administrator',
+                            referralCode: 'ADMIN2024',
+                            balance: 0,
+                            joinedDate: new Date().toISOString(),
+                            currentStreak: 0,
+                            longestStreak: 0,
+                            lastLoginDate: null,
+                            totalPoints: 0,
+                            pointsBalance: 0,
+                            lastTaskReset: null,
+                            totalTaskEarnings: 0,
+                            monthlyWithdrawals: 0,
+                            firstDepositDate: null,
+                            canWithdraw: false
+                        });
+                    } catch (authError) {
+                        if (authError.code !== 'auth/email-already-in-use') {
+                            console.error("Admin creation error:", authError);
+                        }
+                    }
                 }
-
-                document.getElementById('loadingScreen').classList.add('hidden');
-                
-                const urlParams = new URLSearchParams(window.location.search);
-                const refCode = urlParams.get('ref');
-                if (refCode) {
-                    document.getElementById('inviteCode').value = refCode;
-                    showRegister();
-                } else {
-                    showLogin();
-                }
-            } catch (error) {
-                console.error("Initialization error:", error);
-                document.getElementById('loadingScreen').innerHTML = `
-                    <div class="spinner"></div>
-                    <h2>Error</h2>
-                    <p>Failed to connect to database</p>
-                `;
-            }
-        }
 
         // Authentication functions
         async function register() {
@@ -1963,18 +1952,8 @@
             const btn = document.getElementById('registerBtn');
             btn.disabled = true;
             btn.textContent = 'Processing...';
-
+        
             try {
-                console.log('Starting registration process');
-                
-                // Check if Firebase is initialized
-                if (!firebaseInitialized || !db) {
-                    showAlert('registerAlert', 'Database not initialized. Please refresh the page.', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
-                    return;
-                }
-                
                 const inviteCode = document.getElementById('inviteCode').value.trim();
                 const fullName = document.getElementById('fullName').value.trim();
                 const email = document.getElementById('email').value.trim();
@@ -1982,39 +1961,28 @@
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 const paymentMethod = document.getElementById('paymentMethod').value;
-                
-                console.log('Form values:', { inviteCode, fullName, email, phone, password, paymentMethod });
-
+        
                 if (!inviteCode || !fullName || !email || !phone || !password || !paymentMethod) {
                     showAlert('registerAlert', 'Please fill all fields', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Register & Pay 20,000 UGX';
                     return;
                 }
-
-                // Additional validation for fullName
+        
                 if (fullName.length < 2) {
                     showAlert('registerAlert', 'Please enter a valid full name', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Register & Pay 20,000 UGX';
                     return;
                 }
-
+        
                 if (password !== confirmPassword) {
                     showAlert('registerAlert', 'Passwords do not match', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Register & Pay 20,000 UGX';
                     return;
                 }
-
-                const emailCheck = await db.collection('users').where('email', '==', email).get();
-                if (!emailCheck.empty) {
-                    showAlert('registerAlert', 'Email already registered', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Register & Pay 20,000 UGX';
-                    return;
-                }
-
+        
                 const referrerQuery = await db.collection('users').where('referralCode', '==', inviteCode).get();
                 if (referrerQuery.empty) {
                     showAlert('registerAlert', 'Invalid invitation code', 'error');
@@ -2022,17 +1990,19 @@
                     btn.textContent = 'Register & Pay 20,000 UGX';
                     return;
                 }
-
+        
                 const referrerDoc = referrerQuery.docs[0];
                 const referrerId = referrerDoc.id;
-
-                const userId = 'user_' + Date.now();
+        
+                // Create Firebase Auth user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userId = userCredential.user.uid;
+        
                 const newUser = {
                     id: userId,
                     fullName,
                     email,
                     phone,
-                    password,
                     balance: 0,
                     referredBy: referrerId,
                     referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -2049,9 +2019,9 @@
                     firstDepositDate: null,
                     canWithdraw: false
                 };
-
+        
                 await db.collection('users').doc(userId).set(newUser);
-
+        
                 await db.collection('users').doc(referrerId).collection('referrals').doc(userId).set({
                     userId: userId,
                     name: fullName,
@@ -2059,7 +2029,7 @@
                     date: new Date().toISOString(),
                     earnings: 0
                 });
-
+        
                 const adminFee = 20000 * 0.10;
                 await db.collection('transactions').add({
                     userId: userId,
@@ -2070,26 +2040,21 @@
                     date: new Date().toISOString(),
                     paymentMethod: paymentMethod
                 });
-
-                // Give referral bonus for registration fee payment
-                const referralCommission = 20000 * 0.20; // 20% of registration fee to referrer
-                const adminCommission = 20000 * 0.80; // 80% of registration fee to admin
-
-                // Update referrer's balance
+        
+                const referralCommission = 20000 * 0.20;
+                const adminCommission = 20000 * 0.80;
+        
                 const referrerData = await db.collection('users').doc(referrerId).get();
                 const referrerBalance = referrerData.data().balance || 0;
                 
-                console.log('Referrer data:', referrerData.data());
                 await db.collection('users').doc(referrerId).update({
                     balance: referrerBalance + referralCommission
                 });
-
-                // Update referral earnings record
+        
                 await db.collection('users').doc(referrerId).collection('referrals').doc(userId).update({
                     earnings: referralCommission
                 });
-
-                // Record referral transaction
+        
                 const referrerData_fullName = referrerData.data().fullName || 'Unknown Referrer';
                 await db.collection('transactions').add({
                     userId: referrerId,
@@ -2099,8 +2064,7 @@
                     description: 'Referral bonus from registration fee (20%)',
                     date: new Date().toISOString()
                 });
-
-                // Record admin commission transaction
+        
                 await db.collection('transactions').add({
                     userId: 'admin',
                     userName: 'Administrator',
@@ -2109,16 +2073,22 @@
                     description: 'Admin commission from registration fee (80%)',
                     date: new Date().toISOString()
                 });
-
+        
                 showAlert('registerAlert', 'Registration successful! Logging you in...', 'success');
                 setTimeout(() => {
                     currentUser = newUser;
                     showUserDashboard();
                 }, 1500);
-
+        
             } catch (error) {
                 console.error("Registration error:", error);
-                showAlert('registerAlert', 'Registration failed: ' + error.message, 'error');
+                if (error.code === 'auth/email-already-in-use') {
+                    showAlert('registerAlert', 'Email already registered', 'error');
+                } else if (error.code === 'auth/weak-password') {
+                    showAlert('registerAlert', 'Password should be at least 6 characters', 'error');
+                } else {
+                    showAlert('registerAlert', 'Registration failed: ' + error.message, 'error');
+                }
                 btn.disabled = false;
                 btn.textContent = 'Register & Pay 20,000 UGX';
             }
@@ -2128,56 +2098,69 @@
             const btn = document.getElementById('loginBtn');
             btn.disabled = true;
             btn.textContent = 'Logging in...';
-
+        
             try {
                 const email = document.getElementById('loginEmail').value.trim();
                 const password = document.getElementById('loginPassword').value;
-
+        
                 if (!email || !password) {
                     showAlert('loginAlert', 'Please enter email and password', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Login';
                     return;
                 }
-
-                const userQuery = await db.collection('users').where('email', '==', email).where('password', '==', password).get();
-
-                if (userQuery.empty) {
-                    showAlert('loginAlert', 'Invalid email or password', 'error');
+        
+                // Sign in with Firebase Auth
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const userId = userCredential.user.uid;
+        
+                const userDoc = await db.collection('users').doc(userId).get();
+                
+                if (!userDoc.exists) {
+                    showAlert('loginAlert', 'User data not found', 'error');
+                    await auth.signOut();
                     btn.disabled = false;
                     btn.textContent = 'Login';
                     return;
                 }
-
-                const userDoc = userQuery.docs[0];
+        
                 currentUser = userDoc.data();
-
-                await updateUserStreak(userDoc.id, currentUser);
-
+        
+                await updateUserStreak(userId, currentUser);
+        
                 if (currentUser.isAdmin) {
                     showAdminDashboard();
                 } else {
                     showUserDashboard();
-                    // Check if user has activated their account
                     if (!currentUser.firstDepositDate) {
                         showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
                     }
                 }
-
+        
             } catch (error) {
                 console.error("Login error:", error);
-                showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    showAlert('loginAlert', 'Invalid email or password', 'error');
+                } else {
+                    showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
+                }
                 btn.disabled = false;
                 btn.textContent = 'Login';
             }
         }
 
-        function logout() {
+    async function logout() {
+        try {
+            await auth.signOut();
             currentUser = null;
             document.getElementById('userDashboard').classList.add('hidden');
             document.getElementById('adminDashboard').classList.add('hidden');
             showLogin();
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert('Logout failed: ' + error.message);
         }
+    }
 
         // Streak system
         async function updateUserStreak(userId, user) {
