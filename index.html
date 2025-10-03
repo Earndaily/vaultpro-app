@@ -1888,12 +1888,18 @@
     // Global variables
     let currentUser = null;
     let selectedPlan = null;
+    let isProcessingReferral = false;
 
     // Authentication state listener
     function setupAuthStateListener() {
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
                 // Don't override if we're processing a referral link
+                if (isProcessingReferral) {
+                    console.log('Referral processing in progress, skipping auth redirect');
+                    return;
+                }
+                
                 const urlParams = new URLSearchParams(window.location.search);
                 const refCode = urlParams.get('ref');
                 if (refCode && document.getElementById('registerPage').classList.contains('hidden') === false) {
@@ -2040,11 +2046,22 @@
 
             if (refCode) {
                 console.log('Referral code detected:', refCode);
+                console.log('User agent:', navigator.userAgent);
+                console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
                 
-                // Add a small delay to ensure Firebase is fully ready (especially on mobile)
+                // Set flag to prevent auth state listener interference
+                isProcessingReferral = true;
+                
+                // Add a longer delay for mobile browsers to ensure Firebase is fully ready
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const initialDelay = isMobile ? 1500 : 500; // Longer delay for mobile
+                
                 const validateReferralCode = async (retries = 3) => {
                     try {
                         console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
+                        console.log('Firebase initialized:', firebaseInitialized);
+                        console.log('DB available:', !!db);
+                        console.log('Auth available:', !!auth);
                         
                         const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                         
@@ -2070,6 +2087,9 @@
                             
                             // Clean up URL
                             window.history.replaceState({}, document.title, window.location.pathname);
+                            
+                            // Clear the processing flag
+                            isProcessingReferral = false;
                         } else if (retries > 0) {
                             // Retry if referral code not found and we have retries left
                             console.log('Referral code not found, retrying...');
@@ -2077,6 +2097,7 @@
                         } else {
                             // Invalid referral code after all retries
                             console.log('Invalid referral code after all retries');
+                            isProcessingReferral = false;
                             showLogin();
                             alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                         }
@@ -2087,6 +2108,7 @@
                             console.log('Error occurred, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
+                            isProcessingReferral = false;
                             showLogin();
                             alert('Unable to validate referral code. Please check your internet connection and try again.');
                         }
@@ -2094,7 +2116,16 @@
                 };
                 
                 // Wait a bit for Firebase to be fully ready, then validate
-                setTimeout(() => validateReferralCode(), 500);
+                console.log(`Waiting ${initialDelay}ms before validating referral code...`);
+                setTimeout(() => validateReferralCode(), initialDelay);
+                
+                // Fallback: Clear processing flag after 10 seconds to prevent getting stuck
+                setTimeout(() => {
+                    if (isProcessingReferral) {
+                        console.warn('Referral processing timeout - clearing flag');
+                        isProcessingReferral = false;
+                    }
+                }, 10000);
                 
             } else {
                 // No referral code - show login
