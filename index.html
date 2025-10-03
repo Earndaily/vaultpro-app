@@ -941,6 +941,10 @@
             Already have an account? 
             <a href="#" onclick="showLogin()" style="color: var(--primary); font-weight: 600;">Login</a>
         </p>
+        
+        <p class="text-center mt-1" style="color: var(--gray); font-size: 0.9rem;">
+            Need a referral code? Ask an existing member for their invitation link.
+        </p>
     </div>
 
     <!-- Login Page -->
@@ -955,7 +959,8 @@
         </button>
         
         <p class="text-center mt-2" style="color: var(--gray);">
-            Need an invitation? Contact an existing member for a referral link.
+            Need an invitation? 
+            <a href="#" onclick="showRegisterWithReferral()" style="color: var(--primary); font-weight: 600;">Register with referral code</a>
         </p>
     </div>
 
@@ -2128,9 +2133,16 @@
                 }, 10000);
                 
             } else {
-                // No referral code - show login
-                console.log('No referral code found, showing login...');
-                showLogin();
+                // No referral code - check if mobile and show register page first
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    console.log('No referral code found, but mobile detected - showing register page first...');
+                    showRegisterWithReferral(); // This will show error message about no referral code
+                } else {
+                    console.log('No referral code found, showing login...');
+                    showLogin();
+                }
             }
         } catch (error) {
             console.error("Initialization error:", error);
@@ -2651,6 +2663,44 @@
 
     function showRegisterFromReferral() {
         // This function is only called when a valid referral link is processed
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('registerPage').classList.remove('hidden');
+    }
+
+    function showRegisterWithReferral() {
+        // This function allows manual access to registration and tries to grab referral code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        
+        if (refCode) {
+            // If there's a referral code in the URL, auto-fill it
+            console.log('Found referral code in URL:', refCode);
+            document.getElementById('inviteCode').value = refCode;
+            
+            // Make the field look validated
+            const inviteCodeField = document.getElementById('inviteCode');
+            inviteCodeField.style.borderColor = 'var(--success)';
+            inviteCodeField.style.background = '#f0fdf4';
+            
+            const lockIcon = document.getElementById('inviteCodeLock');
+            if (lockIcon) lockIcon.style.display = 'block';
+            
+            // Show welcome message
+            showAlert('registerAlert', `Referral code "${refCode}" detected and pre-filled. Complete the form to register.`, 'success');
+        } else {
+            // No referral code in URL - show helpful message
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                showAlert('registerAlert', 'Registration is by invitation only. Please ask an existing member for their referral link, or go back to login if you already have an account.', 'info');
+            } else {
+                showAlert('registerAlert', 'No referral code found in URL. Please use a referral link from an existing member.', 'error');
+                setTimeout(() => showLogin(), 3000);
+                return;
+            }
+        }
+        
+        // Show registration page
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('registerPage').classList.remove('hidden');
     }
