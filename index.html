@@ -1903,9 +1903,10 @@
                                     }
                                 }
                             } else {
-                                console.log("User document not found - user needs to register");
-                                // Don't sign out, just show registration
-                                auth.signOut();
+                                console.log("User document not found - user needs to complete registration");
+                                // Show registration form for user to complete their profile
+                                showRegister();
+                                showAlert('registerAlert', 'Please complete your registration by filling out your profile information.', 'info');
                             }
                         } catch (error) {
                             console.error("Error loading user data:", error);
@@ -1954,9 +1955,6 @@
             }
 
             try {
-                // Skip admin user creation for now - let it be created manually in Firebase Console
-                console.log('Skipping admin user creation - please create manually in Firebase Console');
-
                 document.getElementById('loadingScreen').classList.add('hidden');
                 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -2022,13 +2020,27 @@
                     return;
                 }
 
-                // Check if email is already registered
-                const emailCheck = await db.collection('users').where('email', '==', email).get();
-                if (!emailCheck.empty) {
-                    showAlert('registerAlert', 'Email already registered', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Register';
-                    return;
+                // Check if user is already authenticated in Firebase Auth
+                const currentAuthUser = auth.currentUser;
+                let userId;
+                
+                if (currentAuthUser && currentAuthUser.email === email) {
+                    // User is already authenticated, use their UID
+                    userId = currentAuthUser.uid;
+                    console.log('User already authenticated, using existing UID:', userId);
+                } else {
+                    // Check if email is already registered in Firestore
+                    const emailCheck = await db.collection('users').where('email', '==', email).get();
+                    if (!emailCheck.empty) {
+                        showAlert('registerAlert', 'Email already registered', 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Register';
+                        return;
+                    }
+                    
+                    // Create new Firebase Auth user
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    userId = userCredential.user.uid;
                 }
 
                 // Validate invitation code
@@ -2042,10 +2054,6 @@
 
                 const referrerDoc = referrerQuery.docs[0];
                 const referrerId = referrerDoc.id;
-
-                // Create Firebase Auth user
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const userId = userCredential.user.uid;
 
                 // Create user document in Firestore
                 const newUser = {
