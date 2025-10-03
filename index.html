@@ -1916,14 +1916,29 @@
                     // Create admin auth account and stay signed in
                     let adminUid;
                     try {
+                        console.log('Attempting to create admin account...');
                         const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
                         adminUid = adminCredential.user.uid;
+                        console.log('Admin account created successfully');
                     } catch (authError) {
+                        console.error('Admin creation error:', authError);
                         if (authError.code === 'auth/email-already-in-use') {
-                            const adminCredential = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                            adminUid = adminCredential.user.uid;
+                            console.log('Admin email already exists, attempting sign-in...');
+                            try {
+                                const adminCredential = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                                adminUid = adminCredential.user.uid;
+                                console.log('Admin sign-in successful');
+                            } catch (signInError) {
+                                console.error('Admin sign-in failed:', signInError);
+                                console.log('Please check admin credentials in Firebase Console');
+                                // Don't throw error, continue with app initialization
+                                return;
+                            }
                         } else {
-                            throw authError;
+                            console.error('Admin creation failed:', authError);
+                            console.log('Admin account creation failed, continuing without admin...');
+                            // Don't throw error, continue with app initialization
+                            return;
                         }
                     }
                     
@@ -1954,8 +1969,18 @@
                         createdDate: new Date().toISOString()
                     });
                     
-                    console.log('Admin created successfully');
-                    await auth.signOut();
+                console.log('Admin created successfully');
+                
+                // Test admin login to verify credentials work
+                console.log('Testing admin login...');
+                const loginTest = await testAdminLogin();
+                if (loginTest) {
+                    console.log('Admin login test passed');
+                } else {
+                    console.log('Admin login test failed - check Firebase Console');
+                }
+                
+                await auth.signOut();
                 }
                 
                 document.getElementById('loadingScreen').classList.add('hidden');
@@ -1978,6 +2003,100 @@
                 `;
             }
         }
+        // Test function to debug authentication
+        async function testAdminLogin() {
+            try {
+                console.log('Testing admin login...');
+                const result = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                console.log('Admin login successful:', result.user.uid);
+                await auth.signOut();
+                return true;
+            } catch (error) {
+                console.error('Admin login test failed:', error);
+                return false;
+            }
+        }
+
+        // Function to sync Firebase Auth users with Firestore
+        async function syncUserToFirestore(user, additionalData = {}) {
+            try {
+                const userId = user.uid;
+                const userDoc = await db.collection('users').doc(userId).get();
+                
+                if (!userDoc.exists) {
+                    console.log('Creating Firestore document for user:', user.email);
+                    
+                    const userData = {
+                        id: userId,
+                        email: user.email || '',
+                        fullName: additionalData.fullName || 'User',
+                        phone: additionalData.phone || '',
+                        balance: 0,
+                        referredBy: additionalData.referredBy || null,
+                        referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                        joinedDate: new Date().toISOString(),
+                        isAdmin: additionalData.isAdmin || false,
+                        authMethod: user.email ? 'email' : 'anonymous',
+                        currentStreak: 0,
+                        longestStreak: 0,
+                        lastLoginDate: new Date().toISOString(),
+                        totalPoints: 0,
+                        pointsBalance: 0,
+                        lastTaskReset: null,
+                        totalTaskEarnings: 0,
+                        monthlyWithdrawals: 0,
+                        firstDepositDate: null,
+                        canWithdraw: false,
+                        ...additionalData
+                    };
+                    
+                    await db.collection('users').doc(userId).set(userData);
+                    
+                    // Create referral code entry
+                    await db.collection('referralCodes').doc(userData.referralCode).set({
+                        userId: userId,
+                        code: userData.referralCode,
+                        createdDate: new Date().toISOString()
+                    });
+                    
+                    console.log('User synced to Firestore successfully');
+                    return userData;
+                } else {
+                    console.log('User already exists in Firestore');
+                    return userDoc.data();
+                }
+            } catch (error) {
+                console.error('Error syncing user to Firestore:', error);
+                throw error;
+            }
+        }
+
+        // Function to manually sync all Firebase Auth users to Firestore (for admin use)
+        async function syncAllUsersToFirestore() {
+            try {
+                console.log('Starting sync of all Firebase Auth users to Firestore...');
+                
+                // Note: This is a simplified version. In production, you'd need to use Firebase Admin SDK
+                // to list all users. For now, this helps with users created manually in console.
+                
+                console.log('Manual sync function ready. Users will be synced automatically on login.');
+                console.log('To sync existing users:');
+                console.log('1. Have each user try to log in');
+                console.log('2. They will be automatically synced to Firestore');
+                console.log('3. Or create them through the registration process');
+                console.log('');
+                console.log('Available functions:');
+                console.log('- syncAllUsersToFirestore() - Show sync instructions');
+                console.log('- testAdminLogin() - Test admin credentials');
+                console.log('- syncUserToFirestore(user, data) - Sync specific user');
+                
+                return true;
+            } catch (error) {
+                console.error('Error in sync function:', error);
+                return false;
+            }
+        }
+
         // Authentication functions
         async function register() {
             console.log('Registration function called');
@@ -2186,17 +2305,49 @@
                 }
         
                 // Sign in with Firebase Auth
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                const userId = userCredential.user.uid;
-        
-                const userDoc = await db.collection('users').doc(userId).get();
-                
-                if (!userDoc.exists) {
-                    showAlert('loginAlert', 'User data not found', 'error');
-                    await auth.signOut();
+                let userCredential;
+                try {
+                    userCredential = await auth.signInWithEmailAndPassword(email, password);
+                    console.log('Login successful for:', email);
+                } catch (authError) {
+                    console.error('Login auth error:', authError);
+                    if (authError.code === 'auth/user-not-found') {
+                        showAlert('loginAlert', 'No account found with this email address', 'error');
+                    } else if (authError.code === 'auth/wrong-password') {
+                        showAlert('loginAlert', 'Incorrect password', 'error');
+                    } else if (authError.code === 'auth/invalid-email') {
+                        showAlert('loginAlert', 'Invalid email address', 'error');
+                    } else if (authError.code === 'auth/too-many-requests') {
+                        showAlert('loginAlert', 'Too many failed attempts. Please try again later.', 'error');
+                    } else {
+                        showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
+                    }
                     btn.disabled = false;
                     btn.textContent = 'Login';
                     return;
+                }
+                const userId = userCredential.user.uid;
+        
+                let userDoc = await db.collection('users').doc(userId).get();
+                
+                if (!userDoc.exists) {
+                    console.log('User exists in Firebase Auth but not in Firestore, syncing...');
+                    try {
+                        // Sync user to Firestore
+                        const userData = await syncUserToFirestore(userCredential.user, {
+                            fullName: 'User', // Default name, user can update later
+                            phone: ''
+                        });
+                        userDoc = { data: () => userData, exists: true };
+                        console.log('User synced to Firestore successfully');
+                    } catch (syncError) {
+                        console.error('Failed to sync user to Firestore:', syncError);
+                        showAlert('loginAlert', 'User data not found and sync failed', 'error');
+                        await auth.signOut();
+                        btn.disabled = false;
+                        btn.textContent = 'Login';
+                        return;
+                    }
                 }
         
                 currentUser = userDoc.data();
