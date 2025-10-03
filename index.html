@@ -2031,25 +2031,8 @@
             
             if (refCode) {
                 console.log('✅ Referral code found, auto-filling and showing registration...');
+                document.getElementById('inviteCode').value = refCode;
                 showRegister();
-                // Set the referral code after the form is shown
-                setTimeout(() => {
-                    const inviteCodeField = document.getElementById('inviteCode');
-                    inviteCodeField.value = refCode;
-                    
-                    // Add visual feedback that the code was auto-filled
-                    inviteCodeField.style.backgroundColor = '#e8f5e8';
-                    inviteCodeField.style.borderColor = '#4caf50';
-                    
-                    // Show a brief message
-                    showAlert('registerAlert', `Referral code "${refCode}" has been automatically filled!`, 'success');
-                    
-                    // Reset styling after a few seconds
-                    setTimeout(() => {
-                        inviteCodeField.style.backgroundColor = '';
-                        inviteCodeField.style.borderColor = '';
-                    }, 3000);
-                }, 100);
             } else {
                 console.log('❌ No referral code found, showing login...');
                 showLogin();
@@ -2151,27 +2134,9 @@
         
         if (detectedRefCode) {
             console.log('✅ Referral code detected successfully');
+            document.getElementById('inviteCode').value = detectedRefCode;
             showRegister();
-            // Set the referral code after the form is shown
-            setTimeout(() => {
-                const inviteCodeField = document.getElementById('inviteCode');
-                inviteCodeField.value = detectedRefCode;
-                
-                // Add visual feedback that the code was auto-filled
-                inviteCodeField.style.backgroundColor = '#e8f5e8';
-                inviteCodeField.style.borderColor = '#4caf50';
-                
-                // Show a brief message
-                showAlert('registerAlert', `Test successful! Referral code "${detectedRefCode}" has been automatically filled!`, 'success');
-                
-                // Reset styling after a few seconds
-                setTimeout(() => {
-                    inviteCodeField.style.backgroundColor = '';
-                    inviteCodeField.style.borderColor = '';
-                }, 3000);
-                
-                alert(`Referral link test successful! Code "${detectedRefCode}" auto-filled.`);
-            }, 100);
+            alert(`Referral link test successful! Code "${detectedRefCode}" auto-filled.`);
         } else {
             console.log('❌ Referral code not detected');
             alert('Referral link test failed - code not detected');
@@ -2559,12 +2524,6 @@
     function showRegister() {
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('registerPage').classList.remove('hidden');
-        
-        // Clear any existing alerts
-        const registerAlert = document.getElementById('registerAlert');
-        if (registerAlert) {
-            registerAlert.innerHTML = '';
-        }
     }
 
     function showLogin() {
