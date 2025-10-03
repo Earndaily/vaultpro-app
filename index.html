@@ -1430,7 +1430,7 @@
                     <div id="paymentInstructions" class="payment-box hidden">
                         <h4>Payment Instructions:</h4>
                         <div class="payment-detail">
-                            <strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span>
+                            <strong>Send money to:</strong> <span id="adminPhoneNumber">0702377999</span>
                         </div>
                         <div class="payment-detail">
                             <strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX
@@ -1491,7 +1491,7 @@
                     <div id="activationPaymentInstructions" class="payment-box hidden">
                         <h4>Payment Instructions:</h4>
                         <div class="payment-detail">
-                            <strong>Send money to:</strong> <span id="activationPhoneNumber">0700000000</span>
+                            <strong>Send money to:</strong> <span id="activationPhoneNumber">0702377999</span>
                         </div>
                         <div class="payment-detail">
                             <strong>Amount:</strong> 20,000 UGX
@@ -2502,9 +2502,9 @@
                     const reference = document.getElementById('activationReference');
                     
                     if (method === 'mtn') {
-                        phoneNumber.textContent = '0700000000'; // MTN number
+                        phoneNumber.textContent = '0779710365'; // MTN number
                     } else if (method === 'airtel') {
-                        phoneNumber.textContent = '0750000000'; // Airtel number
+                        phoneNumber.textContent = '0702377999'; // Airtel number
                     }
                     
                     reference.textContent = `ACTIVATION_${currentUser.referralCode}`;
@@ -3828,12 +3828,7 @@
                         <td>${d.userName}<br><small style="color: var(--gray);">${d.userEmail}</small></td>
                         <td>${d.amount.toLocaleString()} UGX</td>
                         <td>${d.method.toUpperCase()}</td>
-                        <td>
-                            ${(d.screenshot || d.paymentProof) ? 
-                                `<button class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="viewScreenshot('${d.screenshot || d.paymentProof}')">View Screenshot</button>` : 
-                                '<span style="color: var(--gray);">No screenshot</span>'
-                            }
-                        </td>
+                        <td><a href="${d.screenshot}" target="_blank" class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">View</a></td>
                         <td>
                             <button class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem; margin-right: 0.5rem;" onclick="approveDeposit('${d.id}', ${d.amount}, '${d.userId}')">Approve</button>
                             <button class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: var(--error);" onclick="rejectDeposit('${d.id}')">Reject</button>
@@ -3911,84 +3906,6 @@
                 console.error("Rejection error:", error);
                 alert('Failed to reject deposit: ' + error.message);
             }
-        }
-
-        function viewScreenshot(base64Data) {
-            // Create modal for viewing screenshot
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                padding: 2rem;
-            `;
-
-            const modalContent = document.createElement('div');
-            modalContent.style.cssText = `
-                background: white;
-                border-radius: 12px;
-                padding: 2rem;
-                max-width: 90%;
-                max-height: 90%;
-                position: relative;
-                overflow: auto;
-            `;
-
-            const closeBtn = document.createElement('button');
-            closeBtn.innerHTML = '✕';
-            closeBtn.style.cssText = `
-                position: absolute;
-                top: 1rem;
-                right: 1rem;
-                background: #ef4444;
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 2rem;
-                height: 2rem;
-                cursor: pointer;
-                font-size: 1rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
-            closeBtn.onclick = () => document.body.removeChild(modal);
-
-            const img = document.createElement('img');
-            img.src = base64Data;
-            img.style.cssText = `
-                max-width: 100%;
-                max-height: 70vh;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            `;
-
-            const title = document.createElement('h3');
-            title.textContent = 'Payment Screenshot';
-            title.style.cssText = `
-                margin: 0 0 1rem 0;
-                color: var(--dark);
-            `;
-
-            modalContent.appendChild(closeBtn);
-            modalContent.appendChild(title);
-            modalContent.appendChild(img);
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-
-            // Close modal when clicking outside
-            modal.onclick = (e) => {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            };
         }
 
         // Admin Task Management
