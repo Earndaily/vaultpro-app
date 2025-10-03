@@ -1907,10 +1907,32 @@
             }
         
             try {
-                try {
-                    const adminAuth = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
-                    await db.collection('users').doc(adminAuth.user.uid).set({
-                        id: adminAuth.user.uid,
+                // Check if admin already exists in Firestore
+                const adminRefCodeDoc = await db.collection('referralCodes').doc('ADMIN2024').get();
+                
+                if (!adminRefCodeDoc.exists) {
+                    // Admin doesn't exist, create it
+                    console.log('Creating admin user...');
+                    
+                    // Try to create admin auth account
+                    let adminUid;
+                    try {
+                        const adminAuth = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
+                        adminUid = adminAuth.user.uid;
+                    } catch (authError) {
+                        if (authError.code === 'auth/email-already-in-use') {
+                            // Admin auth exists, sign in to get UID
+                            const adminAuth = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'admin123');
+                            adminUid = adminAuth.user.uid;
+                            await auth.signOut();
+                        } else {
+                            throw authError;
+                        }
+                    }
+                    
+                    // Create/update admin user in Firestore
+                    await db.collection('users').doc(adminUid).set({
+                        id: adminUid,
                         email: 'admin@vaultpro.com',
                         isAdmin: true,
                         fullName: 'Administrator',
@@ -1925,22 +1947,20 @@
                         lastTaskReset: null,
                         totalTaskEarnings: 0,
                         monthlyWithdrawals: 0,
-                        firstDepositDate: null,
-                        canWithdraw: false
+                        firstDepositDate: new Date().toISOString(), // Admin is always activated
+                        canWithdraw: true
                     });
                     
                     // Create referral code entry
                     await db.collection('referralCodes').doc('ADMIN2024').set({
-                        userId: adminAuth.user.uid,
+                        userId: adminUid,
                         code: 'ADMIN2024',
                         createdDate: new Date().toISOString()
                     });
                     
                     console.log('Admin user created successfully');
-                } catch (authError) {
-                    if (authError.code !== 'auth/email-already-in-use') {
-                        console.error("Admin creation error:", authError);
-                    }
+                } else {
+                    console.log('Admin user already exists');
                 }
         
                 document.getElementById('loadingScreen').classList.add('hidden');
