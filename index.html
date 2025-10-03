@@ -1869,12 +1869,14 @@
 
         // Initialize Firebase
         let db;
+        let auth;
         let firebaseInitialized = false;
 
         try {
             if (firebaseConfig.apiKey !== "apikey") {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
+                auth = firebase.auth();
                 firebaseInitialized = true;
                 console.log("Firebase initialized successfully");
             }
@@ -1885,6 +1887,41 @@
         // Global variables
         let currentUser = null;
         let selectedPlan = null;
+
+        // Authentication state listener
+        function setupAuthStateListener() {
+            if (auth) {
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        console.log('User is signed in:', user.uid);
+                        // User is signed in, get their data from Firestore
+                        try {
+                            const userDoc = await db.collection('users').doc(user.uid).get();
+                            if (userDoc.exists) {
+                                currentUser = userDoc.data();
+                                await updateUserStreak(user.uid, currentUser);
+                                
+                                if (currentUser.isAdmin) {
+                                    showAdminDashboard();
+                                } else {
+                                    showUserDashboard();
+                                }
+                            } else {
+                                console.log('User document not found in Firestore');
+                                await auth.signOut();
+                            }
+                        } catch (error) {
+                            console.error('Error getting user data:', error);
+                            await auth.signOut();
+                        }
+                    } else {
+                        console.log('User is signed out');
+                        currentUser = null;
+                        // Don't automatically show login - let the app decide based on URL params
+                    }
+                });
+            }
+        }
 
         const vaultPlans = {
             bronze: { name: 'Bronze Vault', amount: 50000, days: 30, profit: 0.15 },
@@ -1902,6 +1939,9 @@
                 document.getElementById('firebaseSetup').classList.remove('hidden');
                 return;
             }
+
+            // Setup authentication state listener
+            setupAuthStateListener();
 
             try {
                 const adminDoc = await db.collection('users').doc('admin').get();
@@ -1961,8 +2001,8 @@
                 console.log('Starting registration process');
                 
                 // Check if Firebase is initialized
-                if (!firebaseInitialized || !db) {
-                    showAlert('registerAlert', 'Database not initialized. Please refresh the page.', 'error');
+                if (!firebaseInitialized || !db || !auth) {
+                    showAlert('registerAlert', 'Firebase not initialized. Please refresh the page.', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Register';
                     return;
@@ -1998,6 +2038,7 @@
                     return;
                 }
 
+                // Check if email is already registered in Firestore
                 const emailCheck = await db.collection('users').where('email', '==', email).get();
                 if (!emailCheck.empty) {
                     showAlert('registerAlert', 'Email already registered', 'error');
@@ -2017,13 +2058,34 @@
                 const referrerDoc = referrerQuery.docs[0];
                 const referrerId = referrerDoc.id;
 
-                const userId = 'user_' + Date.now();
+                // Create Firebase Auth user first
+                let userCredential;
+                try {
+                    userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    console.log('User registered with Firebase Auth');
+                } catch (authError) {
+                    console.error('Firebase Auth registration failed:', authError);
+                    if (authError.code === 'auth/email-already-in-use') {
+                        showAlert('registerAlert', 'Email is already registered with Firebase Auth', 'error');
+                    } else if (authError.code === 'auth/weak-password') {
+                        showAlert('registerAlert', 'Password should be at least 6 characters', 'error');
+                    } else if (authError.code === 'auth/invalid-email') {
+                        showAlert('registerAlert', 'Invalid email address', 'error');
+                    } else {
+                        showAlert('registerAlert', `Registration failed: ${authError.message}`, 'error');
+                    }
+                    btn.disabled = false;
+                    btn.textContent = 'Register';
+                    return;
+                }
+
+                // Use Firebase Auth UID as the document ID
+                const userId = userCredential.user.uid;
                 const newUser = {
                     id: userId,
                     fullName,
                     email,
                     phone,
-                    password,
                     balance: 0,
                     referredBy: referrerId,
                     referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -2039,7 +2101,8 @@
                     lastTaskReset: null,
                     totalTaskEarnings: 0,
                     monthlyWithdrawals: 0,
-                    canWithdraw: false
+                    canWithdraw: false,
+                    authMethod: 'email' // Track that this user used email/password auth
                 };
 
                 await db.collection('users').doc(userId).set(newUser);
@@ -2082,16 +2145,52 @@
                     return;
                 }
 
-                const userQuery = await db.collection('users').where('email', '==', email).where('password', '==', password).get();
-
-                if (userQuery.empty) {
-                    showAlert('loginAlert', 'Invalid email or password', 'error');
+                // Check if Firebase is initialized
+                if (!firebaseInitialized || !db || !auth) {
+                    showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Login';
                     return;
                 }
 
-                const userDoc = userQuery.docs[0];
+                // Sign in with Firebase Auth
+                let userCredential;
+                try {
+                    userCredential = await auth.signInWithEmailAndPassword(email, password);
+                    console.log('User signed in with Firebase Auth');
+                } catch (authError) {
+                    console.error('Login auth error:', authError);
+                    if (authError.code === 'auth/user-not-found') {
+                        showAlert('loginAlert', 'No user found with this email address', 'error');
+                    } else if (authError.code === 'auth/wrong-password') {
+                        showAlert('loginAlert', 'Incorrect password', 'error');
+                    } else if (authError.code === 'auth/invalid-email') {
+                        showAlert('loginAlert', 'Invalid email address', 'error');
+                    } else if (authError.code === 'auth/too-many-requests') {
+                        showAlert('loginAlert', 'Too many failed attempts. Please try again later.', 'error');
+                    } else {
+                        showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
+                    }
+                    btn.disabled = false;
+                    btn.textContent = 'Login';
+                    return;
+                }
+
+                // Get user data from Firestore using Firebase Auth UID
+                const userId = userCredential.user.uid;
+                const userDoc = await db.collection('users').doc(userId).get();
+                
+                if (!userDoc.exists) {
+                    console.log('User exists in Firebase Auth but not in Firestore, syncing...');
+                    // User exists in Firebase Auth but not in Firestore - this shouldn't happen with new registration flow
+                    // but we'll handle it gracefully
+                    showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
+                    await auth.signOut();
+                    btn.disabled = false;
+                    btn.textContent = 'Login';
+                    return;
+                }
+
                 currentUser = userDoc.data();
 
                 await updateUserStreak(userDoc.id, currentUser);
@@ -2114,7 +2213,17 @@
             }
         }
 
-        function logout() {
+        async function logout() {
+            try {
+                // Sign out from Firebase Auth
+                if (auth) {
+                    await auth.signOut();
+                    console.log('User signed out from Firebase Auth');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            
             currentUser = null;
             document.getElementById('userDashboard').classList.add('hidden');
             document.getElementById('adminDashboard').classList.add('hidden');
