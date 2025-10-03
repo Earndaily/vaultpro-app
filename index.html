@@ -3572,18 +3572,6 @@
         }
     }
 
-    function showWalletTab(tab) {
-        document.getElementById('withdrawTab').classList.add('hidden');
-        document.getElementById('depositTab').classList.add('hidden');
-        
-        if (tab === 'withdraw') {
-            document.getElementById('withdrawTab').classList.remove('hidden');
-            updateWithdrawSection();
-        } else if (tab === 'deposit') {
-            document.getElementById('depositTab').classList.remove('hidden');
-            updateDepositSection();
-        }
-    }
 
     function toggleCollapsible(sectionId) {
         const content = document.getElementById(sectionId);
@@ -3632,8 +3620,8 @@
             document.getElementById('walletBalance').textContent = balance.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
             
-            // Show withdraw tab by default
-            showWalletTab('withdraw');
+            // Wallet section updated successfully
+            console.log('Wallet section updated');
         } catch (error) {
             console.error("Error updating wallet section:", error);
         }
@@ -4565,8 +4553,9 @@
                 electionDate: candidate.electionDate || 'TBD'
             };
 
-            // Add stake to database
-            await db.collection('stakes').add(stakeData);
+            // Add stake to database (both main collection and user subcollection)
+            const stakeRef = await db.collection('stakes').add(stakeData);
+            await db.collection('users').doc(currentUser.id).collection('stakes').add(stakeData);
 
             // Deduct stake amount from user balance
             await db.collection('users').doc(currentUser.id).update({
@@ -4597,19 +4586,35 @@
         if (!currentUser) return;
 
         try {
-            const stakesSnapshot = await db.collection('stakes')
-                .where('userId', '==', currentUser.id)
-                .orderBy('placedAt', 'desc')
-                .get();
-
-            const stakes = stakesSnapshot.docs.map(doc => ({
+            // Try user subcollection first (preferred method)
+            const stakesSnapshot = await db.collection('users').doc(currentUser.id).collection('stakes').get();
+            
+            let stakes = stakesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
+            // If no stakes in subcollection, try main collection as fallback
+            if (stakes.length === 0) {
+                console.log('No stakes in subcollection, checking main collection...');
+                const mainStakesSnapshot = await db.collection('stakes').get();
+                const allStakes = mainStakesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Filter by userId client-side
+                stakes = allStakes.filter(stake => stake.userId === currentUser.id);
+            }
+
+            // Sort by placedAt client-side (newest first)
+            stakes.sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
+
             displayMyStakes(stakes);
         } catch (error) {
             console.error('Error loading stakes:', error);
+            // Show empty state if there's an error
+            displayMyStakes([]);
         }
     }
 
@@ -4661,6 +4666,27 @@
         `).join('');
 
         myStakesList.innerHTML = stakesHTML;
+    }
+
+    // Function to migrate stakes to user subcollections (admin use)
+    async function migrateStakesToSubcollections() {
+        try {
+            console.log('Starting stakes migration...');
+            const stakesSnapshot = await db.collection('stakes').get();
+            
+            for (const doc of stakesSnapshot.docs) {
+                const stakeData = doc.data();
+                if (stakeData.userId) {
+                    // Add to user subcollection
+                    await db.collection('users').doc(stakeData.userId).collection('stakes').add(stakeData);
+                    console.log(`Migrated stake for user: ${stakeData.userId}`);
+                }
+            }
+            
+            console.log('Stakes migration completed successfully');
+        } catch (error) {
+            console.error('Error migrating stakes:', error);
+        }
     }
 
     // Function to add sample candidates (for admin use)
@@ -5043,26 +5069,53 @@
 
     // Withdraw section
     async function updateWithdrawSection() {
-        const userDoc = await db.collection('users').doc(currentUser.id).get();
-        const userData = userDoc.data();
-        const balance = userData.balance || 0;
-        const pointsBalance = userData.pointsBalance || 0;
-        
-        document.getElementById('withdrawBalance').textContent = balance.toLocaleString();
-        document.getElementById('withdrawPointsBalance').textContent = pointsBalance.toLocaleString();
-        
-        document.getElementById('withdrawAmount').addEventListener('input', (e) => {
-            const amount = parseFloat(e.target.value) || 0;
-            const fee = amount * 0.05;
-            const net = amount - fee;
-            document.getElementById('netWithdraw').textContent = net.toLocaleString();
-        });
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
+            const balance = userData.balance || 0;
+            const pointsBalance = userData.pointsBalance || 0;
+            
+            // Update elements if they exist
+            const withdrawBalanceEl = document.getElementById('withdrawBalance');
+            const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
+            
+            if (withdrawBalanceEl) {
+                withdrawBalanceEl.textContent = balance.toLocaleString();
+            }
+            if (withdrawPointsBalanceEl) {
+                withdrawPointsBalanceEl.textContent = pointsBalance.toLocaleString();
+            }
+            
+            // Set up event listeners if elements exist
+            const withdrawAmountEl = document.getElementById('withdrawAmount');
+            if (withdrawAmountEl && !withdrawAmountEl.hasAttribute('data-listener-added')) {
+                withdrawAmountEl.addEventListener('input', (e) => {
+                    const amount = parseFloat(e.target.value) || 0;
+                    const fee = amount * 0.05;
+                    const net = amount - fee;
+                    const netWithdrawEl = document.getElementById('netWithdraw');
+                    if (netWithdrawEl) {
+                        netWithdrawEl.textContent = net.toLocaleString();
+                    }
+                });
+                withdrawAmountEl.setAttribute('data-listener-added', 'true');
+            }
 
-        document.getElementById('pointsToConvert').addEventListener('input', (e) => {
-            const points = parseFloat(e.target.value) || 0;
-            const amount = points * 10;
-            document.getElementById('pointsConversionAmount').textContent = amount.toLocaleString();
-        });
+            const pointsToConvertEl = document.getElementById('pointsToConvert');
+            if (pointsToConvertEl && !pointsToConvertEl.hasAttribute('data-listener-added')) {
+                pointsToConvertEl.addEventListener('input', (e) => {
+                    const points = parseFloat(e.target.value) || 0;
+                    const amount = points * 10;
+                    const conversionAmountEl = document.getElementById('pointsConversionAmount');
+                    if (conversionAmountEl) {
+                        conversionAmountEl.textContent = amount.toLocaleString();
+                    }
+                });
+                pointsToConvertEl.setAttribute('data-listener-added', 'true');
+            }
+        } catch (error) {
+            console.error('Error updating withdraw section:', error);
+        }
 
         updateWithdrawHistory();
     }
@@ -5281,33 +5334,69 @@
 
     // Deposit section
     async function updateDepositSection() {
-        document.getElementById('depositAmount').addEventListener('input', showPaymentInstructions);
-        document.getElementById('depositMethod').addEventListener('change', showPaymentInstructions);
-        updateDepositHistory();
+        try {
+            // Set up event listeners if elements exist
+            const depositAmountEl = document.getElementById('depositAmount');
+            const depositMethodEl = document.getElementById('depositMethod');
+            
+            if (depositAmountEl && !depositAmountEl.hasAttribute('data-listener-added')) {
+                depositAmountEl.addEventListener('input', showPaymentInstructions);
+                depositAmountEl.setAttribute('data-listener-added', 'true');
+            }
+            
+            if (depositMethodEl && !depositMethodEl.hasAttribute('data-listener-added')) {
+                depositMethodEl.addEventListener('change', showPaymentInstructions);
+                depositMethodEl.setAttribute('data-listener-added', 'true');
+            }
+            
+            updateDepositHistory();
+        } catch (error) {
+            console.error('Error updating deposit section:', error);
+        }
     }
 
     function showPaymentInstructions() {
-        const amount = parseFloat(document.getElementById('depositAmount').value);
-        const method = document.getElementById('depositMethod').value;
+        const depositAmountEl = document.getElementById('depositAmount');
+        const depositMethodEl = document.getElementById('depositMethod');
+        
+        if (!depositAmountEl || !depositMethodEl) {
+            return; // Elements not available
+        }
+        
+        const amount = parseFloat(depositAmountEl.value);
+        const method = depositMethodEl.value;
 
         if (amount >= 10000 && method) {
-            document.getElementById('displayDepositAmount').textContent = amount.toLocaleString();
+            const displayAmountEl = document.getElementById('displayDepositAmount');
+            if (displayAmountEl) {
+                displayAmountEl.textContent = amount.toLocaleString();
+            }
             
             // Update phone number based on method
             const phoneNumber = document.getElementById('adminPhoneNumber');
-            if (method === 'mtn') {
-                phoneNumber.textContent = '0779710365'; // MTN number
-            } else if (method === 'airtel') {
-                phoneNumber.textContent = '0702377999'; // Airtel number
+            if (phoneNumber) {
+                if (method === 'mtn') {
+                    phoneNumber.textContent = '0779710365'; // MTN number
+                } else if (method === 'airtel') {
+                    phoneNumber.textContent = '0702377999'; // Airtel number
+                }
             }
             
-            document.getElementById('paymentInstructions').classList.remove('hidden');
-            document.getElementById('depositScreenshot').classList.remove('hidden');
-            document.getElementById('submitDepositBtn').classList.remove('hidden');
+            const paymentInstructionsEl = document.getElementById('paymentInstructions');
+            const depositScreenshotEl = document.getElementById('depositScreenshot');
+            const submitDepositBtnEl = document.getElementById('submitDepositBtn');
+            
+            if (paymentInstructionsEl) paymentInstructionsEl.classList.remove('hidden');
+            if (depositScreenshotEl) depositScreenshotEl.classList.remove('hidden');
+            if (submitDepositBtnEl) submitDepositBtnEl.classList.remove('hidden');
         } else {
-            document.getElementById('paymentInstructions').classList.add('hidden');
-            document.getElementById('depositScreenshot').classList.add('hidden');
-            document.getElementById('submitDepositBtn').classList.add('hidden');
+            const paymentInstructionsEl = document.getElementById('paymentInstructions');
+            const depositScreenshotEl = document.getElementById('depositScreenshot');
+            const submitDepositBtnEl = document.getElementById('submitDepositBtn');
+            
+            if (paymentInstructionsEl) paymentInstructionsEl.classList.add('hidden');
+            if (depositScreenshotEl) depositScreenshotEl.classList.add('hidden');
+            if (submitDepositBtnEl) submitDepositBtnEl.classList.add('hidden');
         }
     }
 
