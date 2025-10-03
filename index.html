@@ -1894,6 +1894,7 @@
     let currentUser = null;
     let selectedPlan = null;
     let isProcessingReferral = false;
+    let allowManualRegistration = false;
 
     // Authentication state listener
     function setupAuthStateListener() {
@@ -2669,8 +2670,12 @@
 
     function showRegisterWithReferral() {
         // This function allows manual access to registration and tries to grab referral code from URL
+        console.log('showRegisterWithReferral() called');
+        allowManualRegistration = true; // Allow manual access to registration
         const urlParams = new URLSearchParams(window.location.search);
         const refCode = urlParams.get('ref');
+        console.log('Current URL:', window.location.href);
+        console.log('Referral code found:', refCode);
         
         if (refCode) {
             // If there's a referral code in the URL, auto-fill it
@@ -2703,6 +2708,12 @@
         // Show registration page
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('registerPage').classList.remove('hidden');
+        
+        // Clear the flag after 30 seconds to prevent indefinite access
+        setTimeout(() => {
+            allowManualRegistration = false;
+            console.log('Manual registration flag cleared after timeout');
+        }, 30000);
     }
 
     function showLogin() {
@@ -2712,6 +2723,9 @@
         // Clear any alerts
         document.getElementById('loginAlert').innerHTML = '';
         document.getElementById('registerAlert').innerHTML = '';
+        
+        // Reset manual registration flag
+        allowManualRegistration = false;
     }
 
     function showUserDashboard() {
@@ -4765,8 +4779,9 @@
         const inviteCodeField = document.getElementById('inviteCode');
         
         // If register page is visible but no invite code, redirect to login
+        // UNLESS manual registration is allowed
         if (registerPage && !registerPage.classList.contains('hidden')) {
-            if (inviteCodeField && !inviteCodeField.value) {
+            if (inviteCodeField && !inviteCodeField.value && !allowManualRegistration) {
                 console.warn('Registration page accessed without referral code');
                 showLogin();
             }
