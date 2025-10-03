@@ -1912,7 +1912,6 @@
             }
         
             try {
-                // Simply try to create admin - will fail silently if exists
                 try {
                     const adminAuth = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
                     await db.collection('users').doc(adminAuth.user.uid).set({
@@ -1934,9 +1933,16 @@
                         firstDepositDate: null,
                         canWithdraw: false
                     });
+                    
+                    // Create referral code entry
+                    await db.collection('referralCodes').doc('ADMIN2024').set({
+                        userId: adminAuth.user.uid,
+                        code: 'ADMIN2024',
+                        createdDate: new Date().toISOString()
+                    });
+                    
                     console.log('Admin user created successfully');
                 } catch (authError) {
-                    // Admin already exists - that's fine
                     if (authError.code !== 'auth/email-already-in-use') {
                         console.error("Admin creation error:", authError);
                     }
@@ -1955,7 +1961,7 @@
             } catch (error) {
                 console.error("Initialization error:", error);
                 document.getElementById('loadingScreen').classList.add('hidden');
-                showLogin(); // Show login even if there's an error
+                showLogin();
             }
         }
         // Authentication functions
@@ -1995,16 +2001,16 @@
                     return;
                 }
         
-                const referrerQuery = await db.collection('users').where('referralCode', '==', inviteCode).get();
-                if (referrerQuery.empty) {
+                // Validate referral code from referralCodes collection
+                const referralCodeDoc = await db.collection('referralCodes').doc(inviteCode).get();
+                if (!referralCodeDoc.exists) {
                     showAlert('registerAlert', 'Invalid invitation code', 'error');
                     btn.disabled = false;
                     btn.textContent = 'Register & Pay 20,000 UGX';
                     return;
                 }
-        
-                const referrerDoc = referrerQuery.docs[0];
-                const referrerId = referrerDoc.id;
+                
+                const referrerId = referralCodeDoc.data().userId;
         
                 // Create Firebase Auth user
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -2033,6 +2039,13 @@
                 };
         
                 await db.collection('users').doc(userId).set(newUser);
+        
+                // Create referral code entry for new user
+                await db.collection('referralCodes').doc(newUser.referralCode).set({
+                    userId: userId,
+                    code: newUser.referralCode,
+                    createdDate: new Date().toISOString()
+                });
         
                 await db.collection('users').doc(referrerId).collection('referrals').doc(userId).set({
                     userId: userId,
@@ -3708,30 +3721,40 @@
         // Admin functions
         async function updateAdminStats() {
             try {
-                const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
-                const totalUsers = usersSnapshot.size;
-
+                if (!currentUser || !currentUser.isAdmin) {
+                    console.error("Not authorized");
+                    return;
+                }
+        
+                // Get all users except current admin
+                const usersSnapshot = await db.collection('users').get();
+                const users = usersSnapshot.docs
+                    .map(doc => doc.data())
+                    .filter(u => !u.isAdmin);
+                
+                const totalUsers = users.length;
+        
                 const transactionsSnapshot = await db.collection('transactions').get();
                 const transactions = transactionsSnapshot.docs.map(doc => doc.data());
-
+        
                 const deposits = transactions.filter(t => t.type === 'deposit' || t.type === 'subscription');
                 const withdrawals = transactions.filter(t => t.type === 'withdrawal');
                 const referrals = transactions.filter(t => t.type === 'referral');
-
+        
                 const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
                 const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
-
-                const depositEarnings = deposits.reduce((sum, t) => sum + t.adminFee, 0);
-                const withdrawEarnings = withdrawals.reduce((sum, t) => sum + t.adminFee, 0);
-                const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
-
+        
+                const depositEarnings = deposits.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+                const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+                const referralEarnings = referrals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+        
                 const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings;
-
+        
                 document.getElementById('adminTotalUsers').textContent = totalUsers;
                 document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
                 document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
                 document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
-
+        
                 document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
                 document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
                 document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
@@ -3742,20 +3765,27 @@
 
         async function updateAdminUsers() {
             try {
-                const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
-                const users = usersSnapshot.docs.map(doc => doc.data());
-
+                if (!currentUser || !currentUser.isAdmin) {
+                    console.error("Not authorized");
+                    return;
+                }
+        
+                const usersSnapshot = await db.collection('users').get();
+                const users = usersSnapshot.docs
+                    .map(doc => doc.data())
+                    .filter(u => !u.isAdmin);
+        
                 const tbody = document.getElementById('adminUsersBody');
-
+        
                 if (users.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="text-center">No users yet</td></tr>';
                     return;
                 }
-
+        
                 const userRows = await Promise.all(users.map(async (u) => {
                     const referralsSnapshot = await db.collection('users').doc(u.id).collection('referrals').get();
                     const refCount = referralsSnapshot.size;
-
+        
                     return `
                         <tr>
                             <td>${u.fullName}</td>
@@ -3766,7 +3796,7 @@
                         </tr>
                     `;
                 }));
-
+        
                 tbody.innerHTML = userRows.join('');
             } catch (error) {
                 console.error("Error updating admin users:", error);
@@ -3775,16 +3805,21 @@
 
         async function updateAdminTransactions() {
             try {
+                if (!currentUser || !currentUser.isAdmin) {
+                    console.error("Not authorized");
+                    return;
+                }
+        
                 const transactionsSnapshot = await db.collection('transactions').orderBy('date', 'desc').limit(50).get();
                 const transactions = transactionsSnapshot.docs.map(doc => doc.data());
-
+        
                 const tbody = document.getElementById('adminTransactionsBody');
-
+        
                 if (transactions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="text-center">No transactions yet</td></tr>';
                     return;
                 }
-
+        
                 tbody.innerHTML = transactions.map(t => `
                     <tr>
                         <td>${new Date(t.date).toLocaleDateString()}</td>
