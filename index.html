@@ -1907,42 +1907,36 @@
             }
         
             try {
-                // Check current auth state before signing out
-                if (auth.currentUser) {
-                    await auth.signOut();
-                }
-                
-                // Check if admin exists in Firestore
+                // Wait for auth to be ready
+                await new Promise(resolve => {
+                    const unsubscribe = auth.onAuthStateChanged(() => {
+                        unsubscribe();
+                        resolve();
+                    });
+                });
+        
+                // Check if admin exists
                 const adminQuery = await db.collection('users').where('email', '==', 'admin@vaultpro.com').get();
                 
                 if (adminQuery.empty) {
-                    console.log('Admin not found, creating...');
+                    console.log('Creating admin account...');
                     
-                    let adminUid;
-                    
-                    // Try to create admin in Auth
+                    // Create admin auth account
+                    let adminCredential;
                     try {
-                        const adminAuth = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                        adminUid = adminAuth.user.uid;
-                        console.log('Admin auth created with UID:', adminUid);
+                        adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
                     } catch (authError) {
                         if (authError.code === 'auth/email-already-in-use') {
-                            // Sign in to get UID, then sign out
-                            const adminAuth = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                            adminUid = adminAuth.user.uid;
-                            console.log('Admin auth exists with UID:', adminUid);
+                            adminCredential = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
                         } else {
-                            console.error('Auth error:', authError);
                             throw authError;
                         }
                     }
                     
-                    // Always sign out after getting UID
-                    await auth.signOut();
+                    const adminUid = adminCredential.user.uid;
                     
-                    // Create admin document in Firestore
+                    // Create admin Firestore document while signed in
                     await db.collection('users').doc(adminUid).set({
-                        
                         id: adminUid,
                         email: 'admin@vaultpro.com',
                         isAdmin: true,
@@ -1961,9 +1955,6 @@
                         firstDepositDate: new Date().toISOString(),
                         canWithdraw: true
                     });
-                    await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
-                    await auth.signOut();
-                    console.log('Admin Firestore document created');
                     
                     // Create referral code
                     await db.collection('referralCodes').doc('ADMIN2024').set({
@@ -1972,12 +1963,13 @@
                         createdDate: new Date().toISOString()
                     });
                     
-                    console.log('Admin referral code created');
-                } else {
-                    console.log('Admin already exists');
+                    console.log('Admin created successfully');
+                    
+                    // Sign out admin
+                    await auth.signOut();
                 }
                 
-                // Now show the appropriate page
+                // Show appropriate page
                 document.getElementById('loadingScreen').classList.add('hidden');
                 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1991,9 +1983,11 @@
                 
             } catch (error) {
                 console.error("Initialization error:", error);
-                alert('Initialization error: ' + error.message);
-                document.getElementById('loadingScreen').classList.add('hidden');
-                showLogin();
+                document.getElementById('loadingScreen').innerHTML = `
+                    <h2 style="color: white;">Setup Error</h2>
+                    <p style="color: white;">${error.message}</p>
+                    <button class="btn" onclick="location.reload()">Retry</button>
+                `;
             }
         }
         // Authentication functions
