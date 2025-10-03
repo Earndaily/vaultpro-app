@@ -922,10 +922,9 @@
         <h1>Welcome to VaultPro</h1>
         <p style="color: var(--gray); margin-bottom: 2rem;">Join our exclusive refer and earn platform</p>
         <div id="registerAlert"></div>
-        <input type="text" id="inviteCode" placeholder="Enter Invitation Code" />
+        <input type="text" id="inviteCode" placeholder="Enter Invitation Code" readonly style="background: #f3f4f6;" />
         <input type="text" id="fullName" placeholder="Full Name" />
         <input type="email" id="email" placeholder="Email Address" />
-        <input type="tel" id="phone" placeholder="Phone Number" />
         <input type="password" id="password" placeholder="Password" />
         <input type="password" id="confirmPassword" placeholder="Confirm Password" />
         
@@ -2022,19 +2021,38 @@
             }
     
             document.getElementById('loadingScreen').classList.add('hidden');
-            
+
+            // Check for referral code in URL
             const urlParams = new URLSearchParams(window.location.search);
             const refCode = urlParams.get('ref');
-            console.log('🔗 Checking for referral code in URL...');
-            console.log('URL params:', window.location.search);
-            console.log('Referral code found:', refCode);
-            
+
             if (refCode) {
-                console.log('✅ Referral code found, auto-filling and showing registration...');
-                document.getElementById('inviteCode').value = refCode;
-                showRegister();
+                console.log('✅ Referral code detected:', refCode);
+                
+                // Verify the referral code exists in database
+                try {
+                    const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
+                    
+                    if (!referrerQuery.empty) {
+                        // Valid referral code - show registration with auto-filled code
+                        document.getElementById('inviteCode').value = refCode;
+                        showRegister();
+                        
+                        // Show a welcome message
+                        showAlert('registerAlert', `Welcome! You've been referred by ${referrerQuery.docs[0].data().fullName}. Complete the form to get started.`, 'success');
+                    } else {
+                        // Invalid referral code
+                        console.log('❌ Invalid referral code');
+                        showLogin();
+                        alert('Invalid referral code. Please contact the person who referred you.');
+                    }
+                } catch (error) {
+                    console.error('Error validating referral code:', error);
+                    showLogin();
+                }
             } else {
-                console.log('❌ No referral code found, showing login...');
+                // No referral code - show login
+                console.log('No referral code found, showing login...');
                 showLogin();
             }
         } catch (error) {
@@ -2199,16 +2217,33 @@
             const confirmPassword = document.getElementById('confirmPassword').value;
             console.log('Form values:', { inviteCode, fullName, email, phone, password });
 
-            if (!inviteCode || !fullName || !email || !phone || !password) {
+            if (!inviteCode || !fullName || !email || !password) {
                 showAlert('registerAlert', 'Please fill all fields', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Register';
                 return;
             }
 
-            // Additional validation for fullName
+            // Validate full name (at least 2 characters)
             if (fullName.length < 2) {
                 showAlert('registerAlert', 'Please enter a valid full name', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Register';
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert('registerAlert', 'Please enter a valid email address', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Register';
+                return;
+            }
+
+            // Validate password length
+            if (password.length < 6) {
+                showAlert('registerAlert', 'Password must be at least 6 characters', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Register';
                 return;
@@ -2268,7 +2303,6 @@
                 id: userId,
                 fullName,
                 email,
-                phone,
                 balance: 0,
                 referredBy: referrerId,
                 referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -2285,7 +2319,7 @@
                 totalTaskEarnings: 0,
                 monthlyWithdrawals: 0,
                 canWithdraw: false,
-                authMethod: 'email' // Track that this user used email/password auth
+                authMethod: 'email'
             };
 
             await db.collection('users').doc(userId).set(newUser);
