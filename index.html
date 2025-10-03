@@ -922,7 +922,12 @@
         <h1>Welcome to VaultPro</h1>
         <p style="color: var(--gray); margin-bottom: 2rem;">Join our exclusive refer and earn platform</p>
         <div id="registerAlert"></div>
-        <input type="text" id="inviteCode" placeholder="Enter Invitation Code" readonly style="background: #f3f4f6;" />
+        
+        <div style="position: relative;">
+            <input type="text" id="inviteCode" placeholder="Enter Invitation Code" />
+            <span id="inviteCodeLock" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--success); font-size: 1.2rem; display: none;">✓</span>
+        </div>
+        
         <input type="text" id="fullName" placeholder="Full Name" />
         <input type="email" id="email" placeholder="Email Address" />
         <input type="password" id="password" placeholder="Password" />
@@ -2027,24 +2032,37 @@
             const refCode = urlParams.get('ref');
 
             if (refCode) {
-                console.log('✅ Referral code detected:', refCode);
+                console.log('Referral code detected:', refCode);
                 
                 // Verify the referral code exists in database
                 try {
                     const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                     
                     if (!referrerQuery.empty) {
-                        // Valid referral code - show registration with auto-filled code
+                        const referrerData = referrerQuery.docs[0].data();
+                        
+                        // Auto-fill the invite code
                         document.getElementById('inviteCode').value = refCode;
+                        
+                        // Make the field look validated
+                        const inviteCodeField = document.getElementById('inviteCode');
+                        inviteCodeField.style.borderColor = 'var(--success)';
+                        inviteCodeField.style.background = '#f0fdf4';
+                        document.getElementById('inviteCodeLock').style.display = 'block';
+                        
+                        // Show registration page
                         showRegister();
                         
-                        // Show a welcome message
-                        showAlert('registerAlert', `Welcome! You've been referred by ${referrerQuery.docs[0].data().fullName}. Complete the form to get started.`, 'success');
+                        // Show welcome message
+                        showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
+                        
+                        // Clean up URL (optional - removes ?ref= from address bar)
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     } else {
                         // Invalid referral code
-                        console.log('❌ Invalid referral code');
+                        console.log('Invalid referral code');
                         showLogin();
-                        alert('Invalid referral code. Please contact the person who referred you.');
+                        alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                     }
                 } catch (error) {
                     console.error('Error validating referral code:', error);
