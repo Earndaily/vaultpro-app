@@ -1173,6 +1173,13 @@
             <div class="card">
                 <h2>Refer & Earn</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Share your unique link and earn from every referral!</p>
+                <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--success);">
+                    <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
+                        <li><strong>4000 SHS</strong> for each direct referral</li>
+                        <li><strong>2000 SHS</strong> when your referral refers someone else</li>
+                    </ul>
+                </div>
                 
                 <div class="referral-link">
                     <span class="referral-link-text" id="userReferralLink">Loading...</span>
@@ -2281,6 +2288,77 @@
     window.handleReferralLink = handleReferralLink;
     window.checkReferralLink = checkReferralLink;
 
+    // Referral reward processing function
+    async function processReferralRewards(referrerId, newUserId, newUserName) {
+        try {
+            console.log('Processing referral rewards for:', referrerId, 'new user:', newUserId);
+            
+            // 1. Give 4000 SHS to direct referrer
+            const directReferrerDoc = await db.collection('users').doc(referrerId).get();
+            if (directReferrerDoc.exists) {
+                const directReferrerData = directReferrerDoc.data();
+                const currentBalance = directReferrerData.balance || 0;
+                const newBalance = currentBalance + 4000;
+                
+                // Update referrer's balance
+                await db.collection('users').doc(referrerId).update({
+                    balance: newBalance
+                });
+                
+                // Update referral earnings
+                const refDoc = await db.collection('users').doc(referrerId).collection('referrals').doc(newUserId).get();
+                const currentEarnings = refDoc.data().earnings || 0;
+                await db.collection('users').doc(referrerId).collection('referrals').doc(newUserId).update({
+                    earnings: currentEarnings + 4000
+                });
+                
+                // Record transaction
+                await db.collection('transactions').add({
+                    userId: referrerId,
+                    userName: directReferrerData.fullName,
+                    type: 'referral',
+                    amount: 4000,
+                    description: `Direct referral reward for ${newUserName}`,
+                    date: new Date().toISOString()
+                });
+                
+                console.log('Direct referral reward: 4000 SHS given to', directReferrerData.fullName);
+            }
+            
+            // 2. Check for second-level referrer (the person who referred the direct referrer)
+            if (directReferrerData.referredBy) {
+                const secondLevelReferrerId = directReferrerData.referredBy;
+                const secondLevelReferrerDoc = await db.collection('users').doc(secondLevelReferrerId).get();
+                
+                if (secondLevelReferrerDoc.exists) {
+                    const secondLevelReferrerData = secondLevelReferrerDoc.data();
+                    const currentBalance = secondLevelReferrerData.balance || 0;
+                    const newBalance = currentBalance + 2000;
+                    
+                    // Update second-level referrer's balance
+                    await db.collection('users').doc(secondLevelReferrerId).update({
+                        balance: newBalance
+                    });
+                    
+                    // Record transaction
+                    await db.collection('transactions').add({
+                        userId: secondLevelReferrerId,
+                        userName: secondLevelReferrerData.fullName,
+                        type: 'referral',
+                        amount: 2000,
+                        description: `Second-level referral reward for ${newUserName} (referred by ${directReferrerData.fullName})`,
+                        date: new Date().toISOString()
+                    });
+                    
+                    console.log('Second-level referral reward: 2000 SHS given to', secondLevelReferrerData.fullName);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error processing referral rewards:', error);
+        }
+    }
+
     // Authentication functions
     async function register() {
         console.log('Registration function called');
@@ -2430,6 +2508,9 @@
                 date: new Date().toISOString(),
                 earnings: 0
             });
+
+            // Handle referral rewards
+            await processReferralRewards(referrerId, userId, fullName);
 
             showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
             setTimeout(() => {
@@ -3555,7 +3636,7 @@
             document.getElementById('activeRefCount').textContent = activeCount;
 
             const totalEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
-            document.getElementById('refEarnings').textContent = totalEarnings.toLocaleString();
+            document.getElementById('refEarnings').textContent = totalEarnings.toLocaleString() + ' SHS';
 
             const tbody = document.getElementById('referralsTableBody');
             if (referrals.length === 0) {
@@ -3569,7 +3650,7 @@
                     <td>${r.email}</td>
                     <td>${new Date(r.date).toLocaleDateString()}</td>
                     <td><span class="status-badge status-active">Active</span></td>
-                    <td>${(r.earnings || 0).toLocaleString()} UGX</td>
+                    <td>${(r.earnings || 0).toLocaleString()} SHS</td>
                 </tr>
             `).join('');
         } catch (error) {
