@@ -2062,7 +2062,7 @@
                 console.error("Registration error:", error);
                 showAlert('registerAlert', 'Registration failed: ' + error.message, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Register & Pay 20,000 UGX';
+                btn.textContent = 'Register';
             }
         }
 
@@ -2124,8 +2124,8 @@
         // Streak system
         async function updateUserStreak(userId, user) {
             try {
-                // Only award streak points if user account is activated
-                if (!user.isActivated) {
+                // Skip activation checks for admin users, only award streak points if user account is activated
+                if (!user.isAdmin && !user.isActivated) {
                     // Update last login date but don't award points
                     await db.collection('users').doc(userId).update({
                         lastLoginDate: new Date().toISOString()
@@ -2221,6 +2221,11 @@
         }
 
         function updateFeatureAccess() {
+            // Skip activation checks for admin users
+            if (currentUser.isAdmin) {
+                return;
+            }
+            
             const isActivated = currentUser.isActivated;
             
             // Disable/enable all interactive elements
@@ -3211,8 +3216,8 @@
         }
 
         function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
-            // Check if user has activated their account
-            if (!currentUser.isActivated) {
+            // Skip activation checks for admin users
+            if (!currentUser.isAdmin && !currentUser.isActivated) {
                 alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
                 return;
             }
@@ -3246,8 +3251,8 @@
 
         async function submitTask(taskId, reward, requiresProof) {
             try {
-                // Check if user has activated their account
-                if (!currentUser.isActivated) {
+                // Skip activation checks for admin users
+                if (!currentUser.isAdmin && !currentUser.isActivated) {
                     alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
                     return;
                 }
@@ -3366,8 +3371,8 @@
                     return;
                 }
 
-                // Check if user has activated their account
-                if (!userData.isActivated) {
+                // Skip activation checks for admin users
+                if (!userData.isAdmin && !userData.isActivated) {
                     alert('You must activate your account before you can withdraw');
                     return;
                 }
