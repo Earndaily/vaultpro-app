@@ -2028,7 +2028,9 @@
                 }
         
                 // Validate referral code from referralCodes collection
+                const tempUser = await auth.signInAnonymously();
                 const referralCodeDoc = await db.collection('referralCodes').doc(inviteCode).get();
+                await auth.signOut();
                 if (!referralCodeDoc.exists) {
                     showAlert('registerAlert', 'Invalid invitation code', 'error');
                     btn.disabled = false;
