@@ -2230,10 +2230,9 @@
             const inviteCode = document.getElementById('inviteCode').value.trim();
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
-            const phone = document.getElementById('phone').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            console.log('Form values:', { inviteCode, fullName, email, phone, password });
+            console.log('Form values:', { inviteCode, fullName, email, password });
 
             if (!inviteCode || !fullName || !email || !password) {
                 showAlert('registerAlert', 'Please fill all fields', 'error');
