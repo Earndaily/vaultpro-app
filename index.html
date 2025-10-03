@@ -1903,13 +1903,20 @@
                                     }
                                 }
                             } else {
-                                console.log("User document not found");
+                                console.log("User document not found - user needs to register");
+                                // Don't sign out, just show registration
                                 auth.signOut();
                             }
                         } catch (error) {
                             console.error("Error loading user data:", error);
-                            // If there's an error loading user data, sign out
-                            auth.signOut();
+                            // If there's a permission error, the user might need to register
+                            if (error.code === 'permission-denied') {
+                                console.log("Permission denied - user needs to register");
+                                auth.signOut();
+                            } else {
+                                // For other errors, sign out
+                                auth.signOut();
+                            }
                         }
                     } else {
                         console.log("User not authenticated");
@@ -1947,53 +1954,8 @@
             }
 
             try {
-                // Check if admin user exists in Firebase Auth
-                try {
-                    // Try to sign in as admin to check if account exists
-                    await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'admin123');
-                    console.log('Admin user exists in Firebase Auth');
-                    // Sign out immediately
-                    await auth.signOut();
-                } catch (error) {
-                    if (error.code === 'auth/user-not-found') {
-                        console.log('Creating admin user...');
-                        // Create admin user in Firebase Auth
-                        try {
-                            const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
-                            const adminId = adminCredential.user.uid;
-                            
-                            // Create admin user document in Firestore
-                            await db.collection('users').doc(adminId).set({
-                                id: adminId,
-                                email: 'admin@vaultpro.com',
-                                isAdmin: true,
-                                name: 'Administrator',
-                                referralCode: 'ADMIN2024',
-                                balance: 0,
-                                joinedDate: new Date().toISOString(),
-                                currentStreak: 0,
-                                longestStreak: 0,
-                                lastLoginDate: null,
-                                totalPoints: 0,
-                                pointsBalance: 0,
-                                lastTaskReset: null,
-                                totalTaskEarnings: 0,
-                                monthlyWithdrawals: 0,
-                                isActivated: true,
-                                activationDate: new Date().toISOString(),
-                                canWithdraw: false
-                            });
-                            
-                            console.log('Admin user created successfully');
-                        } catch (createError) {
-                            console.error('Error creating admin user:', createError);
-                        }
-                    } else {
-                        console.log('Admin user exists but different error:', error);
-                    }
-                    // Sign out after admin operations
-                    await auth.signOut();
-                }
+                // Skip admin user creation for now - let it be created manually in Firebase Console
+                console.log('Skipping admin user creation - please create manually in Firebase Console');
 
                 document.getElementById('loadingScreen').classList.add('hidden');
                 
