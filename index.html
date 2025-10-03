@@ -1908,11 +1908,16 @@
                             }
                         } catch (error) {
                             console.error("Error loading user data:", error);
+                            // If there's an error loading user data, sign out
+                            auth.signOut();
                         }
                     } else {
                         console.log("User not authenticated");
                         currentUser = null;
-                        showLogin();
+                        // Only show login if we're not in the middle of initialization
+                        if (document.getElementById('loadingScreen').classList.contains('hidden')) {
+                            showLogin();
+                        }
                     }
                 });
             }
@@ -1942,40 +1947,52 @@
             }
 
             try {
-                const adminDoc = await db.collection('users').doc('admin').get();
-                
-                if (!adminDoc.exists) {
-                    // Create admin user in Firebase Auth
-                    try {
-                        const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
-                        const adminId = adminCredential.user.uid;
-                        
-                        await db.collection('users').doc(adminId).set({
-                            id: adminId,
-                            email: 'admin@vaultpro.com',
-                            isAdmin: true,
-                            name: 'Administrator',
-                            referralCode: 'ADMIN2024',
-                            balance: 0,
-                            joinedDate: new Date().toISOString(),
-                            currentStreak: 0,
-                            longestStreak: 0,
-                            lastLoginDate: null,
-                            totalPoints: 0,
-                            pointsBalance: 0,
-                            lastTaskReset: null,
-                            totalTaskEarnings: 0,
-                            monthlyWithdrawals: 0,
-                            isActivated: true,
-                            activationDate: new Date().toISOString(),
-                            canWithdraw: false
-                        });
-                        
-                        // Sign out the admin user after creation
-                        await auth.signOut();
-                    } catch (error) {
-                        console.log('Admin user already exists in Firebase Auth or creation failed:', error);
+                // Check if admin user exists in Firebase Auth
+                try {
+                    // Try to sign in as admin to check if account exists
+                    await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'admin123');
+                    console.log('Admin user exists in Firebase Auth');
+                    // Sign out immediately
+                    await auth.signOut();
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found') {
+                        console.log('Creating admin user...');
+                        // Create admin user in Firebase Auth
+                        try {
+                            const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'admin123');
+                            const adminId = adminCredential.user.uid;
+                            
+                            // Create admin user document in Firestore
+                            await db.collection('users').doc(adminId).set({
+                                id: adminId,
+                                email: 'admin@vaultpro.com',
+                                isAdmin: true,
+                                name: 'Administrator',
+                                referralCode: 'ADMIN2024',
+                                balance: 0,
+                                joinedDate: new Date().toISOString(),
+                                currentStreak: 0,
+                                longestStreak: 0,
+                                lastLoginDate: null,
+                                totalPoints: 0,
+                                pointsBalance: 0,
+                                lastTaskReset: null,
+                                totalTaskEarnings: 0,
+                                monthlyWithdrawals: 0,
+                                isActivated: true,
+                                activationDate: new Date().toISOString(),
+                                canWithdraw: false
+                            });
+                            
+                            console.log('Admin user created successfully');
+                        } catch (createError) {
+                            console.error('Error creating admin user:', createError);
+                        }
+                    } else {
+                        console.log('Admin user exists but different error:', error);
                     }
+                    // Sign out after admin operations
+                    await auth.signOut();
                 }
 
                 document.getElementById('loadingScreen').classList.add('hidden');
@@ -1990,11 +2007,8 @@
                 }
             } catch (error) {
                 console.error("Initialization error:", error);
-                document.getElementById('loadingScreen').innerHTML = `
-                    <div class="spinner"></div>
-                    <h2>Error</h2>
-                    <p>Failed to connect to database</p>
-                `;
+                document.getElementById('loadingScreen').classList.add('hidden');
+                showLogin();
             }
         }
 
