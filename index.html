@@ -1530,14 +1530,10 @@
                 </div>
                 
                 <div class="modal-body">
-                    <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-                        <h3 style="color: #92400e; margin: 0 0 0.5rem 0;">💰 Activation Fee: 20,000 UGX</h3>
-                        <p style="color: #92400e; margin: 0; font-size: 0.9rem;">Complete your account activation to unlock all features</p>
-                    </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                         <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; text-align: center;">
-                            <h4 style="color: #374151; margin: 0 0 0.5rem 0;">📱 MTN Mobile Money</h4>
+                            <h4 style="color: #374151; margin: 0 0 0.5rem 0;">📱 Airtel Money</h4>
                             <div style="font-size: 1.2rem; font-weight: 700; color: #059669; margin-bottom: 0.5rem;">0702377999</div>
                             <button class="btn" style="background: #059669; color: white; padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="copyToClipboard('0702377999')">
                                 📋 Copy Number
@@ -1944,13 +1940,16 @@
             setupAuthStateListener();
 
             try {
-                const adminDoc = await db.collection('users').doc('admin').get();
-                
-                if (!adminDoc.exists) {
-                    await db.collection('users').doc('admin').set({
-                        id: 'admin',
+                // Create admin Firebase Auth account if it doesn't exist
+                try {
+                    console.log('Creating admin Firebase Auth account...');
+                    const adminCredential = await auth.createUserWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                    console.log('Admin Firebase Auth account created successfully');
+                    
+                    // Create admin user document in Firestore
+                    await db.collection('users').doc(adminCredential.user.uid).set({
+                        id: adminCredential.user.uid,
                         email: 'admin@vaultpro.com',
-                        password: 'admin123',
                         isAdmin: true,
                         name: 'Administrator',
                         referralCode: 'ADMIN2024',
@@ -1966,8 +1965,49 @@
                         monthlyWithdrawals: 0,
                         isActivated: true,
                         activationDate: new Date().toISOString(),
-                        canWithdraw: false
+                        canWithdraw: false,
+                        authMethod: 'email'
                     });
+                    
+                    // Sign out the admin after creation
+                    await auth.signOut();
+                    console.log('Admin account created and signed out');
+                } catch (authError) {
+                    if (authError.code === 'auth/email-already-in-use') {
+                        console.log('Admin account already exists in Firebase Auth');
+                        // Check if admin document exists in Firestore
+                        const adminDoc = await db.collection('users').where('email', '==', 'admin@vaultpro.com').where('isAdmin', '==', true).get();
+                        if (adminDoc.empty) {
+                            console.log('Creating admin Firestore document...');
+                            // Get the existing Firebase Auth user
+                            const existingUser = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                            await db.collection('users').doc(existingUser.user.uid).set({
+                                id: existingUser.user.uid,
+                                email: 'admin@vaultpro.com',
+                                isAdmin: true,
+                                name: 'Administrator',
+                                referralCode: 'ADMIN2024',
+                                balance: 0,
+                                joinedDate: new Date().toISOString(),
+                                currentStreak: 0,
+                                longestStreak: 0,
+                                lastLoginDate: null,
+                                totalPoints: 0,
+                                pointsBalance: 0,
+                                lastTaskReset: null,
+                                totalTaskEarnings: 0,
+                                monthlyWithdrawals: 0,
+                                isActivated: true,
+                                activationDate: new Date().toISOString(),
+                                canWithdraw: false,
+                                authMethod: 'email'
+                            });
+                            await auth.signOut();
+                            console.log('Admin Firestore document created');
+                        }
+                    } else {
+                        console.error('Admin creation failed:', authError);
+                    }
                 }
 
                 document.getElementById('loadingScreen').classList.add('hidden');
@@ -1989,6 +2029,23 @@
                 `;
             }
         }
+
+        // Admin login helper function (for development/testing)
+        async function adminLogin() {
+            try {
+                console.log('Logging in as admin...');
+                const result = await auth.signInWithEmailAndPassword('admin@vaultpro.com', 'Admin@123');
+                console.log('Admin login successful:', result.user.email);
+                return result;
+            } catch (error) {
+                console.error('Admin login failed:', error);
+                alert('Admin login failed: ' + error.message);
+                throw error;
+            }
+        }
+
+        // Make adminLogin available globally for console access
+        window.adminLogin = adminLogin;
 
         // Authentication functions
         async function register() {
@@ -2569,9 +2626,9 @@
                     const reference = document.getElementById('activationReference');
                     
                     if (method === 'mtn') {
-                        phoneNumber.textContent = '0700000000'; // MTN number
+                        phoneNumber.textContent = '0779710365'; // MTN number
                     } else if (method === 'airtel') {
-                        phoneNumber.textContent = '0750000000'; // Airtel number
+                        phoneNumber.textContent = '0702377999'; // Airtel number
                     }
                     
                     reference.textContent = `ACTIVATION_${currentUser.referralCode}`;
@@ -3680,6 +3737,15 @@
 
             if (amount >= 10000 && method) {
                 document.getElementById('displayDepositAmount').textContent = amount.toLocaleString();
+                
+                // Update phone number based on method
+                const phoneNumber = document.getElementById('adminPhoneNumber');
+                if (method === 'mtn') {
+                    phoneNumber.textContent = '0779710365'; // MTN number
+                } else if (method === 'airtel') {
+                    phoneNumber.textContent = '0702377999'; // Airtel number
+                }
+                
                 document.getElementById('paymentInstructions').classList.remove('hidden');
                 document.getElementById('depositScreenshot').classList.remove('hidden');
                 document.getElementById('submitDepositBtn').classList.remove('hidden');
