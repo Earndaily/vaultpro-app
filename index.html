@@ -2242,11 +2242,7 @@
 
                 <!-- Candidates List -->
                 <div id="candidatesList">
-                    <div style="text-align: center; padding: 2rem; color: var(--gray);">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🏛️</div>
-                        <h3>Loading candidates...</h3>
-                        <p>Please wait while we fetch the latest election data</p>
-                    </div>
+                    <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading candidates...</p>
                 </div>
                 
                 <!-- Debug: Add Sample Candidates Button (for testing) -->
@@ -2260,9 +2256,7 @@
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
                     <h3>📋 My Stakes</h3>
                     <div id="myStakesList">
-                        <div style="text-align: center; padding: 1rem; color: var(--gray);">
-                            <p>No stakes placed yet</p>
-                        </div>
+                        <p class="text-center" style="color: var(--gray); padding: 1rem;">No stakes placed yet</p>
                     </div>
                 </div>
             </div>
@@ -4353,18 +4347,9 @@
     let currentFilter = 'all';
 
     async function openStakeModal() {
-        console.log('Opening stake modal...');
         document.getElementById('stakeModal').classList.remove('hidden');
-        
-        // Check if Firebase is initialized
-        if (!firebaseInitialized || !db) {
-            showAlert('stakeAlert', 'Database not initialized. Please refresh the page.', 'error');
-            return;
-        }
-        
         await loadCandidates();
         await loadMyStakes();
-        filterCandidates('all');
     }
 
     function closeStakeModal() {
@@ -4379,23 +4364,16 @@
 
     async function loadCandidates() {
         try {
-            console.log('Loading candidates from database...');
             const candidatesSnapshot = await db.collection('electionCandidates').get();
             const candidates = candidatesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            console.log(`Found ${candidates.length} candidates:`, candidates);
-            
-            if (candidates.length === 0) {
-                showAlert('stakeAlert', 'No candidates found. Please add some candidates first.', 'warning');
-            }
-
             displayCandidates(candidates);
         } catch (error) {
             console.error('Error loading candidates:', error);
-            showAlert('stakeAlert', 'Failed to load candidates: ' + error.message, 'error');
+            showAlert('stakeAlert', 'Failed to load candidates', 'error');
         }
     }
 
@@ -4403,13 +4381,7 @@
         const candidatesList = document.getElementById('candidatesList');
         
         if (candidates.length === 0) {
-            candidatesList.innerHTML = `
-                <div style="text-align: center; padding: 2rem; color: var(--gray);">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🏛️</div>
-                    <h3>No candidates available</h3>
-                    <p>Check back later for election candidates</p>
-                </div>
-            `;
+            candidatesList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No candidates available</p>';
             return;
         }
 
@@ -4479,61 +4451,37 @@
     }
 
     async function stakeOnCandidate(candidateId) {
-        console.log('Staking on candidate:', candidateId);
-        
-        try {
-            // Check if user is logged in
-            if (!currentUser) {
-                showAlert('stakeAlert', 'Please login to place stakes', 'error');
-                return;
-            }
-            
-            // Get candidate details
-            const candidateDoc = await db.collection('electionCandidates').doc(candidateId).get();
-            if (!candidateDoc.exists) {
-                showAlert('stakeAlert', 'Candidate not found', 'error');
-                return;
-            }
-
-            const candidate = candidateDoc.data();
-            selectedCandidate = candidateId;
-            
-            console.log('Selected candidate:', candidate);
-
-            // Populate stake details
-            document.getElementById('stakeDetails').innerHTML = `
-                <div style="display: grid; gap: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><strong>Candidate:</strong></span>
-                        <span>${candidate.name}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><strong>Position:</strong></span>
-                        <span>${candidate.title}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><strong>Location:</strong></span>
-                        <span>${candidate.district || candidate.region}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><strong>Odds:</strong></span>
-                        <span style="color: var(--primary); font-weight: 700;">${candidate.odds}x</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><strong>Early Bonus:</strong></span>
-                        <span style="color: var(--success); font-weight: 700;">30%</span>
-                    </div>
-                </div>
-            `;
-
-            // Show confirmation modal
-            document.getElementById('stakeConfirmModal').classList.remove('hidden');
-            document.getElementById('stakeAmount').focus();
-
-        } catch (error) {
-            console.error('Error getting candidate details:', error);
-            showAlert('stakeAlert', 'Failed to get candidate details: ' + error.message, 'error');
+        if (!currentUser) {
+            showAlert('stakeAlert', 'Please login to place stakes', 'error');
+            return;
         }
+        
+        const candidateDoc = await db.collection('electionCandidates').doc(candidateId).get();
+        const candidate = candidateDoc.data();
+        selectedCandidate = candidateId;
+        
+        document.getElementById('stakeDetails').innerHTML = `
+            <div style="display: grid; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Candidate:</strong></span>
+                    <span>${candidate.name}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Position:</strong></span>
+                    <span>${candidate.title}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Odds:</strong></span>
+                    <span style="color: var(--primary); font-weight: 700;">${candidate.odds}x</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Early Bonus:</strong></span>
+                    <span style="color: var(--success); font-weight: 700;">30%</span>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('stakeConfirmModal').classList.remove('hidden');
     }
 
     async function placeStake() {
@@ -4545,10 +4493,6 @@
             return;
         }
 
-        if (!currentUser) {
-            showAlert('stakeConfirmAlert', 'Please login to place stakes', 'error');
-            return;
-        }
 
         if (stakeAmount > currentUser.balance) {
             showAlert('stakeConfirmAlert', 'Insufficient balance', 'error');
@@ -4618,35 +4562,18 @@
         if (!currentUser) return;
 
         try {
-            // Try user subcollection first (preferred method)
-            const stakesSnapshot = await db.collection('users').doc(currentUser.id).collection('stakes').get();
+            const stakesSnapshot = await db.collection('users').doc(currentUser.id).collection('stakes')
+                .orderBy('placedAt', 'desc')
+                .get();
             
-            let stakes = stakesSnapshot.docs.map(doc => ({
+            const stakes = stakesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            // If no stakes in subcollection, try main collection as fallback
-            if (stakes.length === 0) {
-                console.log('No stakes in subcollection, checking main collection...');
-                const mainStakesSnapshot = await db.collection('stakes').get();
-                const allStakes = mainStakesSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                
-                // Filter by userId client-side
-                stakes = allStakes.filter(stake => stake.userId === currentUser.id);
-            }
-
-            // Sort by placedAt client-side (newest first)
-            stakes.sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
-
             displayMyStakes(stakes);
         } catch (error) {
             console.error('Error loading stakes:', error);
-            // Show empty state if there's an error
-            displayMyStakes([]);
         }
     }
 
@@ -4654,11 +4581,7 @@
         const myStakesList = document.getElementById('myStakesList');
         
         if (stakes.length === 0) {
-            myStakesList.innerHTML = `
-                <div style="text-align: center; padding: 1rem; color: var(--gray);">
-                    <p>No stakes placed yet</p>
-                </div>
-            `;
+            myStakesList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No stakes placed yet</p>';
             return;
         }
 
@@ -4722,31 +4645,18 @@
     }
 
     // Function to add sample candidates (for admin use)
+    // Admin function to add sample candidates
     async function addSampleCandidates() {
-        const sampleCandidates = [
+        const candidates = [
             {
-                name: "Yoweri Kaguta Museveni",
+                name: "Yoweri Museveni",
                 title: "President",
                 district: "National",
                 region: "Uganda",
                 category: "president",
                 odds: 2.5,
-                opponents: ["Robert Kyagulanyi", "Patrick Amuriat", "Nancy Kalembe"],
-                electionDate: "2026",
-                description: "Current President seeking re-election",
-                party: "NRM"
-            },
-            {
-                name: "Robert Kyagulanyi",
-                title: "President",
-                district: "National", 
-                region: "Uganda",
-                category: "president",
-                odds: 3.0,
-                opponents: ["Yoweri Museveni", "Patrick Amuriat", "Nancy Kalembe"],
-                electionDate: "2026",
-                description: "Opposition leader and musician",
-                party: "NUP"
+                opponents: ["Robert Kyagulanyi", "Patrick Amuriat"],
+                electionDate: "2026"
             },
             {
                 name: "Betty Amongi",
@@ -4755,53 +4665,15 @@
                 region: "Northern Uganda",
                 category: "mp",
                 odds: 2.0,
-                opponents: ["Samuel Okello", "Francis Ogwang"],
-                electionDate: "2026",
-                description: "Current MP seeking re-election",
-                party: "NRM"
-            },
-            {
-                name: "Erias Lukwago",
-                title: "Lord Mayor",
-                district: "Kampala City",
-                region: "Central Uganda",
-                category: "mayor",
-                odds: 2.8,
-                opponents: ["Salim Uhuru", "Michael Kabaziguruka"],
-                electionDate: "2026",
-                description: "Current Lord Mayor of Kampala",
-                party: "FDC"
-            },
-            {
-                name: "David Bahati",
-                title: "LC5 Chairman",
-                district: "Ntungamo",
-                region: "Western Uganda",
-                category: "lc5",
-                odds: 1.8,
-                opponents: ["Ronald Kaginda", "Sarah Nantaba"],
-                electionDate: "2026",
-                description: "Current LC5 Chairman",
-                party: "NRM"
+                opponents: ["Samuel Okello"],
+                electionDate: "2026"
             }
         ];
 
-        try {
-            console.log('Adding sample candidates...');
-            for (const candidate of sampleCandidates) {
-                await db.collection('electionCandidates').add(candidate);
-            }
-            console.log('Sample candidates added successfully');
-            showAlert('stakeAlert', 'Sample candidates added successfully! Refresh the list to see them.', 'success');
-            
-            // Reload candidates after adding
-            setTimeout(() => {
-                loadCandidates();
-            }, 1000);
-        } catch (error) {
-            console.error('Error adding sample candidates:', error);
-            showAlert('stakeAlert', 'Failed to add sample candidates: ' + error.message, 'error');
+        for (const candidate of candidates) {
+            await db.collection('electionCandidates').add(candidate);
         }
+        alert('Sample candidates added!');
     }
 
     // Referrals section
