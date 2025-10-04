@@ -3711,6 +3711,13 @@
            const paymentProof = document.getElementById('simplePaymentProof').files[0];
            const paymentNumber = document.getElementById('displayPaymentNumber').getAttribute('data-number');
            
+           if (!method) {
+               showAlert('simpleActivationAlert', 'Please select payment method', 'error');
+               submitBtn.disabled = false;
+               submitBtn.textContent = '💳 Submit Payment';
+               return;
+           }
+           
            if (!paymentProof) {
                showAlert('simpleActivationAlert', 'Please upload payment screenshot', 'error');
                submitBtn.disabled = false;
@@ -3928,58 +3935,64 @@
     }
 
     // User stats
-    async function updateUserStats() {
-        try {
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            currentUser = userDoc.data();
-
-            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
-            const vaults = vaultsSnapshot.docs.map(doc => doc.data());
-
-            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
-            const referrals = referralsSnapshot.docs.map(doc => doc.data());
-
-            const depositsSnapshot = await db.collection('depositRequests')
-                .where('userId', '==', currentUser.id)
-                .where('status', '==', 'approved')
-                .get();
-            const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
-            const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
-
-            const totalBalance = currentUser.balance || 0;
-            const activeVaults = vaults.length;
-            const totalReferrals = referrals.length;
-            const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
-
-            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
-            document.getElementById('activeVaults').textContent = activeVaults;
-            document.getElementById('totalReferrals').textContent = totalReferrals;
-            document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
-            document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
-            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
-            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
-            document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
-            
-            // Update user name and activation status in navbar
-            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
-            if (currentUser.isActivated) {
-                document.getElementById('activationStatus').style.display = 'inline';
-            } else {
-                document.getElementById('activationStatus').style.display = 'none';
-            }
-
-            const baseUrl = window.location.href.split('?')[0];
-            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
-
-            updateVaultTable(vaults);
-            
-            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
-                updateVaultSection();
-            }
-        } catch (error) {
-            console.error("Error updating user stats:", error);
-        }
-    }
+   async function updateUserStats() {
+       try {
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           currentUser = { id: currentUser.id, ...userDoc.data() };
+   
+           // Update referral link immediately
+           const baseUrl = window.location.href.split('?')[0];
+           const referralLink = `${baseUrl}?ref=${currentUser.referralCode}`;
+           const linkElement = document.getElementById('userReferralLink');
+           if (linkElement) {
+               linkElement.textContent = referralLink;
+           }
+   
+           // Rest of stats...
+           const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
+           const vaults = vaultsSnapshot.docs.map(doc => doc.data());
+   
+           const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+           const referrals = referralsSnapshot.docs.map(doc => doc.data());
+   
+           const depositsSnapshot = await db.collection('depositRequests')
+               .where('userId', '==', currentUser.id)
+               .where('status', '==', 'approved')
+               .get();
+           const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
+           const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
+   
+           const totalBalance = currentUser.balance || 0;
+           const activeVaults = vaults.length;
+           const totalReferrals = referrals.length;
+           const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
+   
+           document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
+           document.getElementById('activeVaults').textContent = activeVaults;
+           document.getElementById('totalReferrals').textContent = totalReferrals;
+           document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+           document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
+           document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
+           document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
+           document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
+           
+           // Update user name and activation status in navbar
+           document.getElementById('userNameDisplay').textContent = currentUser.fullName;
+           if (currentUser.isActivated) {
+               document.getElementById('activationStatus').style.display = 'inline';
+           } else {
+               document.getElementById('activationStatus').style.display = 'none';
+           }
+   
+           updateVaultTable(vaults);
+           
+           if (!document.getElementById('vaultSection').classList.contains('hidden')) {
+               updateVaultSection();
+           }
+       } catch (error) {
+           console.error("Error updating user stats:", error);
+       }
+   }
 
     function updateVaultTable(vaults) {
         const tbody = document.getElementById('vaultTableBody');
@@ -5108,24 +5121,19 @@
            const userData = userDoc.data();
            
            if (userData && userData.isActivated) {
-               // Hide activation sections
+               // Hide activation section
                document.getElementById('activationRequiredSection').classList.add('hidden');
-               document.getElementById('earningsPreviewSection').classList.add('hidden');
-               document.getElementById('welcomeBonusMessage').classList.add('hidden');
-               document.getElementById('activationCarousel').classList.add('hidden');
                
-               // Show home
+               // Show home section
                document.getElementById('homeSection').classList.remove('hidden');
                
+               // Load carousel
                loadActivationCarousel();
            } else {
                // Show ONLY activation section
                document.getElementById('activationRequiredSection').classList.remove('hidden');
                
                // Hide everything else
-               document.getElementById('earningsPreviewSection').classList.add('hidden');
-               document.getElementById('welcomeBonusMessage').classList.add('hidden');
-               document.getElementById('activationCarousel').classList.add('hidden');
                document.getElementById('homeSection').classList.add('hidden');
                
                ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
@@ -5790,109 +5798,79 @@
         }
     }
 
-    function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
-        // Skip activation checks for admin users
-        if (!currentUser.isAdmin && !currentUser.isActivated) {
-            alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
-            return;
-        }
-
-        const button = document.getElementById(`btn-${taskId}`);
-        const timerDiv = document.getElementById(`timer-${taskId}`);
-        const countdownDiv = document.getElementById(`countdown-${taskId}`);
-        
-        // Disable button and show timer
-        button.disabled = true;
-        button.textContent = 'Timer Running...';
-        timerDiv.classList.remove('hidden');
-        
-        let timeLeft = timerDuration;
-        countdownDiv.textContent = timeLeft;
-        
-        const countdown = setInterval(() => {
-            timeLeft--;
-            countdownDiv.textContent = timeLeft;
-            
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                // Timer finished, now allow task completion
-                button.disabled = false;
-                button.textContent = 'Complete Task';
-                button.onclick = () => submitTask(taskId, reward, requiresProof);
-                timerDiv.classList.add('hidden');
-            }
-        }, 1000);
-    }
-
-    async function submitTask(taskId, reward, requiresProof) {
-        try {
-            // Skip activation checks for admin users
-            if (!currentUser.isAdmin && !currentUser.isActivated) {
-                alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
-                return;
-            }
-
-            // Get task details
-            const taskDoc = await db.collection('tasks').doc(taskId).get();
-            if (!taskDoc.exists) {
-                alert('Task not found');
-                return;
-            }
-            
-            const task = taskDoc.data();
-            
-            if (requiresProof) {
-                // For tasks requiring proof, create a submission for admin review
-                const proof = prompt('Please provide proof of completion (e.g., screenshot link, description):');
-                if (!proof) {
-                    alert('Proof is required for this task');
-                    return;
-                }
-                
-                await db.collection('taskSubmissions').add({
-                    userId: currentUser.id,
-                    userName: currentUser.fullName,
-                    userEmail: currentUser.email,
-                    taskId: taskId,
-                    taskTitle: task.title,
-                    reward: reward,
-                    proof: proof,
-                    status: 'pending',
-                    submittedDate: new Date().toISOString()
-                });
-                
-                alert('Task submission sent for review! You will be notified when approved.');
-            } else {
-                // For tasks not requiring proof, auto-approve
-                const userDoc = await db.collection('users').doc(currentUser.id).get();
-                const userData = userDoc.data();
-                const currentBalance = userData.balance || 0;
-
-                await db.collection('users').doc(currentUser.id).update({
-                    balance: currentBalance + reward,
-                    totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
-                });
-
-                await db.collection('transactions').add({
-                    userId: currentUser.id,
-                    userName: currentUser.fullName,
-                    type: 'task_reward',
-                    amount: reward,
-                    taskTitle: task.title,
-                    date: new Date().toISOString()
-                });
-                
-                alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
-            }
-            
-            updateTasksSection();
-            updateUserStats();
-            
-        } catch (error) {
-            console.error("Error submitting task:", error);
-            alert('Failed to submit task: ' + error.message);
-        }
-    }
+   function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
+       // Skip activation checks for admin users
+       if (!currentUser.isAdmin && !currentUser.isActivated) {
+           alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+           return;
+       }
+   
+       // Get task link
+       db.collection('tasks').doc(taskId).get().then(taskDoc => {
+           const task = taskDoc.data();
+           
+           // Open link in new tab if it exists
+           if (task.link) {
+               window.open(task.link, '_blank');
+           }
+       });
+   
+       const button = document.getElementById(`btn-${taskId}`);
+       const timerDiv = document.getElementById(`timer-${taskId}`);
+       const countdownDiv = document.getElementById(`countdown-${taskId}`);
+       
+       // Disable button and show timer
+       button.disabled = true;
+       button.textContent = 'Timer Running...';
+       timerDiv.classList.remove('hidden');
+       
+       let timeLeft = timerDuration;
+       countdownDiv.textContent = timeLeft;
+       
+       const countdown = setInterval(() => {
+           timeLeft--;
+           countdownDiv.textContent = timeLeft;
+           
+           if (timeLeft <= 0) {
+               clearInterval(countdown);
+               // Timer finished, award automatically (no proof needed)
+               submitTaskAutomatically(taskId, reward);
+           }
+       }, 1000);
+   }
+   
+   async function submitTaskAutomatically(taskId, reward) {
+       try {
+           const taskDoc = await db.collection('tasks').doc(taskId).get();
+           const task = taskDoc.data();
+           
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           const currentBalance = userData.balance || 0;
+   
+           await db.collection('users').doc(currentUser.id).update({
+               balance: currentBalance + reward,
+               totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
+           });
+   
+           await db.collection('transactions').add({
+               userId: currentUser.id,
+               userName: currentUser.fullName,
+               type: 'task_reward',
+               amount: reward,
+               taskTitle: task.title,
+               date: new Date().toISOString()
+           });
+           
+           alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
+           updateTasksSection();
+           updateUserStats();
+           
+       } catch (error) {
+           console.error("Error submitting task:", error);
+           alert('Failed to complete task: ' + error.message);
+       }
+   }
 
 
     // Withdraw section
