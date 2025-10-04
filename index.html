@@ -699,6 +699,7 @@
         align-items: center;
         justify-content: space-between;
         border: 2px solid #e5e7eb;
+        margin-bottom: 1.5rem;
     }
 
     .referral-link-text {
@@ -707,6 +708,77 @@
         word-break: break-all;
         font-family: monospace;
         font-size: 0.875rem;
+        color: var(--dark);
+        background: white;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    /* Share Buttons */
+    .share-buttons-container {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        margin-bottom: 1.5rem;
+    }
+
+    .share-buttons-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .share-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        font-size: 0.875rem;
+        font-weight: 600;
+        gap: 0.5rem;
+    }
+
+    .share-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .share-icon {
+        font-size: 1.5rem;
+    }
+
+    .share-text {
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .share-btn.whatsapp:hover {
+        border-color: #25D366;
+        background: rgba(37, 211, 102, 0.1);
+    }
+
+    .share-btn.twitter:hover {
+        border-color: #1DA1F2;
+        background: rgba(29, 161, 242, 0.1);
+    }
+
+    .share-btn.instagram:hover {
+        border-color: #E4405F;
+        background: rgba(228, 64, 95, 0.1);
+    }
+
+    .share-btn.facebook:hover {
+        border-color: #1877F2;
+        background: rgba(24, 119, 242, 0.1);
     }
 
     /* Loading */
@@ -832,6 +904,23 @@
         .btn {
             padding: 0.875rem 1.5rem;
         }
+
+        .share-buttons-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .share-btn {
+            padding: 0.75rem;
+        }
+
+        .share-icon {
+            font-size: 1.25rem;
+        }
+
+        .share-text {
+            font-size: 0.75rem;
+        }
     }
 
     @media (min-width: 1200px) {
@@ -862,6 +951,18 @@
         
         .card {
             border: 1px solid #000;
+        }
+    }
+
+    /* Animation for success notification */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
         }
     }
 
@@ -1475,6 +1576,29 @@
                     <button class="btn btn-secondary" onclick="copyReferralLink()">Copy Link</button>
                 </div>
 
+                <!-- Social Media Share Buttons -->
+                <div class="share-buttons-container">
+                    <h4 style="color: var(--dark); margin-bottom: 1rem; text-align: center;">Share Your Referral Link</h4>
+                    <div class="share-buttons-grid">
+                        <button class="share-btn whatsapp" onclick="shareToWhatsApp()">
+                            <span class="share-icon">📱</span>
+                            <span class="share-text">WhatsApp</span>
+                        </button>
+                        <button class="share-btn twitter" onclick="shareToTwitter()">
+                            <span class="share-icon">🐦</span>
+                            <span class="share-text">X/Twitter</span>
+                        </button>
+                        <button class="share-btn instagram" onclick="shareToInstagram()">
+                            <span class="share-icon">📷</span>
+                            <span class="share-text">Instagram</span>
+                        </button>
+                        <button class="share-btn facebook" onclick="shareToFacebook()">
+                            <span class="share-icon">👥</span>
+                            <span class="share-text">Facebook</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="grid grid-2 mt-3">
                     <div class="stat-card">
                         <div class="stat-label">Total Referrals</div>
@@ -1731,24 +1855,38 @@
                                 
                                 <input type="number" id="depositAmount" placeholder="Enter Amount (Min: 10,000 UGX)" min="10000" />
                                 
-                                <select id="depositMethod">
+                                <select id="depositMethod" onchange="updateAdminPhoneNumber()">
                                     <option value="">Select Payment Method</option>
                                     <option value="mtn">MTN Mobile Money</option>
                                     <option value="airtel">Airtel Money</option>
                                 </select>
 
-                                <div id="paymentInstructions" class="payment-box hidden">
-                                    <h4>Payment Instructions:</h4>
-                                    <div class="payment-detail">
-                                        <strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span>
+                                <div id="depositDetails" class="hidden">
+                                    <h4 style="color: var(--dark); margin: 1.5rem 0 1rem 0;">Deposit Details</h4>
+                                    
+                                    <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.25rem;">Sent From (Your Number)</label>
+                                            <input type="tel" id="senderPhoneNumber" placeholder="Enter your phone number (e.g., 0701234567)" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" />
+                                        </div>
+                                        
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.25rem;">Sent To (Admin Number)</label>
+                                            <input type="tel" id="adminPhoneNumber" readonly style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f3f4f6; color: var(--dark); font-weight: 600;" />
+                                        </div>
+                                        
+                                        <div>
+                                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.25rem;">Amount</label>
+                                            <input type="text" id="displayDepositAmount" readonly style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f3f4f6; color: var(--success); font-weight: 600;" />
+                                        </div>
                                     </div>
-                                    <div class="payment-detail">
-                                        <strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX
+                                    
+                                    <div style="margin-bottom: 1rem;">
+                                        <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">📸 Upload Screenshot Proof</label>
+                                        <input type="file" id="depositScreenshot" accept="image/*" style="width: 100%; padding: 0.75rem; border: 2px dashed #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;" onchange="validateFileSize(this)" />
+                                        <small style="color: var(--gray); margin-top: 0.25rem; display: block;">Maximum file size: 6MB. Supported formats: JPG, PNG, GIF</small>
                                     </div>
-                                    <p style="margin-top: 1rem;">After sending, upload a screenshot of the transaction below:</p>
                                 </div>
-
-                                <input type="file" id="depositScreenshot" accept="image/*" class="hidden" />
                                 
                                 <button class="btn btn-success btn-block hidden" id="submitDepositBtn" onclick="submitDepositRequest()">
                                     Submit Deposit Request
@@ -2045,12 +2183,14 @@
                                 <th>User</th>
                                 <th>Amount</th>
                                 <th>Method</th>
+                                <th>Sent From</th>
+                                <th>Sent To</th>
                                 <th>Screenshot</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminDepositsBody">
-                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="8" class="text-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -5295,6 +5435,69 @@
         });
     }
 
+    // Social Media Share Functions
+    function shareToWhatsApp() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const message = `🚀 Join me on VaultPro and start earning! Use my referral link: ${link}`;
+        const encodedMessage = encodeURIComponent(message);
+        
+        // Try WhatsApp Web first, fallback to copying to clipboard
+        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        const whatsappWindow = window.open(whatsappUrl, '_blank');
+        
+        // If WhatsApp Web doesn't open (user doesn't have it), copy to clipboard
+        setTimeout(() => {
+            if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed == 'undefined') {
+                navigator.clipboard.writeText(message).then(() => {
+                    alert('📱 WhatsApp Share:\n\nWhatsApp Web not available. Message copied to clipboard!\n\nPaste this in your WhatsApp:\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = message;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('📱 WhatsApp Share:\n\nWhatsApp Web not available. Message copied to clipboard!\n\nPaste this in your WhatsApp:\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"');
+                });
+            }
+        }, 1000);
+    }
+
+    function shareToTwitter() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const message = `🚀 Join me on VaultPro and start earning! Use my referral link: ${link}`;
+        const encodedMessage = encodeURIComponent(message);
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedMessage}`;
+        window.open(twitterUrl, '_blank');
+    }
+
+    function shareToInstagram() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const message = `🚀 Join me on VaultPro and start earning! Use my referral link: ${link}`;
+        
+        // Instagram doesn't support direct link sharing, so we copy to clipboard and show instructions
+        navigator.clipboard.writeText(message).then(() => {
+            alert('📷 Instagram Share Instructions:\n\n1. Open Instagram app\n2. Create a new story or post\n3. Add this text and link (already copied):\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"\n\nContent copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = message;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('📷 Instagram Share Instructions:\n\n1. Open Instagram app\n2. Create a new story or post\n3. Add this text and link (already copied):\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"\n\nContent copied to clipboard!');
+        });
+    }
+
+    function shareToFacebook() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const encodedUrl = encodeURIComponent(link);
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        window.open(facebookUrl, '_blank');
+    }
+
     // Streak section
     function updateStreakSection() {
         try {
@@ -5358,11 +5561,11 @@
                                 <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
                                 <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
                                 <p style="color: var(--gray); font-size: 0.875rem;">Timer: ${task.timer || 60} seconds</p>
-                                ${task.link ? `<a href="${task.link}" target="_blank" style="color: var(--primary); font-size: 0.875rem;">📱 Open Link</a>` : ''}
+                                ${task.link ? `<p style="color: var(--primary); font-size: 0.875rem; margin: 0.5rem 0;">🔗 Link will open automatically when you start the task</p>` : ''}
                             </div>
                             <div class="task-action">
                                 <button class="btn btn-success" id="btn-${task.id}" onclick="startTaskTimer('${task.id}', ${task.reward}, ${task.requiresProof}, ${task.timer || 60})">
-                                    Complete Task
+                                    ${task.link ? 'Start Task & Open Link' : 'Start Task'}
                                 </button>
                                 <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
                                     <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
@@ -5373,6 +5576,25 @@
                     `;
                 }).join('');
             }
+
+            // Check which tasks are already completed today
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            
+            // Update task buttons based on completion status
+            tasks.forEach(task => {
+                const button = document.getElementById(`btn-${task.id}`);
+                if (button && completedTaskIds.includes(task.id)) {
+                    button.disabled = true;
+                    button.textContent = 'Completed Today';
+                    button.style.background = '#6b7280';
+                }
+            });
 
             // Update user submissions
             const submissionsSnapshot = await db.collection('taskSubmissions')
@@ -5423,22 +5645,18 @@
 
     async function calculateTodayTaskEarnings() {
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const todayDate = new Date().toDateString();
             
-            // Get today's approved task submissions
+            // Get today's task submissions (both approved and automatically completed)
             const submissionsSnapshot = await db.collection('taskSubmissions')
                 .where('userId', '==', currentUser.id)
-                .where('status', '==', 'approved')
+                .where('date', '==', todayDate)
                 .get();
             
             let totalEarnings = 0;
             submissionsSnapshot.docs.forEach(doc => {
                 const submission = doc.data();
-                const submissionDate = submission.approvedDate ? submission.approvedDate.split('T')[0] : submission.submittedDate.split('T')[0];
-                
-                if (submissionDate === today) {
-                    totalEarnings += submission.reward || 0;
-                }
+                totalEarnings += submission.reward || 0;
             });
             
             return totalEarnings;
@@ -5448,7 +5666,7 @@
         }
     }
 
-    function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
+    async function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
         // Skip activation checks for admin users
         if (!currentUser.isAdmin && !currentUser.isActivated) {
             alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
@@ -5458,6 +5676,20 @@
         const button = document.getElementById(`btn-${taskId}`);
         const timerDiv = document.getElementById(`timer-${taskId}`);
         const countdownDiv = document.getElementById(`countdown-${taskId}`);
+        
+        // Get task details to access the link
+        const taskDoc = await db.collection('tasks').doc(taskId).get();
+        if (!taskDoc.exists) {
+            alert('Task not found');
+            return;
+        }
+        
+        const task = taskDoc.data();
+        
+        // Open the link if it exists
+        if (task.link) {
+            window.open(task.link, '_blank');
+        }
         
         // Disable button and show timer
         button.disabled = true;
@@ -5473,13 +5705,100 @@
             
             if (timeLeft <= 0) {
                 clearInterval(countdown);
-                // Timer finished, now allow task completion
+                // Timer finished, automatically award the reward
                 button.disabled = false;
-                button.textContent = 'Complete Task';
-                button.onclick = () => submitTask(taskId, reward, requiresProof);
+                button.textContent = 'Task Completed!';
+                button.style.background = '#10b981';
                 timerDiv.classList.add('hidden');
+                
+                // Automatically award the reward
+                awardTaskReward(taskId, reward, task.title);
             }
         }, 1000);
+    }
+
+    async function awardTaskReward(taskId, reward, taskTitle) {
+        try {
+            // Check if user already completed this task today
+            const todayForAward = new Date().toDateString();
+            const submissionQuery = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('taskId', '==', taskId)
+                .where('date', '==', todayForAward)
+                .get();
+
+            if (!submissionQuery.empty) {
+                alert('You have already completed this task today!');
+                return;
+            }
+
+            // Award the reward
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const currentBalance = userDoc.data().balance || 0;
+            
+            await db.collection('users').doc(currentUser.id).update({
+                balance: currentBalance + reward
+            });
+
+            // Record the task submission
+            await db.collection('taskSubmissions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                taskId: taskId,
+                taskTitle: taskTitle,
+                reward: reward,
+                date: todayForAward,
+                timestamp: new Date().toISOString(),
+                completedAutomatically: true
+            });
+
+            // Record the transaction
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'task_reward',
+                amount: reward,
+                description: `Task completed: ${taskTitle}`,
+                date: new Date().toISOString()
+            });
+
+            // Show success notification
+            showTaskSuccessNotification(`🎉 Task completed! You earned ${reward.toLocaleString()} UGX!`);
+            
+            // Update UI
+            updateTasksSection();
+            updateUserStats();
+            
+        } catch (error) {
+            console.error("Error awarding task reward:", error);
+            alert('Failed to award task reward: ' + error.message);
+        }
+    }
+
+    function showTaskSuccessNotification(message) {
+        // Create success notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
     }
 
     async function submitTask(taskId, reward, requiresProof) {
@@ -5819,6 +6138,49 @@
     }
 
     // Deposit section
+    function updateAdminPhoneNumber() {
+        const depositMethodEl = document.getElementById('depositMethod');
+        const adminPhoneEl = document.getElementById('adminPhoneNumber');
+        
+        if (!depositMethodEl || !adminPhoneEl) {
+            return;
+        }
+        
+        const method = depositMethodEl.value;
+        
+        if (method === 'mtn') {
+            adminPhoneEl.value = '0779710365';
+        } else if (method === 'airtel') {
+            adminPhoneEl.value = '0702377999';
+        } else {
+            adminPhoneEl.value = '';
+        }
+        
+        // Also trigger the main payment instructions function
+        showPaymentInstructions();
+    }
+
+    function validateFileSize(input) {
+        const maxSize = 6 * 1024 * 1024; // 6MB in bytes
+        const file = input.files[0];
+        
+        if (file && file.size > maxSize) {
+            alert('File size too large! Maximum size is 6MB.');
+            input.value = ''; // Clear the input
+            return false;
+        }
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (file && !allowedTypes.includes(file.type)) {
+            alert('Invalid file type! Please upload JPG, PNG, or GIF images only.');
+            input.value = ''; // Clear the input
+            return false;
+        }
+        
+        return true;
+    }
+
     async function updateDepositSection() {
         try {
             // Set up event listeners if elements exist
@@ -5855,33 +6217,19 @@
         if (amount >= 10000 && method) {
             const displayAmountEl = document.getElementById('displayDepositAmount');
             if (displayAmountEl) {
-                displayAmountEl.textContent = amount.toLocaleString();
+                displayAmountEl.value = amount.toLocaleString() + ' UGX';
             }
             
-            // Update phone number based on method
-            const phoneNumber = document.getElementById('adminPhoneNumber');
-            if (phoneNumber) {
-                if (method === 'mtn') {
-                    phoneNumber.textContent = '0779710365'; // MTN number
-                } else if (method === 'airtel') {
-                    phoneNumber.textContent = '0702377999'; // Airtel number
-                }
-            }
-            
-            const paymentInstructionsEl = document.getElementById('paymentInstructions');
-            const depositScreenshotEl = document.getElementById('depositScreenshot');
+            const depositDetailsEl = document.getElementById('depositDetails');
             const submitDepositBtnEl = document.getElementById('submitDepositBtn');
             
-            if (paymentInstructionsEl) paymentInstructionsEl.classList.remove('hidden');
-            if (depositScreenshotEl) depositScreenshotEl.classList.remove('hidden');
+            if (depositDetailsEl) depositDetailsEl.classList.remove('hidden');
             if (submitDepositBtnEl) submitDepositBtnEl.classList.remove('hidden');
         } else {
-            const paymentInstructionsEl = document.getElementById('paymentInstructions');
-            const depositScreenshotEl = document.getElementById('depositScreenshot');
+            const depositDetailsEl = document.getElementById('depositDetails');
             const submitDepositBtnEl = document.getElementById('submitDepositBtn');
             
-            if (paymentInstructionsEl) paymentInstructionsEl.classList.add('hidden');
-            if (depositScreenshotEl) depositScreenshotEl.classList.add('hidden');
+            if (depositDetailsEl) depositDetailsEl.classList.add('hidden');
             if (submitDepositBtnEl) submitDepositBtnEl.classList.add('hidden');
         }
     }
@@ -5890,10 +6238,38 @@
         try {
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const method = document.getElementById('depositMethod').value;
+            const senderPhone = document.getElementById('senderPhoneNumber').value;
+            const adminPhone = document.getElementById('adminPhoneNumber').value;
             const screenshotFile = document.getElementById('depositScreenshot').files[0];
 
-            if (!amount || amount < 10000 || !method || !screenshotFile) {
-                alert('Please complete all fields and upload screenshot');
+            // Validation
+            if (!amount || amount < 10000) {
+                alert('Please enter a valid amount (minimum 10,000 UGX)');
+                return;
+            }
+            
+            if (!method) {
+                alert('Please select a payment method');
+                return;
+            }
+            
+            if (!senderPhone || senderPhone.length < 10) {
+                alert('Please enter a valid sender phone number');
+                return;
+            }
+            
+            if (!adminPhone) {
+                alert('Admin phone number is missing. Please select a payment method first.');
+                return;
+            }
+            
+            if (!screenshotFile) {
+                alert('Please upload a screenshot as proof of payment');
+                return;
+            }
+
+            // Validate file size and type
+            if (!validateFileSize(document.getElementById('depositScreenshot'))) {
                 return;
             }
 
@@ -5907,18 +6283,23 @@
                     userEmail: currentUser.email,
                     amount: amount,
                     method: method,
+                    senderPhone: senderPhone,
+                    adminPhone: adminPhone,
                     screenshot: screenshotBase64,
                     status: 'pending',
                     requestDate: new Date().toISOString()
                 });
 
-                alert('Deposit request submitted! Waiting for admin approval.');
+                alert('✅ Deposit request submitted successfully! Admin will review and approve your deposit.');
                 
+                // Clear form
                 document.getElementById('depositAmount').value = '';
                 document.getElementById('depositMethod').value = '';
+                document.getElementById('senderPhoneNumber').value = '';
+                document.getElementById('adminPhoneNumber').value = '';
+                document.getElementById('displayDepositAmount').value = '';
                 document.getElementById('depositScreenshot').value = '';
-                document.getElementById('paymentInstructions').classList.add('hidden');
-                document.getElementById('depositScreenshot').classList.add('hidden');
+                document.getElementById('depositDetails').classList.add('hidden');
                 document.getElementById('submitDepositBtn').classList.add('hidden');
                 
                 updateDepositHistory();
@@ -6116,7 +6497,7 @@
             const tbody = document.getElementById('adminDepositsBody');
 
             if (deposits.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No pending deposits</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">No pending deposits</td></tr>';
                 return;
             }
 
@@ -6126,6 +6507,8 @@
                     <td>${d.userName}<br><small style="color: var(--gray);">${d.userEmail}</small></td>
                     <td>${d.amount.toLocaleString()} UGX</td>
                     <td>${d.method.toUpperCase()}</td>
+                    <td>${d.senderPhone || 'N/A'}</td>
+                    <td>${d.adminPhone || 'N/A'}</td>
                     <td>
                         ${(d.screenshot || d.paymentProof) ? 
                             `<button class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="viewScreenshot('${d.screenshot || d.paymentProof}')">View Screenshot</button>` : 
