@@ -736,52 +736,7 @@
         animation: spin 1s linear infinite;
         margin: 0 auto 1rem;
     }
-   /* Loading */
-   .loading {
-       text-align: center;
-       padding: 3rem;
-       color: white;
-       position: relative;
-       z-index: 1;
-   }
-   
-/* Fix z-index and visibility issues */
-#loginPage, #registerPage {
-    position: relative;
-    z-index: 1;
-}
 
-#userDashboard, #adminDashboard {
-    position: relative;
-    z-index: 1;
-}
-
-#loadingScreen, #firebaseSetup {
-    position: relative;
-    z-index: 1;
-}
-
-/* Ensure hidden class works properly */
-.hidden {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-
-/* Loading */
-.loading {
-    text-align: center;
-    padding: 3rem;
-    color: white;
-    position: relative;
-    z-index: 1;
-}
-
-.loading h2 {
-    color: white;
-    margin-bottom: 1rem;
-}
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
@@ -1259,55 +1214,28 @@
             </div>
         </div>
 
-<!-- Home Section -->
-<div id="homeSection" class="hidden">
-    <div class="card">
-        <h2>Welcome back, <span id="homeUserName"></span>!</h2>
-        <p style="color: var(--gray); margin-bottom: 2rem;">Here's your account overview</p>
-        
-        <!-- Dashboard Stats Grid -->
-        <div class="dashboard-grid">
-            <div class="stat-card compact">
-                <div class="stat-label">Balance</div>
-                <div class="stat-value" id="totalBalance">0</div>
-                <div class="stat-unit">UGX</div>
-            </div>
-            <div class="stat-card compact">
-                <div class="stat-label">Active Vaults</div>
-                <div class="stat-value" id="activeVaults">0</div>
-            </div>
-            <div class="stat-card compact">
-                <div class="stat-label">Referrals</div>
-                <div class="stat-value" id="totalReferrals">0</div>
-            </div>
-            <div class="stat-card compact">
-                <div class="stat-label">Streak</div>
-                <div class="stat-value" id="currentStreak">0</div>
-                <div class="stat-unit">Days</div>
+        <!-- Welcome Bonus Message -->
+        <div id="welcomeBonusMessage" class="hidden" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; text-align: center; margin: 0; border-radius: 0; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                <div style="font-size: 2rem;">🎉</div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Welcome to VaultPro!</h3>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">You have a special welcome bonus waiting for you!</p>
+                </div>
+                <div id="welcomeBonusAmount" style="font-size: 1.5rem; font-weight: 800; filter: blur(8px); transition: filter 0.3s ease;">5,000 UGX</div>
             </div>
         </div>
 
-        <!-- My Vaults -->
-        <h3 class="mt-3">My Active Vaults</h3>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Plan</th>
-                        <th>Amount</th>
-                        <th>Duration</th>
-                        <th>Profit</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="vaultTableBody">
-                    <tr><td colspan="6" class="text-center">No active vaults</td></tr>
-                </tbody>
-            </table>
+        <!-- Activation Carousel -->
+        <div id="activationCarousel" class="hidden" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 0.75rem; border-bottom: 2px solid #e5e7eb; overflow: hidden; position: relative;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="color: var(--primary); font-weight: 600;">🔥</span>
+                <span style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">Recently Activated Users:</span>
+            </div>
+            <div id="carouselContent" style="display: flex; animation: scroll 30s linear infinite; white-space: nowrap;">
+                <!-- Carousel items will be populated by JavaScript -->
+            </div>
         </div>
-    </div>
-</div>
 
         <!-- Activation Required Section -->
 <!-- Activation Required Section -->
@@ -1315,20 +1243,23 @@
     <div class="card">
         <div style="text-align: center; margin-bottom: 2rem;">
             <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-            <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Activate Your Account</h2>
+            <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Account activation</h2>
             <p style="color: var(--gray);">Complete payment to unlock all features</p>
         </div>
         
-
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Activation Fee: 20,000 UGX</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">One-time payment • Lifetime access</div>
+        </div>
         
         <form id="simpleActivationForm" onsubmit="submitSimpleActivation(event)">
             <!-- Payment Method Selection -->
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
-                    Select Payment Method:
+                    choose number-that you sent the activation fee too:
                 </label>
                 <select id="simplePaymentMethod" required style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" onchange="showPaymentNumber()">
-                    <option value="">Choose payment method...</option>
+                    <option value="">method is mobile money</option>
                     <option value="airtel">Airtel Money</option>
                     <option value="mtn">MTN Mobile Money</option>
                 </select>
@@ -1350,7 +1281,7 @@
             <!-- Screenshot Upload -->
             <div id="screenshotUpload" class="hidden" style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
-                    Upload Payment Screenshot:
+                    then attach screenshot of proof that shows mo:
                 </label>
                 <input type="file" id="simplePaymentProof" accept="image/*" required style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
                 <p style="color: #6b7280; font-size: 0.8rem; margin: 0.5rem 0 0 0;">Upload a clear screenshot of your payment confirmation</p>
@@ -3127,82 +3058,85 @@
         }
     }
 
-      async function login() {
-          const btn = document.getElementById('loginBtn');
-          btn.disabled = true;
-          btn.textContent = 'Logging in...';
-      
-          try {
-              const email = document.getElementById('loginEmail').value.trim();
-              const password = document.getElementById('loginPassword').value;
-      
-              if (!email || !password) {
-                  showAlert('loginAlert', 'Please enter email and password', 'error');
-                  btn.disabled = false;
-                  btn.textContent = 'Login';
-                  return;
-              }
-      
-              if (!firebaseInitialized || !db || !auth) {
-                  showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
-                  btn.disabled = false;
-                  btn.textContent = 'Login';
-                  return;
-              }
-      
-              let userCredential;
-              try {
-                  userCredential = await auth.signInWithEmailAndPassword(email, password);
-                  console.log('User signed in with Firebase Auth');
-              } catch (authError) {
-                  console.error('Login auth error:', authError);
-                  if (authError.code === 'auth/user-not-found') {
-                      showAlert('loginAlert', 'No user found with this email address', 'error');
-                  } else if (authError.code === 'auth/wrong-password') {
-                      showAlert('loginAlert', 'Incorrect password', 'error');
-                  } else if (authError.code === 'auth/invalid-email') {
-                      showAlert('loginAlert', 'Invalid email address', 'error');
-                  } else if (authError.code === 'auth/too-many-requests') {
-                      showAlert('loginAlert', 'Too many failed attempts. Please try again later.', 'error');
-                  } else {
-                      showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
-                  }
-                  btn.disabled = false;
-                  btn.textContent = 'Login';
-                  return;
-              }
-      
-              const userId = userCredential.user.uid;
-              const userDoc = await db.collection('users').doc(userId).get();
-              
-              if (!userDoc.exists) {
-                  console.log('User exists in Firebase Auth but not in Firestore, syncing...');
-                  showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
-                  await auth.signOut();
-                  btn.disabled = false;
-                  btn.textContent = 'Login';
-                  return;
-              }
-      
-              currentUser = { id: userId, ...userDoc.data() };
-              await updateUserStreak(userId, currentUser);
-      
-              // Show success message
-              showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
-              
-              // Small delay to show success message
-              setTimeout(() => {
-                  btn.disabled = false;
-                  btn.textContent = 'Login';
-              }, 1000);
-      
-          } catch (error) {
-              console.error("Login error:", error);
-              showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
-              btn.disabled = false;
-              btn.textContent = 'Login';
-          }
-      }
+    async function login() {
+        const btn = document.getElementById('loginBtn');
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+
+        try {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showAlert('loginAlert', 'Please enter email and password', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Login';
+                return;
+            }
+
+            // Check if Firebase is initialized
+            if (!firebaseInitialized || !db || !auth) {
+                showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Login';
+                return;
+            }
+
+            // Sign in with Firebase Auth
+            let userCredential;
+            try {
+                userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('User signed in with Firebase Auth');
+            } catch (authError) {
+                console.error('Login auth error:', authError);
+                if (authError.code === 'auth/user-not-found') {
+                    showAlert('loginAlert', 'No user found with this email address', 'error');
+                } else if (authError.code === 'auth/wrong-password') {
+                    showAlert('loginAlert', 'Incorrect password', 'error');
+                } else if (authError.code === 'auth/invalid-email') {
+                    showAlert('loginAlert', 'Invalid email address', 'error');
+                } else if (authError.code === 'auth/too-many-requests') {
+                    showAlert('loginAlert', 'Too many failed attempts. Please try again later.', 'error');
+                } else {
+                    showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
+                }
+                btn.disabled = false;
+                btn.textContent = 'Login';
+                return;
+            }
+
+            // Get user data from Firestore using Firebase Auth UID
+            const userId = userCredential.user.uid;
+            const userDoc = await db.collection('users').doc(userId).get();
+            
+            if (!userDoc.exists) {
+                console.log('User exists in Firebase Auth but not in Firestore, syncing...');
+                // User exists in Firebase Auth but not in Firestore - this shouldn't happen with new registration flow
+                // but we'll handle it gracefully
+                showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
+                await auth.signOut();
+                btn.disabled = false;
+                btn.textContent = 'Login';
+                return;
+            }
+
+            currentUser = { id: userId, ...userDoc.data() };
+
+            await updateUserStreak(userId, currentUser);
+
+            // Let auth state listener handle the dashboard display
+            console.log('Login successful, auth state listener will handle navigation');
+
+            // Show temporary success message
+            showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
+
+        } catch (error) {
+            console.error("Login error:", error);
+            showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Login';
+        }
+    }
 
     async function logout() {
         try {
@@ -3403,50 +3337,43 @@
         allowManualRegistration = false;
     }
 
-   function showUserDashboard() {
-       console.log('showUserDashboard() called');
-       
-       // FIRST: Hide ALL auth pages completely
-       document.getElementById('registerPage').classList.add('hidden');
-       document.getElementById('loginPage').classList.add('hidden');
-       document.getElementById('loadingScreen').classList.add('hidden');
-       document.getElementById('firebaseSetup').classList.add('hidden');
-       
-       // SECOND: Show user dashboard
-       document.getElementById('userDashboard').classList.remove('hidden');
-       document.getElementById('adminDashboard').classList.add('hidden');
-       
-       // Update home user name
-       const homeUserNameEl = document.getElementById('homeUserName');
-       if (homeUserNameEl && currentUser) {
-           homeUserNameEl.textContent = currentUser.fullName || 'User';
-       }
-       
-       // Check activation status
-       checkActivationStatus();
-       
-       // Update stats and features
-       updateUserStats();
-       updateFeatureAccess();
-       
-       // Update profile
-       if (currentUser) {
-           updateProfileSection();
-       }
-       
-       // Ensure all sections are hidden initially
-       ensureAllSectionsHidden();
-       
-       // Show home section if activated
-       if (currentUser && currentUser.isActivated) {
-           document.getElementById('homeSection').classList.remove('hidden');
-       }
-       
-       // Handle referral links
-       handleReferralLink();
-       
-       console.log('User dashboard shown');
-   }
+    function showUserDashboard() {
+        console.log('showUserDashboard() called');
+        
+        // Hide auth pages
+        document.getElementById('registerPage').classList.add('hidden');
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
+        // Show user dashboard
+        document.getElementById('userDashboard').classList.remove('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+        
+        // Check activation status first
+        checkActivationStatus();
+        
+        // Update stats and features
+        updateUserStats();
+        updateFeatureAccess();
+        
+        // Update profile
+        if (currentUser) {
+            updateProfileSection();
+        }
+        
+        // Ensure sections are properly hidden
+        ensureAllSectionsHidden();
+        
+        // Show home section if activated, otherwise activation screen will show
+        if (currentUser && currentUser.isActivated) {
+            document.getElementById('homeSection').classList.remove('hidden');
+        }
+        
+        // Handle referral links
+        handleReferralLink();
+        
+        console.log('User dashboard shown');
+    }
 
    function updateFeatureAccess() {
        if (currentUser.isAdmin) {
@@ -3784,13 +3711,6 @@
            const paymentProof = document.getElementById('simplePaymentProof').files[0];
            const paymentNumber = document.getElementById('displayPaymentNumber').getAttribute('data-number');
            
-           if (!method) {
-               showAlert('simpleActivationAlert', 'Please select payment method', 'error');
-               submitBtn.disabled = false;
-               submitBtn.textContent = '💳 Submit Payment';
-               return;
-           }
-           
            if (!paymentProof) {
                showAlert('simpleActivationAlert', 'Please upload payment screenshot', 'error');
                submitBtn.disabled = false;
@@ -3866,59 +3786,50 @@
        }
    }
 
-   function displaySection(section) {
-       // Hide all sections first
-       ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
-           const el = document.getElementById(s + 'Section');
-           if (el) {
-               el.classList.add('hidden');
-           }
-       });
-       
-       // Show the requested section
-       const sectionEl = document.getElementById(section + 'Section');
-       if (sectionEl) {
-           sectionEl.classList.remove('hidden');
-       }
-   
-       // Update bottom nav active state
-       document.querySelectorAll('.bottom-nav-item').forEach(item => {
-           item.classList.remove('active');
-       });
-       const activeNavItem = document.querySelector(`[data-section="${section}"]`);
-       if (activeNavItem) {
-           activeNavItem.classList.add('active');
-       }
-   
-       // Update feature access when switching sections
-       updateFeatureAccess();
-   
-       // Load section-specific data
-       if (section === 'home') {
-           updateUserStats();
-       } else if (section === 'referrals') {
-           updateReferralsSection();
-       } else if (section === 'wallet') {
-           updateWalletSection();
-       } else if (section === 'stake') {
-           loadCandidates();
-           loadMyStakes();
-       } else if (section === 'vault') {
-           updateVaultSection();
-       } else if (section === 'streak') {
-           updateStreakSection();
-       } else if (section === 'tasks') {
-           updateTasksSection();
-       } else if (section === 'profile') {
-           if (currentUser && currentUser.id) {
-               refreshUserData().then(() => {
-                   updateProfileSection();
-               });
-           } else {
-               updateProfileSection();
-           }
-       }
-   }
+    function displaySection(section) {
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
+            const el = document.getElementById(s + 'Section');
+            if (el) {
+                el.classList.add('hidden');
+            }
+        });
+        
+        const sectionEl = document.getElementById(section + 'Section');
+        if (sectionEl) {
+            sectionEl.classList.remove('hidden');
+        }
+    
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        const activeNavItem = document.querySelector(`[data-section="${section}"]`);
+        if (activeNavItem) {
+            activeNavItem.classList.add('active');
+        }
+    
+        // Update feature access when switching sections
+        updateFeatureAccess();
+
+        if (section === 'referrals') updateReferralsSection();
+        else if (section === 'wallet') updateWalletSection();
+        else if (section === 'stake') {
+            loadCandidates();
+            loadMyStakes();
+        }
+        else if (section === 'vault') updateVaultSection();
+        else if (section === 'streak') updateStreakSection();
+        else if (section === 'tasks') updateTasksSection();
+        else if (section === 'profile') {
+            // Refresh user data before updating profile section
+            if (currentUser && currentUser.id) {
+                refreshUserData().then(() => {
+                    updateProfileSection();
+                });
+            } else {
+                updateProfileSection();
+            }
+        }
+    }
 
 
     function toggleCollapsible(sectionId) {
@@ -4017,64 +3928,58 @@
     }
 
     // User stats
-   async function updateUserStats() {
-       try {
-           const userDoc = await db.collection('users').doc(currentUser.id).get();
-           currentUser = { id: currentUser.id, ...userDoc.data() };
-   
-           // Update referral link immediately
-           const baseUrl = window.location.href.split('?')[0];
-           const referralLink = `${baseUrl}?ref=${currentUser.referralCode}`;
-           const linkElement = document.getElementById('userReferralLink');
-           if (linkElement) {
-               linkElement.textContent = referralLink;
-           }
-   
-           // Rest of stats...
-           const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
-           const vaults = vaultsSnapshot.docs.map(doc => doc.data());
-   
-           const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
-           const referrals = referralsSnapshot.docs.map(doc => doc.data());
-   
-           const depositsSnapshot = await db.collection('depositRequests')
-               .where('userId', '==', currentUser.id)
-               .where('status', '==', 'approved')
-               .get();
-           const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
-           const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
-   
-           const totalBalance = currentUser.balance || 0;
-           const activeVaults = vaults.length;
-           const totalReferrals = referrals.length;
-           const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
-   
-           document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
-           document.getElementById('activeVaults').textContent = activeVaults;
-           document.getElementById('totalReferrals').textContent = totalReferrals;
-           document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
-           document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
-           document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
-           document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
-           document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
-           
-           // Update user name and activation status in navbar
-           document.getElementById('userNameDisplay').textContent = currentUser.fullName;
-           if (currentUser.isActivated) {
-               document.getElementById('activationStatus').style.display = 'inline';
-           } else {
-               document.getElementById('activationStatus').style.display = 'none';
-           }
-   
-           updateVaultTable(vaults);
-           
-           if (!document.getElementById('vaultSection').classList.contains('hidden')) {
-               updateVaultSection();
-           }
-       } catch (error) {
-           console.error("Error updating user stats:", error);
-       }
-   }
+    async function updateUserStats() {
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            currentUser = userDoc.data();
+
+            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
+            const vaults = vaultsSnapshot.docs.map(doc => doc.data());
+
+            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+            const referrals = referralsSnapshot.docs.map(doc => doc.data());
+
+            const depositsSnapshot = await db.collection('depositRequests')
+                .where('userId', '==', currentUser.id)
+                .where('status', '==', 'approved')
+                .get();
+            const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
+            const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+            const totalBalance = currentUser.balance || 0;
+            const activeVaults = vaults.length;
+            const totalReferrals = referrals.length;
+            const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
+
+            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
+            document.getElementById('activeVaults').textContent = activeVaults;
+            document.getElementById('totalReferrals').textContent = totalReferrals;
+            document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+            document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
+            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
+            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
+            document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
+            
+            // Update user name and activation status in navbar
+            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
+            if (currentUser.isActivated) {
+                document.getElementById('activationStatus').style.display = 'inline';
+            } else {
+                document.getElementById('activationStatus').style.display = 'none';
+            }
+
+            const baseUrl = window.location.href.split('?')[0];
+            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
+
+            updateVaultTable(vaults);
+            
+            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
+                updateVaultSection();
+            }
+        } catch (error) {
+            console.error("Error updating user stats:", error);
+        }
+    }
 
     function updateVaultTable(vaults) {
         const tbody = document.getElementById('vaultTableBody');
@@ -5203,19 +5108,24 @@
            const userData = userDoc.data();
            
            if (userData && userData.isActivated) {
-               // Hide activation section
+               // Hide activation sections
                document.getElementById('activationRequiredSection').classList.add('hidden');
+               document.getElementById('earningsPreviewSection').classList.add('hidden');
+               document.getElementById('welcomeBonusMessage').classList.add('hidden');
+               document.getElementById('activationCarousel').classList.add('hidden');
                
-               // Show home section
+               // Show home
                document.getElementById('homeSection').classList.remove('hidden');
                
-               // Load carousel
                loadActivationCarousel();
            } else {
                // Show ONLY activation section
                document.getElementById('activationRequiredSection').classList.remove('hidden');
                
                // Hide everything else
+               document.getElementById('earningsPreviewSection').classList.add('hidden');
+               document.getElementById('welcomeBonusMessage').classList.add('hidden');
+               document.getElementById('activationCarousel').classList.add('hidden');
                document.getElementById('homeSection').classList.add('hidden');
                
                ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
@@ -5880,79 +5790,109 @@
         }
     }
 
-   function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
-       // Skip activation checks for admin users
-       if (!currentUser.isAdmin && !currentUser.isActivated) {
-           alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
-           return;
-       }
-   
-       // Get task link
-       db.collection('tasks').doc(taskId).get().then(taskDoc => {
-           const task = taskDoc.data();
-           
-           // Open link in new tab if it exists
-           if (task.link) {
-               window.open(task.link, '_blank');
-           }
-       });
-   
-       const button = document.getElementById(`btn-${taskId}`);
-       const timerDiv = document.getElementById(`timer-${taskId}`);
-       const countdownDiv = document.getElementById(`countdown-${taskId}`);
-       
-       // Disable button and show timer
-       button.disabled = true;
-       button.textContent = 'Timer Running...';
-       timerDiv.classList.remove('hidden');
-       
-       let timeLeft = timerDuration;
-       countdownDiv.textContent = timeLeft;
-       
-       const countdown = setInterval(() => {
-           timeLeft--;
-           countdownDiv.textContent = timeLeft;
-           
-           if (timeLeft <= 0) {
-               clearInterval(countdown);
-               // Timer finished, award automatically (no proof needed)
-               submitTaskAutomatically(taskId, reward);
-           }
-       }, 1000);
-   }
-   
-   async function submitTaskAutomatically(taskId, reward) {
-       try {
-           const taskDoc = await db.collection('tasks').doc(taskId).get();
-           const task = taskDoc.data();
-           
-           const userDoc = await db.collection('users').doc(currentUser.id).get();
-           const userData = userDoc.data();
-           const currentBalance = userData.balance || 0;
-   
-           await db.collection('users').doc(currentUser.id).update({
-               balance: currentBalance + reward,
-               totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
-           });
-   
-           await db.collection('transactions').add({
-               userId: currentUser.id,
-               userName: currentUser.fullName,
-               type: 'task_reward',
-               amount: reward,
-               taskTitle: task.title,
-               date: new Date().toISOString()
-           });
-           
-           alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
-           updateTasksSection();
-           updateUserStats();
-           
-       } catch (error) {
-           console.error("Error submitting task:", error);
-           alert('Failed to complete task: ' + error.message);
-       }
-   }
+    function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
+        // Skip activation checks for admin users
+        if (!currentUser.isAdmin && !currentUser.isActivated) {
+            alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+            return;
+        }
+
+        const button = document.getElementById(`btn-${taskId}`);
+        const timerDiv = document.getElementById(`timer-${taskId}`);
+        const countdownDiv = document.getElementById(`countdown-${taskId}`);
+        
+        // Disable button and show timer
+        button.disabled = true;
+        button.textContent = 'Timer Running...';
+        timerDiv.classList.remove('hidden');
+        
+        let timeLeft = timerDuration;
+        countdownDiv.textContent = timeLeft;
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            countdownDiv.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                // Timer finished, now allow task completion
+                button.disabled = false;
+                button.textContent = 'Complete Task';
+                button.onclick = () => submitTask(taskId, reward, requiresProof);
+                timerDiv.classList.add('hidden');
+            }
+        }, 1000);
+    }
+
+    async function submitTask(taskId, reward, requiresProof) {
+        try {
+            // Skip activation checks for admin users
+            if (!currentUser.isAdmin && !currentUser.isActivated) {
+                alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+                return;
+            }
+
+            // Get task details
+            const taskDoc = await db.collection('tasks').doc(taskId).get();
+            if (!taskDoc.exists) {
+                alert('Task not found');
+                return;
+            }
+            
+            const task = taskDoc.data();
+            
+            if (requiresProof) {
+                // For tasks requiring proof, create a submission for admin review
+                const proof = prompt('Please provide proof of completion (e.g., screenshot link, description):');
+                if (!proof) {
+                    alert('Proof is required for this task');
+                    return;
+                }
+                
+                await db.collection('taskSubmissions').add({
+                    userId: currentUser.id,
+                    userName: currentUser.fullName,
+                    userEmail: currentUser.email,
+                    taskId: taskId,
+                    taskTitle: task.title,
+                    reward: reward,
+                    proof: proof,
+                    status: 'pending',
+                    submittedDate: new Date().toISOString()
+                });
+                
+                alert('Task submission sent for review! You will be notified when approved.');
+            } else {
+                // For tasks not requiring proof, auto-approve
+                const userDoc = await db.collection('users').doc(currentUser.id).get();
+                const userData = userDoc.data();
+                const currentBalance = userData.balance || 0;
+
+                await db.collection('users').doc(currentUser.id).update({
+                    balance: currentBalance + reward,
+                    totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
+                });
+
+                await db.collection('transactions').add({
+                    userId: currentUser.id,
+                    userName: currentUser.fullName,
+                    type: 'task_reward',
+                    amount: reward,
+                    taskTitle: task.title,
+                    date: new Date().toISOString()
+                });
+                
+                alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
+            }
+            
+            updateTasksSection();
+            updateUserStats();
+            
+        } catch (error) {
+            console.error("Error submitting task:", error);
+            alert('Failed to submit task: ' + error.message);
+        }
+    }
 
 
     // Withdraw section
