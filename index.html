@@ -736,7 +736,25 @@
         animation: spin 1s linear infinite;
         margin: 0 auto 1rem;
     }
-
+   /* Loading */
+   .loading {
+       text-align: center;
+       padding: 3rem;
+       color: white;
+       position: relative;
+       z-index: 1;
+   }
+   
+   /* Fix z-index issues */
+   #loginPage, #registerPage {
+       position: relative;
+       z-index: 10;
+   }
+   
+   #userDashboard, #adminDashboard {
+       position: relative;
+       z-index: 5;
+   }
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
