@@ -1880,6 +1880,7 @@
                 <div class="nav-link" onclick="showAdminSection('transactions')">Transactions</div>
                 <div class="nav-link" onclick="showAdminSection('deposits')">Deposits</div>
                 <div class="nav-link" onclick="showAdminSection('withdrawals')">Withdrawals</div>
+                <div class="nav-link" onclick="showAdminSection('candidates')">Candidates</div>
                 <div class="nav-link" onclick="logout()">Logout</div>
             </div>
         </div>
@@ -2082,6 +2083,64 @@
                         </thead>
                         <tbody id="adminTaskSubmissionsBody">
                             <tr><td colspan="6" class="text-center">No pending submissions</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Candidates Management -->
+        <div id="adminCandidatesSection" class="hidden">
+            <div class="card">
+                <h2>Election Candidates Management</h2>
+                
+                <!-- Create New Candidate -->
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
+                    <h3>Add New Candidate</h3>
+                    <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
+                    <input type="text" id="candidateTitle" placeholder="Position (e.g., President, MP, Mayor, LC5 Chairman)" />
+                    <select id="candidateCategory">
+                        <option value="">Select Category</option>
+                        <option value="president">President</option>
+                        <option value="mp">Member of Parliament</option>
+                        <option value="mayor">City Mayor</option>
+                        <option value="lc5">LC5 Chairman</option>
+                    </select>
+                    <input type="text" id="candidateDistrict" placeholder="District (e.g., Kampala, Oyam South)" />
+                    <input type="text" id="candidateRegion" placeholder="Region (e.g., Central Uganda, National)" />
+                    <input type="number" id="candidateOdds" placeholder="Odds (e.g., 2.5)" step="0.1" min="1" />
+                    <textarea id="candidateOpponents" placeholder="Opponents (comma-separated, e.g., John Doe, Jane Smith)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
+                    <input type="text" id="candidateParty" placeholder="Political Party (optional)" />
+                    <input type="date" id="candidateElectionDate" placeholder="Election Date" />
+                    <textarea id="candidateDescription" placeholder="Description (optional)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
+                    
+                    <button class="btn btn-success btn-block mt-2" onclick="addCandidate()">
+                        Add Candidate
+                    </button>
+                </div>
+
+                <!-- Active Candidates -->
+                <h3>Active Candidates</h3>
+                <div id="adminCandidatesList">
+                    <p class="text-center" style="color: var(--gray); padding: 2rem;">No candidates added yet</p>
+                </div>
+
+                <!-- Stakes Overview -->
+                <h3 class="mt-3">Stakes Overview</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Candidate</th>
+                                <th>Stake Amount</th>
+                                <th>Potential Winnings</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminStakesBody">
+                            <tr><td colspan="6" class="text-center">No stakes placed yet</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -3629,7 +3688,7 @@
     }
 
     function showAdminSection(section) {
-        ['Stats', 'Users', 'Tasks', 'Transactions', 'Deposits', 'Withdrawals'].forEach(s => {
+        ['Stats', 'Users', 'Tasks', 'Transactions', 'Deposits', 'Withdrawals', 'Candidates'].forEach(s => {
             const el = document.getElementById('admin' + s + 'Section');
             if (el) el.classList.add('hidden');
         });
@@ -3641,6 +3700,7 @@
         if (section === 'transactions') updateAdminTransactions();
         if (section === 'deposits') updateAdminDeposits();
         if (section === 'withdrawals') updateAdminWithdrawals();
+        if (section === 'candidates') updateAdminCandidates();
     }
 
     // User stats
@@ -4693,6 +4753,292 @@
             await db.collection('electionCandidates').add(candidate);
         }
         alert('Sample candidates added!');
+    }
+
+    // Admin Candidates Management Functions
+    async function addCandidate() {
+        try {
+            const name = document.getElementById('candidateName').value.trim();
+            const title = document.getElementById('candidateTitle').value.trim();
+            const category = document.getElementById('candidateCategory').value;
+            const district = document.getElementById('candidateDistrict').value.trim();
+            const region = document.getElementById('candidateRegion').value.trim();
+            const odds = parseFloat(document.getElementById('candidateOdds').value);
+            const opponentsText = document.getElementById('candidateOpponents').value.trim();
+            const party = document.getElementById('candidateParty').value.trim();
+            const electionDate = document.getElementById('candidateElectionDate').value;
+            const description = document.getElementById('candidateDescription').value.trim();
+
+            if (!name || !title || !category || !district || !region || !odds) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            if (odds < 1) {
+                alert('Odds must be at least 1.0');
+                return;
+            }
+
+            const opponents = opponentsText ? opponentsText.split(',').map(o => o.trim()).filter(o => o) : [];
+
+            await db.collection('electionCandidates').add({
+                name: name,
+                title: title,
+                category: category,
+                district: district,
+                region: region,
+                odds: odds,
+                opponents: opponents,
+                party: party || null,
+                electionDate: electionDate || 'TBD',
+                description: description || null,
+                createdDate: new Date().toISOString(),
+                isActive: true,
+                totalStakes: 0,
+                totalStakeAmount: 0
+            });
+
+            alert('Candidate added successfully!');
+            
+            // Reset form
+            document.getElementById('candidateName').value = '';
+            document.getElementById('candidateTitle').value = '';
+            document.getElementById('candidateCategory').value = '';
+            document.getElementById('candidateDistrict').value = '';
+            document.getElementById('candidateRegion').value = '';
+            document.getElementById('candidateOdds').value = '';
+            document.getElementById('candidateOpponents').value = '';
+            document.getElementById('candidateParty').value = '';
+            document.getElementById('candidateElectionDate').value = '';
+            document.getElementById('candidateDescription').value = '';
+            
+            updateAdminCandidates();
+        } catch (error) {
+            console.error('Error adding candidate:', error);
+            alert('Failed to add candidate: ' + error.message);
+        }
+    }
+
+    async function updateAdminCandidates() {
+        try {
+            const candidatesSnapshot = await db.collection('electionCandidates').where('isActive', '==', true).get();
+            const candidates = candidatesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const candidatesList = document.getElementById('adminCandidatesList');
+            if (candidates.length === 0) {
+                candidatesList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No candidates added yet</p>';
+            } else {
+                candidatesList.innerHTML = candidates.map(candidate => `
+                    <div class="candidate-card" style="cursor: default;">
+                        <div class="candidate-header">
+                            <div class="candidate-info">
+                                <h3>${candidate.name}</h3>
+                                <p class="candidate-title">${candidate.title}</p>
+                                <p class="candidate-location">${candidate.district} - ${candidate.region}</p>
+                                ${candidate.party ? `<p style="color: var(--gray); font-size: 0.875rem;">Party: ${candidate.party}</p>` : ''}
+                                <p style="color: var(--gray); font-size: 0.875rem;">
+                                    Total Stakes: ${candidate.totalStakes || 0} | 
+                                    Total Amount: ${(candidate.totalStakeAmount || 0).toLocaleString()} UGX
+                                </p>
+                            </div>
+                            <div class="odds-badge">${candidate.odds}x</div>
+                        </div>
+                        
+                        ${candidate.opponents && candidate.opponents.length > 0 ? `
+                            <div class="candidate-opponents">
+                                <h4>Opponents:</h4>
+                                <div class="opponents-list">
+                                    ${candidate.opponents.map(opp => `<span class="opponent-tag">${opp}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <button class="btn" style="background: var(--warning); flex: 1;" onclick="editCandidate('${candidate.id}')">
+                                Edit
+                            </button>
+                            <button class="btn" style="background: var(--error); flex: 1;" onclick="deleteCandidate('${candidate.id}')">
+                                Delete
+                            </button>
+                            <button class="btn btn-success" style="flex: 1;" onclick="declareWinner('${candidate.id}')">
+                                Declare Winner
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Load all stakes
+            await updateAdminStakes();
+        } catch (error) {
+            console.error('Error updating admin candidates:', error);
+        }
+    }
+
+    async function updateAdminStakes() {
+        try {
+            const stakesSnapshot = await db.collection('stakes').get();
+            const stakes = stakesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const tbody = document.getElementById('adminStakesBody');
+            if (stakes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No stakes placed yet</td></tr>';
+            } else {
+                tbody.innerHTML = stakes.map(stake => `
+                    <tr>
+                        <td>${stake.userName}<br><small style="color: var(--gray);">${stake.userId}</small></td>
+                        <td>${stake.candidateName}<br><small style="color: var(--gray);">${stake.candidateTitle}</small></td>
+                        <td>${stake.stakeAmount.toLocaleString()} UGX</td>
+                        <td>${stake.potentialWinnings.toLocaleString()} UGX</td>
+                        <td><span class="stake-status ${stake.status}">${stake.status.toUpperCase()}</span></td>
+                        <td>
+                            ${stake.status === 'pending' ? `
+                                <button class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem; margin-right: 0.5rem;" onclick="markStakeWon('${stake.id}')">
+                                    Won
+                                </button>
+                                <button class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: var(--error);" onclick="markStakeLost('${stake.id}')">
+                                    Lost
+                                </button>
+                            ` : 'Settled'}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Error updating admin stakes:', error);
+        }
+    }
+
+    async function deleteCandidate(candidateId) {
+        if (!confirm('Are you sure you want to delete this candidate?')) return;
+        
+        try {
+            await db.collection('electionCandidates').doc(candidateId).update({
+                isActive: false
+            });
+            alert('Candidate deleted successfully!');
+            updateAdminCandidates();
+        } catch (error) {
+            console.error('Error deleting candidate:', error);
+            alert('Failed to delete candidate: ' + error.message);
+        }
+    }
+
+    async function declareWinner(candidateId) {
+        if (!confirm('Are you sure this candidate won? This will process all stakes for this candidate.')) return;
+        
+        try {
+            // Get all stakes for this candidate
+            const stakesSnapshot = await db.collection('stakes')
+                .where('candidateId', '==', candidateId)
+                .where('status', '==', 'pending')
+                .get();
+            
+            // Process each stake
+            for (const stakeDoc of stakesSnapshot.docs) {
+                const stake = stakeDoc.data();
+                const winnings = stake.potentialWinnings;
+                
+                // Add winnings to user balance
+                const userDoc = await db.collection('users').doc(stake.userId).get();
+                const userData = userDoc.data();
+                const currentBalance = userData.balance || 0;
+                
+                await db.collection('users').doc(stake.userId).update({
+                    balance: currentBalance + winnings
+                });
+                
+                // Update stake status
+                await db.collection('stakes').doc(stakeDoc.id).update({
+                    status: 'won',
+                    settledDate: new Date().toISOString()
+                });
+                
+                // Also update in user's subcollection
+                const userStakes = await db.collection('users').doc(stake.userId).collection('stakes')
+                    .where('candidateId', '==', candidateId)
+                    .get();
+                
+                for (const userStakeDoc of userStakes.docs) {
+                    await db.collection('users').doc(stake.userId).collection('stakes').doc(userStakeDoc.id).update({
+                        status: 'won',
+                        settledDate: new Date().toISOString()
+                    });
+                }
+                
+                // Record transaction
+                await db.collection('transactions').add({
+                    userId: stake.userId,
+                    userName: stake.userName,
+                    type: 'stake_winnings',
+                    amount: winnings,
+                    candidateName: stake.candidateName,
+                    date: new Date().toISOString()
+                });
+            }
+            
+            alert('Winner declared! All winning stakes have been processed.');
+            updateAdminCandidates();
+        } catch (error) {
+            console.error('Error declaring winner:', error);
+            alert('Failed to declare winner: ' + error.message);
+        }
+    }
+
+    async function markStakeWon(stakeId) {
+        try {
+            const stakeDoc = await db.collection('stakes').doc(stakeId).get();
+            const stake = stakeDoc.data();
+            
+            const userDoc = await db.collection('users').doc(stake.userId).get();
+            const userData = userDoc.data();
+            const currentBalance = userData.balance || 0;
+            
+            await db.collection('users').doc(stake.userId).update({
+                balance: currentBalance + stake.potentialWinnings
+            });
+            
+            await db.collection('stakes').doc(stakeId).update({
+                status: 'won',
+                settledDate: new Date().toISOString()
+            });
+            
+            await db.collection('transactions').add({
+                userId: stake.userId,
+                userName: stake.userName,
+                type: 'stake_winnings',
+                amount: stake.potentialWinnings,
+                candidateName: stake.candidateName,
+                date: new Date().toISOString()
+            });
+            
+            alert('Stake marked as won!');
+            updateAdminStakes();
+        } catch (error) {
+            console.error('Error marking stake as won:', error);
+            alert('Failed to mark stake as won: ' + error.message);
+        }
+    }
+
+    async function markStakeLost(stakeId) {
+        try {
+            await db.collection('stakes').doc(stakeId).update({
+                status: 'lost',
+                settledDate: new Date().toISOString()
+            });
+            
+            alert('Stake marked as lost');
+            updateAdminStakes();
+        } catch (error) {
+            console.error('Error marking stake as lost:', error);
+            alert('Failed to mark stake as lost: ' + error.message);
+        }
     }
 
     // Referrals section
