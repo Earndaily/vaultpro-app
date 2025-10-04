@@ -2569,45 +2569,50 @@
     function setupAuthStateListener() {
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
-                // Don't override if we're processing a referral link
-                if (isProcessingReferral) {
-                    console.log('Referral processing in progress, skipping auth redirect');
-                    return;
-                }
-                
-                const urlParams = new URLSearchParams(window.location.search);
-                const refCode = urlParams.get('ref');
-                if (refCode && document.getElementById('registerPage').classList.contains('hidden') === false) {
-                    console.log('Referral registration in progress, skipping auth redirect');
-                    return;
-                }
+                console.log('Auth state changed:', user ? user.email : 'no user');
                 
                 if (user) {
                     console.log('User is signed in:', user.uid);
-                    // User is signed in, get their data from Firestore
+                    
                     try {
                         const userDoc = await db.collection('users').doc(user.uid).get();
                         if (userDoc.exists) {
-                            currentUser = userDoc.data();
+                            currentUser = { id: user.uid, ...userDoc.data() };
+                            console.log('Current user loaded:', currentUser.email);
+                            
+                            // Update streak
                             await updateUserStreak(user.uid, currentUser);
                             
+                            // Clear processing flag
+                            isProcessingReferral = false;
+                            
+                            // Show appropriate dashboard
                             if (currentUser.isAdmin) {
+                                console.log('Showing admin dashboard');
                                 showAdminDashboard();
                             } else {
+                                console.log('Showing user dashboard');
                                 showUserDashboard();
                             }
                         } else {
                             console.log('User document not found in Firestore');
                             await auth.signOut();
+                            showLogin();
                         }
                     } catch (error) {
                         console.error('Error getting user data:', error);
                         await auth.signOut();
+                        showLogin();
                     }
                 } else {
                     console.log('User is signed out');
                     currentUser = null;
-                    // Don't automatically show login - let the app decide based on URL params
+                    
+                    // Only show login if we're not processing a referral
+                    if (!isProcessingReferral) {
+                        console.log('Showing login page');
+                        showLogin();
+                    }
                 }
             });
         }
@@ -2740,9 +2745,6 @@
                 const validateReferralCode = async (retries = 3) => {
                     try {
                         console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
-                        console.log('Firebase initialized:', firebaseInitialized);
-                        console.log('DB available:', !!db);
-                        console.log('Auth available:', !!auth);
                         
                         const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                         
@@ -2769,29 +2771,30 @@
                             // Clean up URL
                             window.history.replaceState({}, document.title, window.location.pathname);
                             
-                            // Clear the processing flag
-                            isProcessingReferral = false;
+                            // Clear the processing flag AFTER showing register page
+                            setTimeout(() => {
+                                isProcessingReferral = false;
+                                console.log('Referral processing complete');
+                            }, 2000);
+                            
                         } else if (retries > 0) {
-                            // Retry if referral code not found and we have retries left
                             console.log('Referral code not found, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
-                            // Invalid referral code after all retries
                             console.log('Invalid referral code after all retries');
                             isProcessingReferral = false;
                             showLogin();
-                            alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
+                            alert('Invalid referral code. Please contact the person who referred you.');
                         }
                     } catch (error) {
                         console.error('Error validating referral code:', error);
                         
                         if (retries > 0) {
-                            console.log('Error occurred, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             isProcessingReferral = false;
                             showLogin();
-                            alert('Unable to validate referral code. Please check your internet connection and try again.');
+                            alert('Unable to validate referral code. Please try again.');
                         }
                     }
                 };
@@ -3180,10 +3183,12 @@
             // Handle referral rewards
             await processReferralRewards(referrerId, userId, fullName);
 
-            showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
+            showAlert('registerAlert', 'Registration successful! Loading your dashboard...', 'success');
+
+            // Don't manually set currentUser here - let the auth state listener handle it
             setTimeout(() => {
-                currentUser = newUser;
-                showUserDashboard();
+                // The auth state listener will automatically trigger and show the dashboard
+                console.log('Registration complete, auth state listener will handle navigation');
             }, 1500);
 
         } catch (error) {
@@ -3256,19 +3261,15 @@
                 return;
             }
 
-            currentUser = userDoc.data();
+            currentUser = { id: userId, ...userDoc.data() };
 
-            await updateUserStreak(userDoc.id, currentUser);
+            await updateUserStreak(userId, currentUser);
 
-            if (currentUser.isAdmin) {
-                showAdminDashboard();
-            } else {
-                showUserDashboard();
-                // Check if user has activated their account
-                if (!currentUser.isActivated) {
-                    showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
-                }
-            }
+            // Let auth state listener handle the dashboard display
+            console.log('Login successful, auth state listener will handle navigation');
+
+            // Show temporary success message
+            showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
 
         } catch (error) {
             console.error("Login error:", error);
@@ -3478,27 +3479,41 @@
     }
 
     function showUserDashboard() {
+        console.log('showUserDashboard() called');
+        
+        // Hide auth pages
         document.getElementById('registerPage').classList.add('hidden');
         document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
+        // Show user dashboard
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         
         // Check activation status first
         checkActivationStatus();
         
+        // Update stats and features
         updateUserStats();
         updateFeatureAccess();
         
-        // Ensure profile section is properly initialized
+        // Update profile
         if (currentUser) {
             updateProfileSection();
         }
         
-        // Ensure all sections are properly hidden initially
+        // Ensure sections are properly hidden
         ensureAllSectionsHidden();
         
-        // Check for referral links when user dashboard is shown
+        // Show home section if activated, otherwise activation screen will show
+        if (currentUser && currentUser.isActivated) {
+            document.getElementById('homeSection').classList.remove('hidden');
+        }
+        
+        // Handle referral links
         handleReferralLink();
+        
+        console.log('User dashboard shown');
     }
 
     function updateFeatureAccess() {
@@ -3645,9 +3660,13 @@
         console.log('Activation form submitted');
         
         try {
-            // Check if Firebase is initialized
             if (!firebaseInitialized || !db) {
                 alert('Database not initialized. Please refresh the page.');
+                return;
+            }
+            
+            if (!currentUser || !currentUser.id) {
+                alert('User session not found. Please login again.');
                 return;
             }
             
@@ -3667,13 +3686,21 @@
                 return;
             }
 
+            // Show loading state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+            }
+
             // Convert image to base64
             const base64Proof = await convertToBase64(paymentProof);
 
-            // Create deposit request for activation fee with screenshot
+            // Create deposit request for activation fee
             await db.collection('depositRequests').add({
                 userId: currentUser.id,
                 userName: currentUser.fullName,
+                userEmail: currentUser.email,
                 amount: 20000,
                 method: 'mobile_money',
                 paymentNumber: paymentNumber,
@@ -3685,18 +3712,26 @@
                 description: 'Account activation fee payment'
             });
 
-            alert('✅ Activation payment proof submitted successfully! Please wait for admin approval. You will receive a notification once your account is activated.');
+            // Show success message
+            alert('✅ Activation payment proof submitted successfully!\n\nYour payment is being reviewed by our admin team. You will receive a notification once your account is activated (usually within 24 hours).\n\nThank you for your patience!');
             
             // Reset form and close modal
             document.getElementById('activationPaymentForm').reset();
             closeActivationModal();
             
-            // Update deposit section to show the request
-            updateDepositSection();
+            // Show pending status message
+            showAlert('activationAlert', 'Your activation payment is pending admin approval. Please check back later.', 'info');
             
         } catch (error) {
             console.error('Error submitting activation fee payment:', error);
             alert('Error submitting payment request: ' + error.message);
+            
+            // Reset button state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💳 Submit Payment Proof';
+            }
         }
     }
 
@@ -4196,9 +4231,11 @@
     // Vault section
     async function updateVaultSection() {
         try {
-            if (!currentUser) return;
+            if (!currentUser || !currentUser.id) return;
             
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            renderVaultPlans(); // Render plans dynamically
+            
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
             const currentBalance = userData ? userData.balance || 0 : 0;
             
@@ -4209,7 +4246,7 @@
                 const planName = card.querySelector('.plan-name').textContent.toLowerCase();
                 let planAmount = 0;
                 
-                // Map new plan names to amounts
+                // Map plan names to amounts
                 if (planName.includes('seed')) planAmount = 45000;
                 else if (planName.includes('rising')) planAmount = 180000;
                 else if (planName.includes('nova')) planAmount = 600000;
@@ -4221,7 +4258,7 @@
                 else if (planName.includes('supreme')) planAmount = 60000000;
                 else if (planName.includes('legendary')) planAmount = 90000000;
                 
-                // Check if user is activated
+                // Check activation status
                 if (!userData || !userData.isActivated) {
                     card.classList.add('disabled');
                     card.style.opacity = '0.6';
@@ -4246,7 +4283,7 @@
         if (planCard && planCard.classList.contains('disabled')) {
             // Check if user is activated
             if (currentUser) {
-                db.collection('users').doc(currentUser.uid).get().then(doc => {
+                db.collection('users').doc(currentUser.id).get().then(doc => {
                     const userData = doc.data();
                     if (!userData || !userData.isActivated) {
                         alert('You must activate your account before purchasing vault plans. Please activate your account first.');
@@ -5101,10 +5138,10 @@
     }
 
     async function checkActivationStatus() {
-        if (!currentUser) return;
+        if (!currentUser || !currentUser.id) return;
 
         try {
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
             
             if (userData && userData.isActivated) {
@@ -5114,9 +5151,12 @@
                 document.getElementById('welcomeBonusMessage').classList.add('hidden');
                 document.getElementById('activationCarousel').classList.add('hidden');
                 
-                // Show welcome bonus unblurred
-                document.getElementById('welcomeBonusAmount').style.filter = 'none';
-                document.getElementById('activationStatus').style.display = 'inline';
+                // Show home section
+                document.getElementById('homeSection').classList.remove('hidden');
+                
+                // Update activation status indicator
+                const statusEl = document.getElementById('activationStatus');
+                if (statusEl) statusEl.style.display = 'inline';
                 
                 // Load carousel for activated users
                 loadActivationCarousel();
@@ -5127,8 +5167,11 @@
                 document.getElementById('welcomeBonusMessage').classList.remove('hidden');
                 document.getElementById('activationCarousel').classList.remove('hidden');
                 
-                // Hide all other sections except vault (users can view plans but not purchase)
-                ['home', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
+                // Hide home section
+                document.getElementById('homeSection').classList.add('hidden');
+                
+                // Hide all other sections
+                ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
                     const el = document.getElementById(section + 'Section');
                     if (el) el.classList.add('hidden');
                 });
