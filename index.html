@@ -4347,33 +4347,51 @@
     let currentFilter = 'all';
 
     async function openStakeModal() {
+        console.log('Opening stake modal...');
         document.getElementById('stakeModal').classList.remove('hidden');
+        document.getElementById('stakeModal').classList.add('show');
+        
+        // Check if Firebase is initialized
+        if (!firebaseInitialized || !db) {
+            showAlert('stakeAlert', 'Database not initialized. Please refresh the page.', 'error');
+            return;
+        }
+        
         await loadCandidates();
         await loadMyStakes();
     }
 
     function closeStakeModal() {
         document.getElementById('stakeModal').classList.add('hidden');
+        document.getElementById('stakeModal').classList.remove('show');
         selectedCandidate = null;
     }
 
     function closeStakeConfirmModal() {
         document.getElementById('stakeConfirmModal').classList.add('hidden');
+        document.getElementById('stakeConfirmModal').classList.remove('show');
         selectedCandidate = null;
     }
 
     async function loadCandidates() {
         try {
+            console.log('Loading candidates from database...');
             const candidatesSnapshot = await db.collection('electionCandidates').get();
             const candidates = candidatesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
+            console.log(`Found ${candidates.length} candidates`);
+            
+            if (candidates.length === 0) {
+                showAlert('stakeAlert', 'No candidates found. Please add some candidates first.', 'warning');
+            }
+
             displayCandidates(candidates);
         } catch (error) {
             console.error('Error loading candidates:', error);
-            showAlert('stakeAlert', 'Failed to load candidates', 'error');
+            showAlert('stakeAlert', 'Failed to load candidates: ' + error.message, 'error');
         }
     }
 
@@ -4482,6 +4500,7 @@
         `;
 
         document.getElementById('stakeConfirmModal').classList.remove('hidden');
+        document.getElementById('stakeConfirmModal').classList.add('show');
     }
 
     async function placeStake() {
