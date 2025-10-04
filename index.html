@@ -928,12 +928,12 @@
         height: 100%;
         background-color: rgba(0,0,0,0.5);
         backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
     }
 
     .modal.show {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex !important;
     }
 
     .modal.hidden {
@@ -1200,7 +1200,6 @@
             <div class="logo">VaultPro</div>
             <div class="user-info" id="userInfo" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span id="userNameDisplay" style="font-weight: 600; color: var(--primary);"></span>
-                <span id="activationStatus" style="display: none;">✅</span>
             </div>
             <div class="nav-links">
                 <div class="nav-link" onclick="showSection('home')">Home</div>
@@ -1237,33 +1236,6 @@
             </div>
         </div>
 
-        <!-- Activation Required Section -->
-        <div id="activationRequiredSection" class="hidden" style="padding: 2rem; text-align: center; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border: 2px solid #fecaca; border-radius: 12px; margin: 1rem;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-            <h2 style="color: #dc2626; margin-bottom: 1rem;">Account Activation Required</h2>
-            <p style="color: #6b7280; margin-bottom: 2rem;">Activate your account to access all features and start earning!</p>
-            
-            <!-- Activation Form -->
-            <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-                <h3 style="margin-bottom: 1.5rem; color: var(--text);">Activate Your Account</h3>
-                <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Activation Fee: 20,000 UGX</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">One-time payment • Lifetime access</div>
-                </div>
-                
-                <select id="activationPaymentMethod" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
-                    <option value="">Select Payment Method</option>
-                    <option value="momo">Mobile Money (MTN/Airtel)</option>
-                    <option value="card">Credit/Debit Card</option>
-                </select>
-                
-                <button id="activateAccountBtn" class="btn btn-block" onclick="activateAccount()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; font-weight: 600; padding: 1rem; font-size: 1.1rem;">
-                    🚀 Activate Account Now
-                </button>
-                
-                <div id="activationAlert" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
 
         <!-- Earnings Preview Section -->
         <div id="earningsPreviewSection" class="hidden" style="padding: 2rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border-radius: 12px; margin: 1rem; border: 2px solid #10b981;">
@@ -1311,18 +1283,6 @@
             <!-- Referral Alert -->
             <div id="referralAlert"></div>
             
-            <!-- Activation Section -->
-            <div class="card" id="activationCard" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; display: none;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <h2 style="color: #92400e; margin: 0;">🔒 Account Not Activated</h2>
-                        <p style="color: #92400e; margin: 0.5rem 0;">Complete your registration to unlock all features</p>
-                    </div>
-                    <button class="btn" style="background: #f59e0b; color: white;" onclick="showActivationPayment()">
-                        Pay 20,000 UGX
-                    </button>
-                </div>
-            </div>
 
             <div class="card">
                 <h2>📊 Dashboard</h2>
@@ -1368,41 +1328,6 @@
                 </div>
             </div>
 
-            <!-- Activation Payment Section (only shown for unactivated users) -->
-            <div id="activationPaymentSection" class="card hidden" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; text-align: center;">
-                <h3 style="color: #92400e; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                    🔒 Account Activation Required
-                </h3>
-                <p style="color: #92400e; margin-bottom: 1.5rem;">
-                    Complete your account activation by paying the 20,000 UGX registration fee to unlock all features.
-                </p>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
-                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">💰 Activation Fee</h4>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">20,000 UGX</div>
-                    </div>
-                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
-                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">🎁 What You Get</h4>
-                        <ul style="color: #6b7280; margin: 0; padding-left: 1rem; font-size: 0.875rem; text-align: left;">
-                            <li>Access to all vault plans</li>
-                            <li>Daily tasks and rewards</li>
-                            <li>Referral bonuses</li>
-                            <li>Withdrawal privileges</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <button class="btn activation-payment-element" style="background: #059669; color: white; padding: 1rem 2rem; font-size: 1.1rem; margin-bottom: 1rem;" onclick="showActivationModal()">
-                    💳 Pay Activation Fee Now
-                </button>
-                
-                <div style="padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 6px;">
-                    <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
-                        <strong>📱 Quick & Easy:</strong> Click the button above to get payment instructions and submit your payment proof.
-                    </p>
-                </div>
-            </div>
 
             <div class="card">
                 <div class="collapsible-section">
@@ -3263,7 +3188,7 @@
                 showUserDashboard();
                 // Check if user has activated their account
                 if (!currentUser.isActivated) {
-                    showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
+                    showAlert('loginAlert', 'Login successful! Welcome to VaultPro.', 'success');
                 }
             }
 
@@ -5790,7 +5715,7 @@
     function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
         // Skip activation checks for admin users
         if (!currentUser.isAdmin && !currentUser.isActivated) {
-            alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+            alert('Please activate your account to access tasks.');
             return;
         }
 
@@ -5955,7 +5880,7 @@
         try {
             // Skip activation checks for admin users
             if (!currentUser.isAdmin && !currentUser.isActivated) {
-                alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+                alert('Please activate your account to access tasks.');
                 return;
             }
 
