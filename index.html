@@ -745,16 +745,43 @@
        z-index: 1;
    }
    
-   /* Fix z-index issues */
-   #loginPage, #registerPage {
-       position: relative;
-       z-index: 10;
-   }
-   
-   #userDashboard, #adminDashboard {
-       position: relative;
-       z-index: 5;
-   }
+/* Fix z-index and visibility issues */
+#loginPage, #registerPage {
+    position: relative;
+    z-index: 1;
+}
+
+#userDashboard, #adminDashboard {
+    position: relative;
+    z-index: 1;
+}
+
+#loadingScreen, #firebaseSetup {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure hidden class works properly */
+.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: white;
+    position: relative;
+    z-index: 1;
+}
+
+.loading h2 {
+    color: white;
+    margin-bottom: 1rem;
+}
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
@@ -1232,28 +1259,55 @@
             </div>
         </div>
 
-        <!-- Welcome Bonus Message -->
-        <div id="welcomeBonusMessage" class="hidden" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; text-align: center; margin: 0; border-radius: 0; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                <div style="font-size: 2rem;">🎉</div>
-                <div>
-                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Welcome to VaultPro!</h3>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">You have a special welcome bonus waiting for you!</p>
-                </div>
-                <div id="welcomeBonusAmount" style="font-size: 1.5rem; font-weight: 800; filter: blur(8px); transition: filter 0.3s ease;">5,000 UGX</div>
+<!-- Home Section -->
+<div id="homeSection" class="hidden">
+    <div class="card">
+        <h2>Welcome back, <span id="homeUserName"></span>!</h2>
+        <p style="color: var(--gray); margin-bottom: 2rem;">Here's your account overview</p>
+        
+        <!-- Dashboard Stats Grid -->
+        <div class="dashboard-grid">
+            <div class="stat-card compact">
+                <div class="stat-label">Balance</div>
+                <div class="stat-value" id="totalBalance">0</div>
+                <div class="stat-unit">UGX</div>
+            </div>
+            <div class="stat-card compact">
+                <div class="stat-label">Active Vaults</div>
+                <div class="stat-value" id="activeVaults">0</div>
+            </div>
+            <div class="stat-card compact">
+                <div class="stat-label">Referrals</div>
+                <div class="stat-value" id="totalReferrals">0</div>
+            </div>
+            <div class="stat-card compact">
+                <div class="stat-label">Streak</div>
+                <div class="stat-value" id="currentStreak">0</div>
+                <div class="stat-unit">Days</div>
             </div>
         </div>
 
-        <!-- Activation Carousel -->
-        <div id="activationCarousel" class="hidden" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 0.75rem; border-bottom: 2px solid #e5e7eb; overflow: hidden; position: relative;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <span style="color: var(--primary); font-weight: 600;">🔥</span>
-                <span style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">Recently Activated Users:</span>
-            </div>
-            <div id="carouselContent" style="display: flex; animation: scroll 30s linear infinite; white-space: nowrap;">
-                <!-- Carousel items will be populated by JavaScript -->
-            </div>
+        <!-- My Vaults -->
+        <h3 class="mt-3">My Active Vaults</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Amount</th>
+                        <th>Duration</th>
+                        <th>Profit</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="vaultTableBody">
+                    <tr><td colspan="6" class="text-center">No active vaults</td></tr>
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
 
         <!-- Activation Required Section -->
 <!-- Activation Required Section -->
@@ -1265,10 +1319,7 @@
             <p style="color: var(--gray);">Complete payment to unlock all features</p>
         </div>
         
-        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Activation Fee: 20,000 UGX</div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">One-time payment • Lifetime access</div>
-        </div>
+
         
         <form id="simpleActivationForm" onsubmit="submitSimpleActivation(event)">
             <!-- Payment Method Selection -->
@@ -3076,85 +3127,82 @@
         }
     }
 
-    async function login() {
-        const btn = document.getElementById('loginBtn');
-        btn.disabled = true;
-        btn.textContent = 'Logging in...';
-
-        try {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            if (!email || !password) {
-                showAlert('loginAlert', 'Please enter email and password', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Login';
-                return;
-            }
-
-            // Check if Firebase is initialized
-            if (!firebaseInitialized || !db || !auth) {
-                showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Login';
-                return;
-            }
-
-            // Sign in with Firebase Auth
-            let userCredential;
-            try {
-                userCredential = await auth.signInWithEmailAndPassword(email, password);
-                console.log('User signed in with Firebase Auth');
-            } catch (authError) {
-                console.error('Login auth error:', authError);
-                if (authError.code === 'auth/user-not-found') {
-                    showAlert('loginAlert', 'No user found with this email address', 'error');
-                } else if (authError.code === 'auth/wrong-password') {
-                    showAlert('loginAlert', 'Incorrect password', 'error');
-                } else if (authError.code === 'auth/invalid-email') {
-                    showAlert('loginAlert', 'Invalid email address', 'error');
-                } else if (authError.code === 'auth/too-many-requests') {
-                    showAlert('loginAlert', 'Too many failed attempts. Please try again later.', 'error');
-                } else {
-                    showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
-                }
-                btn.disabled = false;
-                btn.textContent = 'Login';
-                return;
-            }
-
-            // Get user data from Firestore using Firebase Auth UID
-            const userId = userCredential.user.uid;
-            const userDoc = await db.collection('users').doc(userId).get();
-            
-            if (!userDoc.exists) {
-                console.log('User exists in Firebase Auth but not in Firestore, syncing...');
-                // User exists in Firebase Auth but not in Firestore - this shouldn't happen with new registration flow
-                // but we'll handle it gracefully
-                showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
-                await auth.signOut();
-                btn.disabled = false;
-                btn.textContent = 'Login';
-                return;
-            }
-
-            currentUser = { id: userId, ...userDoc.data() };
-
-            await updateUserStreak(userId, currentUser);
-
-            // Let auth state listener handle the dashboard display
-            console.log('Login successful, auth state listener will handle navigation');
-
-            // Show temporary success message
-            showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
-
-        } catch (error) {
-            console.error("Login error:", error);
-            showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
-            btn.disabled = false;
-            btn.textContent = 'Login';
-        }
-    }
+      async function login() {
+          const btn = document.getElementById('loginBtn');
+          btn.disabled = true;
+          btn.textContent = 'Logging in...';
+      
+          try {
+              const email = document.getElementById('loginEmail').value.trim();
+              const password = document.getElementById('loginPassword').value;
+      
+              if (!email || !password) {
+                  showAlert('loginAlert', 'Please enter email and password', 'error');
+                  btn.disabled = false;
+                  btn.textContent = 'Login';
+                  return;
+              }
+      
+              if (!firebaseInitialized || !db || !auth) {
+                  showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
+                  btn.disabled = false;
+                  btn.textContent = 'Login';
+                  return;
+              }
+      
+              let userCredential;
+              try {
+                  userCredential = await auth.signInWithEmailAndPassword(email, password);
+                  console.log('User signed in with Firebase Auth');
+              } catch (authError) {
+                  console.error('Login auth error:', authError);
+                  if (authError.code === 'auth/user-not-found') {
+                      showAlert('loginAlert', 'No user found with this email address', 'error');
+                  } else if (authError.code === 'auth/wrong-password') {
+                      showAlert('loginAlert', 'Incorrect password', 'error');
+                  } else if (authError.code === 'auth/invalid-email') {
+                      showAlert('loginAlert', 'Invalid email address', 'error');
+                  } else if (authError.code === 'auth/too-many-requests') {
+                      showAlert('loginAlert', 'Too many failed attempts. Please try again later.', 'error');
+                  } else {
+                      showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
+                  }
+                  btn.disabled = false;
+                  btn.textContent = 'Login';
+                  return;
+              }
+      
+              const userId = userCredential.user.uid;
+              const userDoc = await db.collection('users').doc(userId).get();
+              
+              if (!userDoc.exists) {
+                  console.log('User exists in Firebase Auth but not in Firestore, syncing...');
+                  showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
+                  await auth.signOut();
+                  btn.disabled = false;
+                  btn.textContent = 'Login';
+                  return;
+              }
+      
+              currentUser = { id: userId, ...userDoc.data() };
+              await updateUserStreak(userId, currentUser);
+      
+              // Show success message
+              showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
+              
+              // Small delay to show success message
+              setTimeout(() => {
+                  btn.disabled = false;
+                  btn.textContent = 'Login';
+              }, 1000);
+      
+          } catch (error) {
+              console.error("Login error:", error);
+              showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
+              btn.disabled = false;
+              btn.textContent = 'Login';
+          }
+      }
 
     async function logout() {
         try {
@@ -3355,43 +3403,50 @@
         allowManualRegistration = false;
     }
 
-    function showUserDashboard() {
-        console.log('showUserDashboard() called');
-        
-        // Hide auth pages
-        document.getElementById('registerPage').classList.add('hidden');
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('loadingScreen').classList.add('hidden');
-        
-        // Show user dashboard
-        document.getElementById('userDashboard').classList.remove('hidden');
-        document.getElementById('adminDashboard').classList.add('hidden');
-        
-        // Check activation status first
-        checkActivationStatus();
-        
-        // Update stats and features
-        updateUserStats();
-        updateFeatureAccess();
-        
-        // Update profile
-        if (currentUser) {
-            updateProfileSection();
-        }
-        
-        // Ensure sections are properly hidden
-        ensureAllSectionsHidden();
-        
-        // Show home section if activated, otherwise activation screen will show
-        if (currentUser && currentUser.isActivated) {
-            document.getElementById('homeSection').classList.remove('hidden');
-        }
-        
-        // Handle referral links
-        handleReferralLink();
-        
-        console.log('User dashboard shown');
-    }
+   function showUserDashboard() {
+       console.log('showUserDashboard() called');
+       
+       // FIRST: Hide ALL auth pages completely
+       document.getElementById('registerPage').classList.add('hidden');
+       document.getElementById('loginPage').classList.add('hidden');
+       document.getElementById('loadingScreen').classList.add('hidden');
+       document.getElementById('firebaseSetup').classList.add('hidden');
+       
+       // SECOND: Show user dashboard
+       document.getElementById('userDashboard').classList.remove('hidden');
+       document.getElementById('adminDashboard').classList.add('hidden');
+       
+       // Update home user name
+       const homeUserNameEl = document.getElementById('homeUserName');
+       if (homeUserNameEl && currentUser) {
+           homeUserNameEl.textContent = currentUser.fullName || 'User';
+       }
+       
+       // Check activation status
+       checkActivationStatus();
+       
+       // Update stats and features
+       updateUserStats();
+       updateFeatureAccess();
+       
+       // Update profile
+       if (currentUser) {
+           updateProfileSection();
+       }
+       
+       // Ensure all sections are hidden initially
+       ensureAllSectionsHidden();
+       
+       // Show home section if activated
+       if (currentUser && currentUser.isActivated) {
+           document.getElementById('homeSection').classList.remove('hidden');
+       }
+       
+       // Handle referral links
+       handleReferralLink();
+       
+       console.log('User dashboard shown');
+   }
 
    function updateFeatureAccess() {
        if (currentUser.isAdmin) {
@@ -3811,50 +3866,59 @@
        }
    }
 
-    function displaySection(section) {
-        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
-            const el = document.getElementById(s + 'Section');
-            if (el) {
-                el.classList.add('hidden');
-            }
-        });
-        
-        const sectionEl = document.getElementById(section + 'Section');
-        if (sectionEl) {
-            sectionEl.classList.remove('hidden');
-        }
-    
-        document.querySelectorAll('.bottom-nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        const activeNavItem = document.querySelector(`[data-section="${section}"]`);
-        if (activeNavItem) {
-            activeNavItem.classList.add('active');
-        }
-    
-        // Update feature access when switching sections
-        updateFeatureAccess();
-
-        if (section === 'referrals') updateReferralsSection();
-        else if (section === 'wallet') updateWalletSection();
-        else if (section === 'stake') {
-            loadCandidates();
-            loadMyStakes();
-        }
-        else if (section === 'vault') updateVaultSection();
-        else if (section === 'streak') updateStreakSection();
-        else if (section === 'tasks') updateTasksSection();
-        else if (section === 'profile') {
-            // Refresh user data before updating profile section
-            if (currentUser && currentUser.id) {
-                refreshUserData().then(() => {
-                    updateProfileSection();
-                });
-            } else {
-                updateProfileSection();
-            }
-        }
-    }
+   function displaySection(section) {
+       // Hide all sections first
+       ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
+           const el = document.getElementById(s + 'Section');
+           if (el) {
+               el.classList.add('hidden');
+           }
+       });
+       
+       // Show the requested section
+       const sectionEl = document.getElementById(section + 'Section');
+       if (sectionEl) {
+           sectionEl.classList.remove('hidden');
+       }
+   
+       // Update bottom nav active state
+       document.querySelectorAll('.bottom-nav-item').forEach(item => {
+           item.classList.remove('active');
+       });
+       const activeNavItem = document.querySelector(`[data-section="${section}"]`);
+       if (activeNavItem) {
+           activeNavItem.classList.add('active');
+       }
+   
+       // Update feature access when switching sections
+       updateFeatureAccess();
+   
+       // Load section-specific data
+       if (section === 'home') {
+           updateUserStats();
+       } else if (section === 'referrals') {
+           updateReferralsSection();
+       } else if (section === 'wallet') {
+           updateWalletSection();
+       } else if (section === 'stake') {
+           loadCandidates();
+           loadMyStakes();
+       } else if (section === 'vault') {
+           updateVaultSection();
+       } else if (section === 'streak') {
+           updateStreakSection();
+       } else if (section === 'tasks') {
+           updateTasksSection();
+       } else if (section === 'profile') {
+           if (currentUser && currentUser.id) {
+               refreshUserData().then(() => {
+                   updateProfileSection();
+               });
+           } else {
+               updateProfileSection();
+           }
+       }
+   }
 
 
     function toggleCollapsible(sectionId) {
