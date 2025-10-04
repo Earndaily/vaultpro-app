@@ -3516,35 +3516,40 @@
         console.log('User dashboard shown');
     }
 
-    function updateFeatureAccess() {
-        // Skip activation checks for admin users
-        if (currentUser.isAdmin) {
-            return;
-        }
-        
-        const isActivated = currentUser.isActivated;
-        
-        // Disable/enable all interactive elements
-        const interactiveElements = document.querySelectorAll('button, input, select, textarea');
-        interactiveElements.forEach(element => {
-            if (element.id === 'registerBtn' || element.id === 'loginBtn' || 
-                element.classList.contains('nav-link') || element.classList.contains('bottom-nav-item') ||
-                element.classList.contains('activation-payment-element') ||
-                element.closest('#activationModal')) {
-                // Keep navigation, login/register buttons, activation payment, and modal elements enabled
-                return;
-            }
-            
-            if (!isActivated) {
-                element.disabled = true;
-                element.style.opacity = '0.5';
-                element.style.cursor = 'not-allowed';
-            } else {
-                element.disabled = false;
-                element.style.opacity = '1';
-                element.style.cursor = 'pointer';
-            }
-        });
+   function updateFeatureAccess() {
+       if (currentUser.isAdmin) {
+           return;
+       }
+       
+       const isActivated = currentUser.isActivated;
+       
+       const interactiveElements = document.querySelectorAll('button, input, select, textarea');
+       interactiveElements.forEach(element => {
+           // Skip these elements - they should always be enabled
+           if (element.id === 'registerBtn' || 
+               element.id === 'loginBtn' || 
+               element.classList.contains('nav-link') || 
+               element.classList.contains('bottom-nav-item') ||
+               element.classList.contains('activation-payment-element') ||
+               element.id === 'activateAccountBtn' ||
+               element.id === 'paymentNumberUsed' ||
+               element.id === 'paymentProof' ||
+               element.id === 'paymentNotes' ||
+               element.closest('#activationModal') ||
+               element.closest('#activationPaymentSection')) { // Added this
+               return;
+           }
+           
+           if (!isActivated) {
+               element.disabled = true;
+               element.style.opacity = '0.5';
+               element.style.cursor = 'not-allowed';
+           } else {
+               element.disabled = false;
+               element.style.opacity = '1';
+               element.style.cursor = 'pointer';
+           }
+       });
         
         // Show/hide activation payment section and message if not activated
         const activationSection = document.getElementById('activationPaymentSection');
@@ -3801,27 +3806,27 @@
         showAdminSection('stats');
     }
 
-    function showSection(section) {
-        // Check if user is activated before showing sections
-        if (currentUser) {
-            db.collection('users').doc(currentUser.uid).get().then(doc => {
-                const userData = doc.data();
-                if (!userData || !userData.isActivated) {
-                    // User not activated, show activation required
-                    checkActivationStatus();
-                    return;
-                }
-                
-                // User is activated, proceed with normal section display
-                displaySection(section);
-            }).catch(error => {
-                console.error('Error checking activation status:', error);
-                displaySection(section);
-            });
-        } else {
-            displaySection(section);
-        }
-    }
+   function showSection(section) {
+       // Allow profile and home sections without activation check
+       const allowedSections = ['profile', 'home'];
+       
+       if (currentUser && !allowedSections.includes(section)) {
+           db.collection('users').doc(currentUser.id).get().then(doc => { // Changed uid to id
+               const userData = doc.data();
+               if (!userData || !userData.isActivated) {
+                   alert('Please activate your account to access this feature');
+                   checkActivationStatus();
+                   return;
+               }
+               displaySection(section);
+           }).catch(error => {
+               console.error('Error checking activation status:', error);
+               displaySection(section);
+           });
+       } else {
+           displaySection(section);
+       }
+   }
 
     function displaySection(section) {
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
@@ -4326,7 +4331,7 @@
 
         // Check if user is activated
         if (currentUser) {
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
             if (!userData || !userData.isActivated) {
                 alert('You must activate your account before purchasing vault plans. Please activate your account first.');
@@ -5093,7 +5098,7 @@
             withdrawalUnlockDate.setDate(withdrawalUnlockDate.getDate() + 7);
             
             // Update user activation status
-            await db.collection('users').doc(currentUser.uid).update({
+            await db.collection('users').doc(currentUser.id).update({
                 isActivated: true,
                 activationDate: new Date().toISOString(),
                 activationPaymentMethod: paymentMethod,
@@ -5105,7 +5110,7 @@
 
             // Create transaction records
             await db.collection('transactions').add({
-                userId: currentUser.uid,
+                userId: currentUser.id,
                 type: 'activation_fee',
                 amount: -20000,
                 description: 'Account activation fee',
@@ -5114,7 +5119,7 @@
             });
 
             await db.collection('transactions').add({
-                userId: currentUser.uid,
+                userId: currentUser.id,
                 type: 'welcome_bonus',
                 amount: 5000,
                 description: 'Welcome bonus (withdrawable after 1 week)',
