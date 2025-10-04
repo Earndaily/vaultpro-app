@@ -3063,11 +3063,19 @@
         btn.disabled = true;
         btn.textContent = 'Logging in...';
 
+        // Set a timeout to prevent infinite loading
+        const loginTimeout = setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = 'Login';
+            showAlert('loginAlert', 'Login timed out. Please try again.', 'error');
+        }, 30000); // 30 second timeout
+
         try {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
             if (!email || !password) {
+                clearTimeout(loginTimeout);
                 showAlert('loginAlert', 'Please enter email and password', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Login';
@@ -3076,6 +3084,7 @@
 
             // Check if Firebase is initialized
             if (!firebaseInitialized || !db || !auth) {
+                clearTimeout(loginTimeout);
                 showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Login';
@@ -3100,6 +3109,7 @@
                 } else {
                     showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
                 }
+                clearTimeout(loginTimeout);
                 btn.disabled = false;
                 btn.textContent = 'Login';
                 return;
@@ -3113,6 +3123,7 @@
                 console.log('User exists in Firebase Auth but not in Firestore, syncing...');
                 // User exists in Firebase Auth but not in Firestore - this shouldn't happen with new registration flow
                 // but we'll handle it gracefully
+                clearTimeout(loginTimeout);
                 showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
                 await auth.signOut();
                 btn.disabled = false;
@@ -3122,16 +3133,31 @@
 
             currentUser = { id: userId, ...userDoc.data() };
 
-            await updateUserStreak(userId, currentUser);
+            // Update user streak with timeout protection
+            try {
+                await Promise.race([
+                    updateUserStreak(userId, currentUser),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Streak update timeout')), 10000))
+                ]);
+            } catch (streakError) {
+                console.warn('Streak update failed or timed out:', streakError);
+                // Continue with login even if streak update fails
+            }
 
             // Let auth state listener handle the dashboard display
             console.log('Login successful, auth state listener will handle navigation');
 
             // Show temporary success message
             showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
+            
+            // Clear timeout and reset button state - auth listener will handle navigation
+            clearTimeout(loginTimeout);
+            btn.disabled = false;
+            btn.textContent = 'Login';
 
         } catch (error) {
             console.error("Login error:", error);
+            clearTimeout(loginTimeout);
             showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
             btn.disabled = false;
             btn.textContent = 'Login';
