@@ -1945,10 +1945,11 @@
                                 <th>Balance</th>
                                 <th>Referrals</th>
                                 <th>Joined</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminUsersBody">
-                            <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2109,7 +2110,6 @@
                     <input type="text" id="candidateDistrict" placeholder="District (e.g., Kampala, Oyam South)" />
                     <input type="text" id="candidateRegion" placeholder="Region (e.g., Central Uganda, National)" />
                     <input type="number" id="candidateOdds" placeholder="Odds (e.g., 2.5)" step="0.1" min="1" />
-                    <textarea id="candidateOpponents" placeholder="Opponents (comma-separated, e.g., John Doe, Jane Smith)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
                     <input type="text" id="candidateParty" placeholder="Political Party (optional)" />
                     <input type="date" id="candidateElectionDate" placeholder="Election Date" />
                     <textarea id="candidateDescription" placeholder="Description (optional)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
@@ -4443,11 +4443,16 @@
     async function loadCandidates() {
         try {
             console.log('Loading candidates from database...');
-            const candidatesSnapshot = await db.collection('electionCandidates').get();
-            const candidates = candidatesSnapshot.docs.map(doc => ({
+            const candidatesSnapshot = await db.collection('electionCandidates').where('isActive', '==', true).get();
+            let candidates = candidatesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // Filter by category if not 'all'
+            if (currentFilter && currentFilter !== 'all') {
+                candidates = candidates.filter(candidate => candidate.category === currentFilter);
+            }
 
             console.log(`Found ${candidates.length} candidates`);
             
@@ -4470,33 +4475,37 @@
             return;
         }
 
-        const candidatesHTML = candidates.map(candidate => `
-            <div class="candidate-card" onclick="selectCandidate('${candidate.id}')">
-                <div class="candidate-header">
-                    <div class="candidate-info">
-                        <h3>${candidate.name}</h3>
-                        <p class="candidate-title">${candidate.title}</p>
-                        <p class="candidate-location">📍 ${candidate.district || candidate.region}</p>
-                    </div>
-                    <div class="odds-badge">
-                        ${candidate.odds}x
-                    </div>
-                </div>
-                
-                ${candidate.opponents && candidate.opponents.length > 0 ? `
-                    <div class="candidate-opponents">
-                        <h4>Running against:</h4>
-                        <div class="opponents-list">
-                            ${candidate.opponents.map(opponent => `
-                                <span class="opponent-tag">${opponent}</span>
-                            `).join('')}
+        // Group candidates by position/title
+        const groupedCandidates = {};
+        candidates.forEach(candidate => {
+            const key = candidate.title;
+            if (!groupedCandidates[key]) {
+                groupedCandidates[key] = [];
+            }
+            groupedCandidates[key].push(candidate);
+        });
+
+        const candidatesHTML = Object.entries(groupedCandidates).map(([position, positionCandidates]) => `
+            <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0 0 1rem 0; color: var(--primary); text-align: center;">${position}</h3>
+                <div style="display: grid; gap: 1rem;">
+                    ${positionCandidates.map(candidate => `
+                        <div class="candidate-card" style="margin-bottom: 0; padding: 1rem; border: 1px solid #e5e7eb;">
+                            <div class="candidate-header">
+                                <div class="candidate-info">
+                                    <h4 style="margin: 0 0 0.25rem 0;">${candidate.name}</h4>
+                                    <p style="margin: 0; color: var(--gray); font-size: 0.875rem;">📍 ${candidate.district || candidate.region}</p>
+                                    ${candidate.party ? `<p style="margin: 0; color: var(--gray); font-size: 0.75rem;">Party: ${candidate.party}</p>` : ''}
+                                </div>
+                                <div class="odds-badge" style="font-size: 1rem; padding: 0.5rem 0.75rem;">${candidate.odds}x</div>
+                            </div>
+                            
+                            <button class="btn stake-button" style="width: 100%; margin-top: 0.75rem;" onclick="stakeOnCandidate('${candidate.id}')">
+                                🎯 Stake on ${candidate.name}
+                            </button>
                         </div>
-                    </div>
-                ` : ''}
-                
-                <button class="btn stake-button" onclick="event.stopPropagation(); stakeOnCandidate('${candidate.id}')">
-                    🎯 Stake on ${candidate.name}
-                </button>
+                    `).join('')}
+                </div>
             </div>
         `).join('');
 
@@ -4518,8 +4527,7 @@
             activeBtn.classList.add('btn');
         }
 
-        // Filter candidates (this would filter the displayed candidates)
-        // For now, we'll reload all candidates
+        // Reload and filter candidates
         loadCandidates();
     }
 
@@ -4740,7 +4748,6 @@
             const district = document.getElementById('candidateDistrict').value.trim();
             const region = document.getElementById('candidateRegion').value.trim();
             const odds = parseFloat(document.getElementById('candidateOdds').value);
-            const opponentsText = document.getElementById('candidateOpponents').value.trim();
             const party = document.getElementById('candidateParty').value.trim();
             const electionDate = document.getElementById('candidateElectionDate').value;
             const description = document.getElementById('candidateDescription').value.trim();
@@ -4755,8 +4762,6 @@
                 return;
             }
 
-            const opponents = opponentsText ? opponentsText.split(',').map(o => o.trim()).filter(o => o) : [];
-
             await db.collection('electionCandidates').add({
                 name: name,
                 title: title,
@@ -4764,7 +4769,6 @@
                 district: district,
                 region: region,
                 odds: odds,
-                opponents: opponents,
                 party: party || null,
                 electionDate: electionDate || 'TBD',
                 description: description || null,
@@ -4783,7 +4787,6 @@
             document.getElementById('candidateDistrict').value = '';
             document.getElementById('candidateRegion').value = '';
             document.getElementById('candidateOdds').value = '';
-            document.getElementById('candidateOpponents').value = '';
             document.getElementById('candidateParty').value = '';
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
@@ -4823,14 +4826,6 @@
                             <div class="odds-badge">${candidate.odds}x</div>
                         </div>
                         
-                        ${candidate.opponents && candidate.opponents.length > 0 ? `
-                            <div class="candidate-opponents">
-                                <h4>Opponents:</h4>
-                                <div class="opponents-list">
-                                    ${candidate.opponents.map(opp => `<span class="opponent-tag">${opp}</span>`).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
                         
                         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                             <button class="btn" style="background: var(--warning); flex: 1;" onclick="editCandidate('${candidate.id}')">
@@ -5783,7 +5778,7 @@
             const tbody = document.getElementById('adminUsersBody');
 
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No users yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users yet</td></tr>';
                 return;
             }
 
@@ -5798,6 +5793,11 @@
                         <td>${(u.balance || 0).toLocaleString()} UGX</td>
                         <td>${refCount}</td>
                         <td>${new Date(u.joinedDate).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn" style="background: var(--error); padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="deleteUser('${u.id}', '${u.fullName}')">
+                                Delete
+                            </button>
+                        </td>
                     </tr>
                 `;
             }));
@@ -5805,6 +5805,36 @@
             tbody.innerHTML = userRows.join('');
         } catch (error) {
             console.error("Error updating admin users:", error);
+        }
+    }
+
+    async function deleteUser(userId, userName) {
+        if (!confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            // Delete user from Firebase Auth
+            await auth.deleteUser(userId);
+            
+            // Delete user document and all subcollections
+            await db.collection('users').doc(userId).delete();
+            
+            // Delete user's stakes
+            const stakesSnapshot = await db.collection('stakes').where('userId', '==', userId).get();
+            const stakeDeletes = stakesSnapshot.docs.map(doc => doc.ref.delete());
+            await Promise.all(stakeDeletes);
+            
+            // Delete user's transactions
+            const transactionsSnapshot = await db.collection('transactions').where('userId', '==', userId).get();
+            const transactionDeletes = transactionsSnapshot.docs.map(doc => doc.ref.delete());
+            await Promise.all(transactionDeletes);
+            
+            alert('User deleted successfully!');
+            updateAdminUsers();
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Failed to delete user: ' + error.message);
         }
     }
 
