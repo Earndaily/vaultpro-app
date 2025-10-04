@@ -2100,7 +2100,12 @@
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Add New Candidate</h3>
                     <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
-                    <input type="url" id="candidatePicture" placeholder="Candidate Picture URL (optional)" />
+                    <input type="file" id="candidatePicture" accept="image/*" style="padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white;" onchange="previewPicture(this)" />
+                    <small style="color: var(--gray); font-size: 0.875rem;">Upload candidate picture (optional)</small>
+                    <div id="picturePreview" style="margin-top: 0.5rem; display: none;">
+                        <img id="previewImage" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;" />
+                        <small style="display: block; color: var(--gray); font-size: 0.75rem; margin-top: 0.25rem;">Preview</small>
+                    </div>
                     <input type="text" id="candidateTitle" placeholder="Position (e.g., President, MP, Mayor, LC5 Chairman)" />
                     <select id="candidateCategory">
                         <option value="">Select Category</option>
@@ -2304,12 +2309,6 @@
                     <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading candidates...</p>
                 </div>
                 
-                <!-- Debug: Add Sample Candidates Button (for testing) -->
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button class="btn btn-secondary" onclick="addSampleCandidates()" style="font-size: 0.8rem;">
-                        🧪 Add Sample Candidates (Testing)
-                    </button>
-                </div>
 
                 <!-- My Stakes -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
@@ -4778,10 +4777,35 @@
 
     // Function to add sample candidates (for admin use)
     // Admin Candidates Management Functions
+    function convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function previewPicture(input) {
+        const preview = document.getElementById('picturePreview');
+        const previewImage = document.getElementById('previewImage');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
     async function addCandidate() {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const picture = document.getElementById('candidatePicture').value.trim();
+            const pictureFile = document.getElementById('candidatePicture').files[0];
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -4801,9 +4825,15 @@
                 return;
             }
 
+            // Convert picture file to base64 if provided
+            let pictureBase64 = null;
+            if (pictureFile) {
+                pictureBase64 = await convertFileToBase64(pictureFile);
+            }
+
             await db.collection('electionCandidates').add({
                 name: name,
-                picture: picture || null,
+                picture: pictureBase64,
                 title: title,
                 category: category,
                 district: district,
@@ -4823,6 +4853,7 @@
             // Reset form
             document.getElementById('candidateName').value = '';
             document.getElementById('candidatePicture').value = '';
+            document.getElementById('picturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -4934,7 +4965,7 @@
             
             // Populate form with existing data
             document.getElementById('candidateName').value = candidate.name;
-            document.getElementById('candidatePicture').value = candidate.picture || '';
+            // Note: File inputs can't be pre-populated for security reasons
             document.getElementById('candidateTitle').value = candidate.title;
             document.getElementById('candidateCategory').value = candidate.category;
             document.getElementById('candidateDistrict').value = candidate.district;
@@ -4961,7 +4992,7 @@
     async function updateCandidate(candidateId) {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const picture = document.getElementById('candidatePicture').value.trim();
+            const pictureFile = document.getElementById('candidatePicture').files[0];
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -4981,9 +5012,14 @@
                 return;
             }
 
-            await db.collection('electionCandidates').doc(candidateId).update({
+            // Convert picture file to base64 if provided
+            let pictureBase64 = null;
+            if (pictureFile) {
+                pictureBase64 = await convertFileToBase64(pictureFile);
+            }
+
+            const updateData = {
                 name: name,
-                picture: picture || null,
                 title: title,
                 category: category,
                 district: district,
@@ -4992,13 +5028,21 @@
                 party: party || null,
                 electionDate: electionDate || 'TBD',
                 description: description || null
-            });
+            };
+
+            // Only update picture if a new file is provided
+            if (pictureBase64) {
+                updateData.picture = pictureBase64;
+            }
+
+            await db.collection('electionCandidates').doc(candidateId).update(updateData);
 
             alert('Candidate updated successfully!');
             
             // Reset form and button
             document.getElementById('candidateName').value = '';
             document.getElementById('candidatePicture').value = '';
+            document.getElementById('picturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -5008,9 +5052,11 @@
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
             
-            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
-            addBtn.textContent = 'Add Candidate';
-            addBtn.onclick = () => addCandidate();
+            const addBtn = document.querySelector('button[onclick*="addCandidate"]');
+            if (addBtn) {
+                addBtn.textContent = 'Add Candidate';
+                addBtn.onclick = () => addCandidate();
+            }
             
             updateAdminCandidates();
         } catch (error) {
@@ -6432,9 +6478,11 @@
             document.getElementById('adminTaskDay').value = '';
             document.getElementById('adminTaskRequiresProof').checked = true;
             
-            const createBtn = document.querySelector('button[onclick="updateTask(\'' + taskId + '\')"]');
-            createBtn.textContent = '📝 Create Task';
-            createBtn.onclick = () => createTask();
+            const createBtn = document.querySelector('button[onclick*="createTask"]');
+            if (createBtn) {
+                createBtn.textContent = '📝 Create Task';
+                createBtn.onclick = () => createTask();
+            }
             
             updateAdminTasks();
         } catch (error) {
