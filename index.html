@@ -1344,41 +1344,92 @@
             <div class="card">
                 <h2>Choose Your Vault Plan</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Select a plan and watch your investment grow!</p>
+                <div style="background: #ff0000; color: white; padding: 10px; margin: 10px 0; text-align: center; font-weight: bold;">
+                    ✅ UPDATED VAULT PLANS - If you see this, the file is loading correctly!
+                </div>
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 2px solid #e5e7eb;">
                     <strong>Your Current Balance: <span id="vaultBalance" style="color: var(--primary); font-size: 1.5rem;">0</span> UGX</strong>
                 </div>
                 
-                <div class="grid">
-                    <div class="plan-card" onclick="selectPlan('bronze')">
-                        <div class="plan-name">Bronze Vault</div>
-                        <div class="plan-amount">50,000 UGX</div>
-                        <p style="color: var(--gray);">30 Days</p>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">15% Profit</p>
-                        <div class="plan-profit">+7,500 UGX</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                    <div class="plan-card" onclick="selectPlan('seed')">
+                        <div class="plan-name">🌱 Seed</div>
+                        <div class="plan-amount">45,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.7%</p>
+                        <div class="plan-profit">+765 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +22,950 UGX</small>
                     </div>
                     
-                    <div class="plan-card" onclick="selectPlan('silver')">
-                        <div class="plan-name">Silver Vault</div>
-                        <div class="plan-amount">100,000 UGX</div>
-                        <p style="color: var(--gray);">60 Days</p>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">35% Profit</p>
-                        <div class="plan-profit">+35,000 UGX</div>
+                    <div class="plan-card" onclick="selectPlan('rising')">
+                        <div class="plan-name">🌅 Rising</div>
+                        <div class="plan-amount">180,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.7%</p>
+                        <div class="plan-profit">+3,060 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +91,800 UGX</small>
                     </div>
                     
-                    <div class="plan-card" onclick="selectPlan('gold')">
-                        <div class="plan-name">Gold Vault</div>
-                        <div class="plan-amount">250,000 UGX</div>
-                        <p style="color: var(--gray);">90 Days</p>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">60% Profit</p>
-                        <div class="plan-profit">+150,000 UGX</div>
+                    <div class="plan-card" onclick="selectPlan('nova')">
+                        <div class="plan-name">💡 Nova</div>
+                        <div class="plan-amount">600,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
+                        <div class="plan-profit">+10,800 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +324,000 UGX</small>
                     </div>
                     
-                    <div class="plan-card" onclick="selectPlan('platinum')">
-                        <div class="plan-name">Platinum Vault</div>
-                        <div class="plan-amount">500,000 UGX</div>
-                        <p style="color: var(--gray);">180 Days</p>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">120% Profit</p>
-                        <div class="plan-profit">+600,000 UGX</div>
+                    <div class="plan-card" onclick="selectPlan('mastermind')">
+                        <div class="plan-name">🧠 Mastermind</div>
+                        <div class="plan-amount">1,800,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
+                        <div class="plan-profit">+32,400 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +972,000 UGX</small>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('titan')">
+                        <div class="plan-name">💪 Titan</div>
+                        <div class="plan-amount">5,000,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
+                        <div class="plan-profit">+90,000 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +2,700,000 UGX</small>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('king')">
+                        <div class="plan-name">👑 King</div>
+                        <div class="plan-amount">10,000,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
+                        <div class="plan-profit">+180,000 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +5,400,000 UGX</small>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('emperor')">
+                        <div class="plan-name">🦅 Emperor</div>
+                        <div class="plan-amount">20,000,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
+                        <div class="plan-profit">+360,000 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +10,800,000 UGX</small>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('icon')">
+                        <div class="plan-name">💫 Icon</div>
+                        <div class="plan-amount">35,000,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.9%</p>
+                        <div class="plan-profit">+665,000 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +19,950,000 UGX</small>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('supreme')">
+                        <div class="plan-name">🔱 Supreme</div>
+                        <div class="plan-amount">60,000,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 2.0%</p>
+                        <div class="plan-profit">+1,200,000 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +36,000,000 UGX</small>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('legendary')">
+                        <div class="plan-name">🕊️ Legendary</div>
+                        <div class="plan-amount">90,000,000 UGX</div>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 2.0%</p>
+                        <div class="plan-profit">+1,800,000 UGX/day</div>
+                        <small style="color: var(--gray);">30-Day: +54,000,000 UGX</small>
                     </div>
                 </div>
 
@@ -1388,6 +1439,8 @@
                         <p><strong>Plan:</strong> <span id="confirmPlanName"></span></p>
                         <p><strong>Amount:</strong> <span id="confirmAmount"></span> UGX</p>
                         <p><strong>Duration:</strong> <span id="confirmDuration"></span></p>
+                        <p><strong>Daily ROI:</strong> <span id="confirmDailyROI"></span>%</p>
+                        <p><strong>Daily Profit:</strong> <span id="confirmDailyProfit"></span> UGX</p>
                         <p><strong>Expected Profit:</strong> <span id="confirmProfit"></span> UGX</p>
                         <p><strong>Total Return:</strong> <span id="confirmTotal"></span> UGX</p>
                     </div>
@@ -2447,10 +2500,16 @@
     }
 
     const vaultPlans = {
-        bronze: { name: 'Bronze Vault', amount: 50000, days: 30, profit: 0.15 },
-        silver: { name: 'Silver Vault', amount: 100000, days: 60, profit: 0.35 },
-        gold: { name: 'Gold Vault', amount: 250000, days: 90, profit: 0.60 },
-        platinum: { name: 'Platinum Vault', amount: 500000, days: 180, profit: 1.20 }
+        seed: { name: '🌱 Seed', amount: 45000, days: 30, profit: 0.51, dailyROI: 1.7 },
+        rising: { name: '🌅 Rising', amount: 180000, days: 30, profit: 0.51, dailyROI: 1.7 },
+        nova: { name: '💡 Nova', amount: 600000, days: 30, profit: 0.54, dailyROI: 1.8 },
+        mastermind: { name: '🧠 Mastermind', amount: 1800000, days: 30, profit: 0.54, dailyROI: 1.8 },
+        titan: { name: '💪 Titan', amount: 5000000, days: 30, profit: 0.54, dailyROI: 1.8 },
+        king: { name: '👑 King', amount: 10000000, days: 30, profit: 0.54, dailyROI: 1.8 },
+        emperor: { name: '🦅 Emperor', amount: 20000000, days: 30, profit: 0.54, dailyROI: 1.8 },
+        icon: { name: '💫 Icon', amount: 35000000, days: 30, profit: 0.57, dailyROI: 1.9 },
+        supreme: { name: '🔱 Supreme', amount: 60000000, days: 30, profit: 0.60, dailyROI: 2.0 },
+        legendary: { name: '🕊️ Legendary', amount: 90000000, days: 30, profit: 0.60, dailyROI: 2.0 }
     };
 
     // Initialize app
@@ -3981,8 +4040,11 @@
     // Vault section
     async function updateVaultSection() {
         try {
+            if (!currentUser || !currentUser.id) return;
+            
             const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const currentBalance = userDoc.data().balance || 0;
+            const userData = userDoc.data();
+            const currentBalance = userData ? userData.balance || 0 : 0;
             
             document.getElementById('vaultBalance').textContent = currentBalance.toLocaleString();
             
@@ -3991,15 +4053,31 @@
                 const planName = card.querySelector('.plan-name').textContent.toLowerCase();
                 let planAmount = 0;
                 
-                if (planName.includes('bronze')) planAmount = 50000;
-                else if (planName.includes('silver')) planAmount = 100000;
-                else if (planName.includes('gold')) planAmount = 250000;
-                else if (planName.includes('platinum')) planAmount = 500000;
+                // Map plan names to amounts
+                if (planName.includes('seed')) planAmount = 45000;
+                else if (planName.includes('rising')) planAmount = 180000;
+                else if (planName.includes('nova')) planAmount = 600000;
+                else if (planName.includes('mastermind')) planAmount = 1800000;
+                else if (planName.includes('titan')) planAmount = 5000000;
+                else if (planName.includes('king')) planAmount = 10000000;
+                else if (planName.includes('emperor')) planAmount = 20000000;
+                else if (planName.includes('icon')) planAmount = 35000000;
+                else if (planName.includes('supreme')) planAmount = 60000000;
+                else if (planName.includes('legendary')) planAmount = 90000000;
                 
-                if (currentBalance < planAmount) {
+                // Check activation status
+                if (!userData || !userData.isActivated) {
                     card.classList.add('disabled');
+                    card.style.opacity = '0.6';
+                    card.style.cursor = 'not-allowed';
+                } else if (currentBalance < planAmount) {
+                    card.classList.add('disabled');
+                    card.style.opacity = '0.6';
+                    card.style.cursor = 'not-allowed';
                 } else {
                     card.classList.remove('disabled');
+                    card.style.opacity = '1';
+                    card.style.cursor = 'pointer';
                 }
             });
         } catch (error) {
@@ -4010,18 +4088,35 @@
     function selectPlan(plan) {
         const planCard = event.target.closest('.plan-card');
         if (planCard && planCard.classList.contains('disabled')) {
-            alert('Insufficient funds. Please deposit more money first.');
-            return;
+            // Check if user is activated
+            if (currentUser) {
+                db.collection('users').doc(currentUser.id).get().then(doc => {
+                    const userData = doc.data();
+                    if (!userData || !userData.isActivated) {
+                        alert('You must activate your account before purchasing vault plans. Please activate your account first.');
+                        return;
+                    } else {
+                        alert('Insufficient funds. Please deposit more money first.');
+                        return;
+                    }
+                });
+            } else {
+                alert('You must login to purchase vault plans.');
+                return;
+            }
         }
         
         selectedPlan = plan;
         const planData = vaultPlans[plan];
         const profit = planData.amount * planData.profit;
         const total = planData.amount + profit;
+        const dailyProfit = planData.amount * (planData.dailyROI / 100);
 
         document.getElementById('confirmPlanName').textContent = planData.name;
         document.getElementById('confirmAmount').textContent = planData.amount.toLocaleString();
         document.getElementById('confirmDuration').textContent = planData.days + ' days';
+        document.getElementById('confirmDailyROI').textContent = planData.dailyROI;
+        document.getElementById('confirmDailyProfit').textContent = dailyProfit.toLocaleString();
         document.getElementById('confirmProfit').textContent = profit.toLocaleString();
         document.getElementById('confirmTotal').textContent = total.toLocaleString();
 
@@ -4035,6 +4130,16 @@
 
     async function purchaseVault() {
         if (!selectedPlan) return;
+
+        // Check if user is activated
+        if (currentUser) {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
+            if (!userData || !userData.isActivated) {
+                alert('You must activate your account before purchasing vault plans. Please activate your account first.');
+                return;
+            }
+        }
 
         const purchaseBtn = document.getElementById('purchaseBtn');
         const originalText = purchaseBtn.textContent;
