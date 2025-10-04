@@ -252,12 +252,6 @@
         box-shadow: none;
     }
 
-    /* Carousel Animation */
-    @keyframes scroll {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-    }
-
     .plan-name {
         font-size: 1.5rem;
         font-weight: 700;
@@ -1214,179 +1208,177 @@
             </div>
         </div>
 
-        <!-- Welcome Bonus Message -->
-        <div id="welcomeBonusMessage" class="hidden" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; text-align: center; margin: 0; border-radius: 0; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                <div style="font-size: 2rem;">🎉</div>
-                <div>
-                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Welcome to VaultPro!</h3>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">You have a special welcome bonus waiting for you!</p>
+        <!-- Home Section -->
+        <div id="homeSection">
+            <!-- Referral Alert -->
+            <div id="referralAlert"></div>
+            
+            <!-- Activation Section -->
+            <div class="card" id="activationCard" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h2 style="color: #92400e; margin: 0;">🔒 Account Not Activated</h2>
+                        <p style="color: #92400e; margin: 0.5rem 0;">Complete your registration to unlock all features</p>
+                    </div>
+                    <button class="btn" style="background: #f59e0b; color: white;" onclick="showActivationPayment()">
+                        Pay 20,000 UGX
+                    </button>
                 </div>
-                <div id="welcomeBonusAmount" style="font-size: 1.5rem; font-weight: 800; filter: blur(8px); transition: filter 0.3s ease;">5,000 UGX</div>
-            </div>
-        </div>
-
-        <!-- Activation Carousel -->
-        <div id="activationCarousel" class="hidden" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 0.75rem; border-bottom: 2px solid #e5e7eb; overflow: hidden; position: relative;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <span style="color: var(--primary); font-weight: 600;">🔥</span>
-                <span style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">Recently Activated Users:</span>
-            </div>
-            <div id="carouselContent" style="display: flex; animation: scroll 30s linear infinite; white-space: nowrap;">
-                <!-- Carousel items will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Activation Required Section -->
-<!-- Activation Required Section -->
-<div id="activationRequiredSection" class="hidden" style="max-width: 600px; margin: 2rem auto; padding: 2rem;">
-    <div class="card">
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-            <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Account activation</h2>
-            <p style="color: var(--gray);">Complete payment to unlock all features</p>
-        </div>
-        
-        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Activation Fee: 20,000 UGX</div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">One-time payment • Lifetime access</div>
-        </div>
-        
-        <form id="simpleActivationForm" onsubmit="submitSimpleActivation(event)">
-            <!-- Payment Method Selection -->
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
-                    choose number-that you sent the activation fee too:
-                </label>
-                <select id="simplePaymentMethod" required style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" onchange="showPaymentNumber()">
-                    <option value="">method is mobile money</option>
-                    <option value="airtel">Airtel Money</option>
-                    <option value="mtn">MTN Mobile Money</option>
-                </select>
             </div>
 
-            <!-- Payment Number Display -->
-            <div id="paymentNumberDisplay" class="hidden" style="margin-bottom: 1.5rem;">
-                <div style="background: #f0f9ff; border: 2px solid #0891b2; border-radius: 8px; padding: 1rem;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 0.875rem; color: #0c4a6e; margin-bottom: 0.5rem;">Send 20,000 UGX to:</div>
-                        <div id="displayPaymentNumber" style="font-size: 1.5rem; font-weight: 700; color: #0891b2; margin-bottom: 0.75rem;">-</div>
-                        <button type="button" class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="copyPaymentNumber()">
-                            📋 Copy Number
-                        </button>
+            <div class="card">
+                <h2>📊 Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="stat-card compact">
+                        <div class="stat-label">💰 Balance</div>
+                        <div class="stat-value" id="totalBalance">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">🏦 Vaults</div>
+                        <div class="stat-value" id="activeVaults">0</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">👥 Referrals</div>
+                        <div class="stat-value" id="totalReferrals">0</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">💵 Earnings</div>
+                        <div class="stat-value" id="referralEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">📈 Deposits</div>
+                        <div class="stat-value" id="totalDeposits">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">🔥 Streak</div>
+                        <div class="stat-value" id="currentStreak">0</div>
+                        <div class="stat-unit">Days</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">⭐ Points</div>
+                        <div class="stat-value" id="pointsBalance">0</div>
+                        <div class="stat-unit">Pts</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">🎯 Tasks</div>
+                        <div class="stat-value" id="taskEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Screenshot Upload -->
-            <div id="screenshotUpload" class="hidden" style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
-                    then attach screenshot of proof that shows mo:
-                </label>
-                <input type="file" id="simplePaymentProof" accept="image/*" required style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-                <p style="color: #6b7280; font-size: 0.8rem; margin: 0.5rem 0 0 0;">Upload a clear screenshot of your payment confirmation</p>
+            <!-- Activation Payment Section (only shown for unactivated users) -->
+            <div id="activationPaymentSection" class="card hidden" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; text-align: center;">
+                <h3 style="color: #92400e; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                    🔒 Account Activation Required
+                </h3>
+                <p style="color: #92400e; margin-bottom: 1.5rem;">
+                    Complete your account activation by paying the 20,000 UGX registration fee to unlock all features.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">💰 Activation Fee</h4>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">20,000 UGX</div>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">🎁 What You Get</h4>
+                        <ul style="color: #6b7280; margin: 0; padding-left: 1rem; font-size: 0.875rem; text-align: left;">
+                            <li>Access to all vault plans</li>
+                            <li>Daily tasks and rewards</li>
+                            <li>Referral bonuses</li>
+                            <li>Withdrawal privileges</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <button class="btn activation-payment-element" style="background: #059669; color: white; padding: 1rem 2rem; font-size: 1.1rem; margin-bottom: 1rem;" onclick="showActivationModal()">
+                    💳 Pay Activation Fee Now
+                </button>
+                
+                <div style="padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 6px;">
+                    <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
+                        <strong>📱 Quick & Easy:</strong> Click the button above to get payment instructions and submit your payment proof.
+                    </p>
+                </div>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" id="simpleSubmitBtn" class="btn btn-block hidden" style="background: linear-gradient(135deg, #10b981, #059669); padding: 1rem; font-size: 1.1rem;">
-                💳 Submit Payment
-            </button>
-        </form>
+            <div class="card">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🏦 My Active Vaults
+                        </h3>
+                    </div>
+                    <div id="myActiveVaults" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Plan</th>
+                                            <th>Amount</th>
+                                            <th>Duration</th>
+                                            <th>Expected Profit</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vaultTableBody">
+                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <div id="simpleActivationAlert" style="margin-top: 1rem;"></div>
-    </div>
-</div>
         <!-- Vault Plans Section -->
         <div id="vaultSection" class="hidden">
             <div class="card">
                 <h2>Choose Your Vault Plan</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Select a plan and watch your investment grow!</p>
-                <div style="background: #ff0000; color: white; padding: 10px; margin: 10px 0; text-align: center; font-weight: bold;">
-                    ✅ UPDATED VAULT PLANS - If you see this, the file is loading correctly!
-                </div>
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 2px solid #e5e7eb;">
                     <strong>Your Current Balance: <span id="vaultBalance" style="color: var(--primary); font-size: 1.5rem;">0</span> UGX</strong>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-                    <div class="plan-card" onclick="selectPlan('seed')">
-                        <div class="plan-name">🌱 Seed</div>
-                        <div class="plan-amount">45,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.7%</p>
-                        <div class="plan-profit">+765 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +22,950 UGX</small>
+                <div class="grid">
+                    <div class="plan-card" onclick="selectPlan('bronze')">
+                        <div class="plan-name">Bronze Vault</div>
+                        <div class="plan-amount">50,000 UGX</div>
+                        <p style="color: var(--gray);">30 Days</p>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">15% Profit</p>
+                        <div class="plan-profit">+7,500 UGX</div>
                     </div>
                     
-                    <div class="plan-card" onclick="selectPlan('rising')">
-                        <div class="plan-name">🌅 Rising</div>
-                        <div class="plan-amount">180,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.7%</p>
-                        <div class="plan-profit">+3,060 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +91,800 UGX</small>
+                    <div class="plan-card" onclick="selectPlan('silver')">
+                        <div class="plan-name">Silver Vault</div>
+                        <div class="plan-amount">100,000 UGX</div>
+                        <p style="color: var(--gray);">60 Days</p>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">35% Profit</p>
+                        <div class="plan-profit">+35,000 UGX</div>
                     </div>
                     
-                    <div class="plan-card" onclick="selectPlan('nova')">
-                        <div class="plan-name">💡 Nova</div>
-                        <div class="plan-amount">600,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+10,800 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +324,000 UGX</small>
+                    <div class="plan-card" onclick="selectPlan('gold')">
+                        <div class="plan-name">Gold Vault</div>
+                        <div class="plan-amount">250,000 UGX</div>
+                        <p style="color: var(--gray);">90 Days</p>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">60% Profit</p>
+                        <div class="plan-profit">+150,000 UGX</div>
                     </div>
                     
-                    <div class="plan-card" onclick="selectPlan('mastermind')">
-                        <div class="plan-name">🧠 Mastermind</div>
-                        <div class="plan-amount">1,800,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+32,400 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +972,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('titan')">
-                        <div class="plan-name">💪 Titan</div>
-                        <div class="plan-amount">5,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+90,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +2,700,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('king')">
-                        <div class="plan-name">👑 King</div>
-                        <div class="plan-amount">10,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+180,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +5,400,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('emperor')">
-                        <div class="plan-name">🦅 Emperor</div>
-                        <div class="plan-amount">20,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+360,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +10,800,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('icon')">
-                        <div class="plan-name">💫 Icon</div>
-                        <div class="plan-amount">35,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.9%</p>
-                        <div class="plan-profit">+665,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +19,950,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('supreme')">
-                        <div class="plan-name">🔱 Supreme</div>
-                        <div class="plan-amount">60,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 2.0%</p>
-                        <div class="plan-profit">+1,200,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +36,000,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('legendary')">
-                        <div class="plan-name">🕊️ Legendary</div>
-                        <div class="plan-amount">90,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 2.0%</p>
-                        <div class="plan-profit">+1,800,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +54,000,000 UGX</small>
+                    <div class="plan-card" onclick="selectPlan('platinum')">
+                        <div class="plan-name">Platinum Vault</div>
+                        <div class="plan-amount">500,000 UGX</div>
+                        <p style="color: var(--gray);">180 Days</p>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">120% Profit</p>
+                        <div class="plan-profit">+600,000 UGX</div>
                     </div>
                 </div>
 
@@ -1396,8 +1388,6 @@
                         <p><strong>Plan:</strong> <span id="confirmPlanName"></span></p>
                         <p><strong>Amount:</strong> <span id="confirmAmount"></span> UGX</p>
                         <p><strong>Duration:</strong> <span id="confirmDuration"></span></p>
-                        <p><strong>Daily ROI:</strong> <span id="confirmDailyROI"></span>%</p>
-                        <p><strong>Daily Profit:</strong> <span id="confirmDailyProfit"></span> UGX</p>
                         <p><strong>Expected Profit:</strong> <span id="confirmProfit"></span> UGX</p>
                         <p><strong>Total Return:</strong> <span id="confirmTotal"></span> UGX</p>
                     </div>
@@ -1608,23 +1598,6 @@
                         <div class="stat-label">Points Balance</div>
                         <div class="stat-value" id="walletPointsBalance">0</div>
                         <div class="stat-unit">Points</div>
-                    </div>
-                </div>
-
-                <!-- Welcome Bonus Status -->
-                <div id="welcomeBonusStatus" class="hidden" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border: 2px solid #10b981; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 2rem;">🎁</div>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #059669;">Welcome Bonus Status</h4>
-                            <p style="margin: 0; color: #6b7280; font-size: 0.9rem;" id="welcomeBonusStatusText">
-                                Your 5,000 UGX welcome bonus is locked for 7 days
-                            </p>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;" id="welcomeBonusAmount">5,000 UGX</div>
-                            <div style="font-size: 0.8rem; color: #6b7280;" id="welcomeBonusUnlockTime">Unlocks in 7 days</div>
-                        </div>
                     </div>
                 </div>
 
@@ -2127,12 +2100,7 @@
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Add New Candidate</h3>
                     <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
-                    <input type="file" id="candidatePicture" accept="image/*" style="padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white;" onchange="previewPicture(this)" />
-                    <small style="color: var(--gray); font-size: 0.875rem;">Upload candidate picture (optional)</small>
-                    <div id="picturePreview" style="margin-top: 0.5rem; display: none;">
-                        <img id="previewImage" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;" />
-                        <small style="display: block; color: var(--gray); font-size: 0.75rem; margin-top: 0.25rem;">Preview</small>
-                    </div>
+                    <input type="url" id="candidatePicture" placeholder="Candidate Picture URL (optional)" />
                     <input type="text" id="candidateTitle" placeholder="Position (e.g., President, MP, Mayor, LC5 Chairman)" />
                     <select id="candidateCategory">
                         <option value="">Select Category</option>
@@ -2336,6 +2304,12 @@
                     <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading candidates...</p>
                 </div>
                 
+                <!-- Debug: Add Sample Candidates Button (for testing) -->
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-secondary" onclick="addSampleCandidates()" style="font-size: 0.8rem;">
+                        🧪 Add Sample Candidates (Testing)
+                    </button>
+                </div>
 
                 <!-- My Stakes -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
@@ -2428,78 +2402,55 @@
     function setupAuthStateListener() {
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
-                console.log('Auth state changed:', user ? user.email : 'no user');
+                // Don't override if we're processing a referral link
+                if (isProcessingReferral) {
+                    console.log('Referral processing in progress, skipping auth redirect');
+                    return;
+                }
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const refCode = urlParams.get('ref');
+                if (refCode && document.getElementById('registerPage').classList.contains('hidden') === false) {
+                    console.log('Referral registration in progress, skipping auth redirect');
+                    return;
+                }
                 
                 if (user) {
                     console.log('User is signed in:', user.uid);
-                    
+                    // User is signed in, get their data from Firestore
                     try {
                         const userDoc = await db.collection('users').doc(user.uid).get();
                         if (userDoc.exists) {
-                            currentUser = { id: user.uid, ...userDoc.data() };
-                            console.log('Current user loaded:', currentUser.email);
+                            currentUser = userDoc.data();
+                            await updateUserStreak(user.uid, currentUser);
                             
-                            // Update streak with timeout protection
-                            try {
-                                await Promise.race([
-                                    updateUserStreak(user.uid, currentUser),
-                                    new Promise((_, reject) => setTimeout(() => reject(new Error('Streak update timeout')), 10000))
-                                ]);
-                            } catch (streakError) {
-                                console.warn('Auth listener streak update failed or timed out:', streakError);
-                                // Continue with dashboard display even if streak update fails
-                            }
-                            
-                            // Clear processing flag
-                            isProcessingReferral = false;
-                            
-                            // Ensure all auth pages are hidden first
-                            hideAllAuthPages();
-                            
-                            // Show appropriate dashboard
                             if (currentUser.isAdmin) {
-                                console.log('Showing admin dashboard');
                                 showAdminDashboard();
                             } else {
-                                console.log('Showing user dashboard for user:', currentUser.email);
-                                console.log('User activation status:', currentUser.isActivated);
                                 showUserDashboard();
                             }
                         } else {
                             console.log('User document not found in Firestore');
                             await auth.signOut();
-                            showLogin();
                         }
                     } catch (error) {
                         console.error('Error getting user data:', error);
                         await auth.signOut();
-                        showLogin();
                     }
                 } else {
                     console.log('User is signed out');
                     currentUser = null;
-                    
-                    // Only show login if we're not processing a referral
-                    if (!isProcessingReferral) {
-                        console.log('Showing login page');
-                        showLogin();
-                    }
+                    // Don't automatically show login - let the app decide based on URL params
                 }
             });
         }
     }
 
     const vaultPlans = {
-        seed: { name: '🌱 Seed', amount: 45000, days: 30, profit: 0.51, dailyROI: 1.7 },
-        rising: { name: '🌅 Rising', amount: 180000, days: 30, profit: 0.51, dailyROI: 1.7 },
-        nova: { name: '💡 Nova', amount: 600000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        mastermind: { name: '🧠 Mastermind', amount: 1800000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        titan: { name: '💪 Titan', amount: 5000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        king: { name: '👑 King', amount: 10000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        emperor: { name: '🦅 Emperor', amount: 20000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        icon: { name: '💫 Icon', amount: 35000000, days: 30, profit: 0.57, dailyROI: 1.9 },
-        supreme: { name: '🔱 Supreme', amount: 60000000, days: 30, profit: 0.60, dailyROI: 2.0 },
-        legendary: { name: '🕊️ Legendary', amount: 90000000, days: 30, profit: 0.60, dailyROI: 2.0 }
+        bronze: { name: 'Bronze Vault', amount: 50000, days: 30, profit: 0.15 },
+        silver: { name: 'Silver Vault', amount: 100000, days: 60, profit: 0.35 },
+        gold: { name: 'Gold Vault', amount: 250000, days: 90, profit: 0.60 },
+        platinum: { name: 'Platinum Vault', amount: 500000, days: 180, profit: 1.20 }
     };
 
     // Initialize app
@@ -2616,6 +2567,9 @@
                 const validateReferralCode = async (retries = 3) => {
                     try {
                         console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
+                        console.log('Firebase initialized:', firebaseInitialized);
+                        console.log('DB available:', !!db);
+                        console.log('Auth available:', !!auth);
                         
                         const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                         
@@ -2642,30 +2596,29 @@
                             // Clean up URL
                             window.history.replaceState({}, document.title, window.location.pathname);
                             
-                            // Clear the processing flag AFTER showing register page
-                            setTimeout(() => {
-                                isProcessingReferral = false;
-                                console.log('Referral processing complete');
-                            }, 2000);
-                            
+                            // Clear the processing flag
+                            isProcessingReferral = false;
                         } else if (retries > 0) {
+                            // Retry if referral code not found and we have retries left
                             console.log('Referral code not found, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
+                            // Invalid referral code after all retries
                             console.log('Invalid referral code after all retries');
                             isProcessingReferral = false;
                             showLogin();
-                            alert('Invalid referral code. Please contact the person who referred you.');
+                            alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                         }
                     } catch (error) {
                         console.error('Error validating referral code:', error);
                         
                         if (retries > 0) {
+                            console.log('Error occurred, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             isProcessingReferral = false;
                             showLogin();
-                            alert('Unable to validate referral code. Please try again.');
+                            alert('Unable to validate referral code. Please check your internet connection and try again.');
                         }
                     }
                 };
@@ -3054,12 +3007,10 @@
             // Handle referral rewards
             await processReferralRewards(referrerId, userId, fullName);
 
-            showAlert('registerAlert', 'Registration successful! Loading your dashboard...', 'success');
-
-            // Don't manually set currentUser here - let the auth state listener handle it
+            showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
             setTimeout(() => {
-                // The auth state listener will automatically trigger and show the dashboard
-                console.log('Registration complete, auth state listener will handle navigation');
+                currentUser = newUser;
+                showUserDashboard();
             }, 1500);
 
         } catch (error) {
@@ -3075,19 +3026,11 @@
         btn.disabled = true;
         btn.textContent = 'Logging in...';
 
-        // Set a timeout to prevent infinite loading
-        const loginTimeout = setTimeout(() => {
-            btn.disabled = false;
-            btn.textContent = 'Login';
-            showAlert('loginAlert', 'Login timed out. Please try again.', 'error');
-        }, 30000); // 30 second timeout
-
         try {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
             if (!email || !password) {
-                clearTimeout(loginTimeout);
                 showAlert('loginAlert', 'Please enter email and password', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Login';
@@ -3096,7 +3039,6 @@
 
             // Check if Firebase is initialized
             if (!firebaseInitialized || !db || !auth) {
-                clearTimeout(loginTimeout);
                 showAlert('loginAlert', 'Firebase not initialized. Please refresh the page.', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Login';
@@ -3121,7 +3063,6 @@
                 } else {
                     showAlert('loginAlert', `Login failed: ${authError.message}`, 'error');
                 }
-                clearTimeout(loginTimeout);
                 btn.disabled = false;
                 btn.textContent = 'Login';
                 return;
@@ -3135,7 +3076,6 @@
                 console.log('User exists in Firebase Auth but not in Firestore, syncing...');
                 // User exists in Firebase Auth but not in Firestore - this shouldn't happen with new registration flow
                 // but we'll handle it gracefully
-                clearTimeout(loginTimeout);
                 showAlert('loginAlert', 'User account not found. Please contact support.', 'error');
                 await auth.signOut();
                 btn.disabled = false;
@@ -3143,35 +3083,22 @@
                 return;
             }
 
-            currentUser = { id: userId, ...userDoc.data() };
+            currentUser = userDoc.data();
 
-            // Update user streak with timeout protection
-            try {
-                await Promise.race([
-                    updateUserStreak(userId, currentUser),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Streak update timeout')), 10000))
-                ]);
-            } catch (streakError) {
-                console.warn('Streak update failed or timed out:', streakError);
-                // Continue with login even if streak update fails
+            await updateUserStreak(userDoc.id, currentUser);
+
+            if (currentUser.isAdmin) {
+                showAdminDashboard();
+            } else {
+                showUserDashboard();
+                // Check if user has activated their account
+                if (!currentUser.isActivated) {
+                    showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
+                }
             }
-
-            // Let auth state listener handle the dashboard display
-            console.log('Login successful, auth state listener will handle navigation');
-            console.log('Current user after login:', currentUser);
-            console.log('User is activated:', currentUser.isActivated);
-
-            // Show temporary success message
-            showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
-            
-            // Clear timeout and reset button state - auth listener will handle navigation
-            clearTimeout(loginTimeout);
-            btn.disabled = false;
-            btn.textContent = 'Login';
 
         } catch (error) {
             console.error("Login error:", error);
-            clearTimeout(loginTimeout);
             showAlert('loginAlert', 'Login failed: ' + error.message, 'error');
             btn.disabled = false;
             btn.textContent = 'Login';
@@ -3378,93 +3305,63 @@
     }
 
     function showUserDashboard() {
-        console.log('showUserDashboard() called');
+        document.getElementById('registerPage').classList.add('hidden');
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('userDashboard').classList.remove('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
         
-        // Hide auth pages and other sections
-        const registerPage = document.getElementById('registerPage');
-        const loginPage = document.getElementById('loginPage');
-        const loadingScreen = document.getElementById('loadingScreen');
-        const userDashboard = document.getElementById('userDashboard');
-        const adminDashboard = document.getElementById('adminDashboard');
-        const firebaseSetup = document.getElementById('firebaseSetup');
+        // Show home section immediately
+        showSection('home');
         
-        if (registerPage) registerPage.classList.add('hidden');
-        if (loginPage) loginPage.classList.add('hidden');
-        if (loadingScreen) loadingScreen.classList.add('hidden');
-        if (firebaseSetup) firebaseSetup.classList.add('hidden');
+        // Ensure home section is shown after async operations
+        setTimeout(() => {
+            showSection('home');
+        }, 100);
         
-        // Show user dashboard
-        if (userDashboard) userDashboard.classList.remove('hidden');
-        if (adminDashboard) adminDashboard.classList.add('hidden');
-        
-        // Check activation status first
-        checkActivationStatus();
-        
-        // Update stats and features
         updateUserStats();
         updateFeatureAccess();
         
-        // Update profile
+        // Ensure profile section is properly initialized
         if (currentUser) {
-            try {
-                updateProfileSection();
-            } catch (error) {
-                console.warn('Error updating profile section:', error);
-            }
+            updateProfileSection();
         }
         
-        // Ensure sections are properly hidden
+        // Ensure all sections are properly hidden initially
         ensureAllSectionsHidden();
         
-        // Show home section if activated, otherwise activation screen will show
-        console.log('Checking activation status in showUserDashboard:', currentUser.isActivated);
-        if (currentUser && currentUser.isActivated) {
-            console.log('User is activated, showing home section');
-            document.getElementById('homeSection').classList.remove('hidden');
-        } else {
-            console.log('User is not activated, activation screen will be shown');
-        }
-        
-        // Handle referral links
+        // Check for referral links when user dashboard is shown
         handleReferralLink();
-        
-        console.log('User dashboard shown');
     }
 
-   function updateFeatureAccess() {
-       if (currentUser.isAdmin) {
-           return;
-       }
-       
-       const isActivated = currentUser.isActivated;
-       
-       const interactiveElements = document.querySelectorAll('button, input, select, textarea');
-       interactiveElements.forEach(element => {
-           // Skip these elements - they should always be enabled
-           if (element.id === 'registerBtn' || 
-               element.id === 'loginBtn' || 
-               element.classList.contains('nav-link') || 
-               element.classList.contains('bottom-nav-item') ||
-               element.classList.contains('activation-payment-element') ||
-               element.id === 'activateAccountBtn' ||
-               element.id === 'paymentNumberUsed' ||
-               element.id === 'paymentProof' ||
-               element.id === 'paymentNotes' ||
-               element.closest('#activationModal') ||
-               element.closest('#activationPaymentSection')) { // Added this
-               return;
-           }
-           
-           if (!isActivated) {
-               element.disabled = true;
-               element.style.opacity = '0.5';
-               element.style.cursor = 'not-allowed';
-           } else {
-               element.disabled = false;
-               element.style.opacity = '1';
-               element.style.cursor = 'pointer';
-           }
-       });
+    function updateFeatureAccess() {
+        // Skip activation checks for admin users
+        if (currentUser.isAdmin) {
+            return;
+        }
+        
+        const isActivated = currentUser.isActivated;
+        
+        // Disable/enable all interactive elements
+        const interactiveElements = document.querySelectorAll('button, input, select, textarea');
+        interactiveElements.forEach(element => {
+            if (element.id === 'registerBtn' || element.id === 'loginBtn' || 
+                element.classList.contains('nav-link') || element.classList.contains('bottom-nav-item') ||
+                element.classList.contains('activation-payment-element') ||
+                element.closest('#activationModal')) {
+                // Keep navigation, login/register buttons, activation payment, and modal elements enabled
+                return;
+            }
+            
+            if (!isActivated) {
+                element.disabled = true;
+                element.style.opacity = '0.5';
+                element.style.cursor = 'not-allowed';
+            } else {
+                element.disabled = false;
+                element.style.opacity = '1';
+                element.style.cursor = 'pointer';
+            }
+        });
         
         // Show/hide activation payment section and message if not activated
         const activationSection = document.getElementById('activationPaymentSection');
@@ -3580,13 +3477,9 @@
         console.log('Activation form submitted');
         
         try {
+            // Check if Firebase is initialized
             if (!firebaseInitialized || !db) {
                 alert('Database not initialized. Please refresh the page.');
-                return;
-            }
-            
-            if (!currentUser || !currentUser.id) {
-                alert('User session not found. Please login again.');
                 return;
             }
             
@@ -3606,21 +3499,13 @@
                 return;
             }
 
-            // Show loading state
-            const submitBtn = event.target.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Submitting...';
-            }
-
             // Convert image to base64
             const base64Proof = await convertToBase64(paymentProof);
 
-            // Create deposit request for activation fee
+            // Create deposit request for activation fee with screenshot
             await db.collection('depositRequests').add({
                 userId: currentUser.id,
                 userName: currentUser.fullName,
-                userEmail: currentUser.email,
                 amount: 20000,
                 method: 'mobile_money',
                 paymentNumber: paymentNumber,
@@ -3632,26 +3517,18 @@
                 description: 'Account activation fee payment'
             });
 
-            // Show success message
-            alert('✅ Activation payment proof submitted successfully!\n\nYour payment is being reviewed by our admin team. You will receive a notification once your account is activated (usually within 24 hours).\n\nThank you for your patience!');
+            alert('✅ Activation payment proof submitted successfully! Please wait for admin approval. You will receive a notification once your account is activated.');
             
             // Reset form and close modal
             document.getElementById('activationPaymentForm').reset();
             closeActivationModal();
             
-            // Show pending status message
-            showAlert('activationAlert', 'Your activation payment is pending admin approval. Please check back later.', 'info');
+            // Update deposit section to show the request
+            updateDepositSection();
             
         } catch (error) {
             console.error('Error submitting activation fee payment:', error);
             alert('Error submitting payment request: ' + error.message);
-            
-            // Reset button state
-            const submitBtn = event.target.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '💳 Submit Payment Proof';
-            }
         }
     }
 
@@ -3709,149 +3586,19 @@
             }
         });
     }
-      function showPaymentNumber() {
-       const method = document.getElementById('simplePaymentMethod').value;
-       const numberDisplay = document.getElementById('paymentNumberDisplay');
-       const screenshotUpload = document.getElementById('screenshotUpload');
-       const submitBtn = document.getElementById('simpleSubmitBtn');
-       const displayNumber = document.getElementById('displayPaymentNumber');
-       
-       if (method) {
-           // Set the appropriate number
-           if (method === 'airtel') {
-               displayNumber.textContent = '0702377999';
-               displayNumber.setAttribute('data-number', '0702377999');
-           } else if (method === 'mtn') {
-               displayNumber.textContent = '0779710365';
-               displayNumber.setAttribute('data-number', '0779710365');
-           }
-           
-           // Show all fields
-           numberDisplay.classList.remove('hidden');
-           screenshotUpload.classList.remove('hidden');
-           submitBtn.classList.remove('hidden');
-       } else {
-           numberDisplay.classList.add('hidden');
-           screenshotUpload.classList.add('hidden');
-           submitBtn.classList.add('hidden');
-       }
-   }
-   
-   function copyPaymentNumber() {
-       const numberElement = document.getElementById('displayPaymentNumber');
-       const number = numberElement.getAttribute('data-number');
-       
-       navigator.clipboard.writeText(number).then(() => {
-           alert('Number copied: ' + number);
-       }).catch(() => {
-           // Fallback
-           const textArea = document.createElement('textarea');
-           textArea.value = number;
-           document.body.appendChild(textArea);
-           textArea.select();
-           document.execCommand('copy');
-           document.body.removeChild(textArea);
-           alert('Number copied: ' + number);
-       });
-   }
-   
-   async function submitSimpleActivation(event) {
-       event.preventDefault();
-       
-       const submitBtn = document.getElementById('simpleSubmitBtn');
-       submitBtn.disabled = true;
-       submitBtn.textContent = 'Submitting...';
-       
-       try {
-           const method = document.getElementById('simplePaymentMethod').value;
-           const paymentProof = document.getElementById('simplePaymentProof').files[0];
-           const paymentNumber = document.getElementById('displayPaymentNumber').getAttribute('data-number');
-           
-           if (!paymentProof) {
-               showAlert('simpleActivationAlert', 'Please upload payment screenshot', 'error');
-               submitBtn.disabled = false;
-               submitBtn.textContent = '💳 Submit Payment';
-               return;
-           }
-   
-           // Convert to base64
-           const base64Proof = await convertToBase64(paymentProof);
-   
-           // Submit to database
-           await db.collection('depositRequests').add({
-               userId: currentUser.id,
-               userName: currentUser.fullName,
-               userEmail: currentUser.email,
-               amount: 20000,
-               method: 'mobile_money',
-               paymentNumber: paymentNumber,
-               paymentProof: base64Proof,
-               requestDate: new Date().toISOString(),
-               status: 'pending',
-               type: 'activation_fee',
-               description: 'Account activation fee payment'
-           });
-   
-           showAlert('simpleActivationAlert', '✅ Payment submitted successfully! Your account will be activated within 24 hours after admin approval.', 'success');
-           
-           // Reset form
-           document.getElementById('simpleActivationForm').reset();
-           document.getElementById('paymentNumberDisplay').classList.add('hidden');
-           document.getElementById('screenshotUpload').classList.add('hidden');
-           submitBtn.classList.add('hidden');
-           
-       } catch (error) {
-           console.error('Error submitting activation:', error);
-           showAlert('simpleActivationAlert', 'Error: ' + error.message, 'error');
-       } finally {
-           submitBtn.disabled = false;
-           submitBtn.textContent = '💳 Submit Payment';
-       }
-   }
 
 
     function showAdminDashboard() {
-        const registerPage = document.getElementById('registerPage');
-        const loginPage = document.getElementById('loginPage');
-        const userDashboard = document.getElementById('userDashboard');
-        const adminDashboard = document.getElementById('adminDashboard');
-        const loadingScreen = document.getElementById('loadingScreen');
-        const firebaseSetup = document.getElementById('firebaseSetup');
-        
-        if (registerPage) registerPage.classList.add('hidden');
-        if (loginPage) loginPage.classList.add('hidden');
-        if (userDashboard) userDashboard.classList.add('hidden');
-        if (loadingScreen) loadingScreen.classList.add('hidden');
-        if (firebaseSetup) firebaseSetup.classList.add('hidden');
-        if (adminDashboard) adminDashboard.classList.remove('hidden');
+        document.getElementById('registerPage').classList.add('hidden');
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('userDashboard').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.remove('hidden');
         
         updateAdminStats();
         showAdminSection('stats');
     }
 
-   function showSection(section) {
-       // Allow profile and home sections without activation check
-       const allowedSections = ['profile', 'home'];
-       
-       if (currentUser && !allowedSections.includes(section)) {
-           db.collection('users').doc(currentUser.id).get().then(doc => { // Changed uid to id
-               const userData = doc.data();
-               if (!userData || !userData.isActivated) {
-                   alert('Please activate your account to access this feature');
-                   checkActivationStatus();
-                   return;
-               }
-               displaySection(section);
-           }).catch(error => {
-               console.error('Error checking activation status:', error);
-               displaySection(section);
-           });
-       } else {
-           displaySection(section);
-       }
-   }
-
-    function displaySection(section) {
+    function showSection(section) {
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
@@ -3934,16 +3681,6 @@
         });
     }
 
-    function hideAllAuthPages() {
-        const authPages = ['registerPage', 'loginPage', 'loadingScreen', 'firebaseSetup'];
-        authPages.forEach(pageId => {
-            const el = document.getElementById(pageId);
-            if (el) {
-                el.classList.add('hidden');
-            }
-        });
-    }
-
     async function updateWalletSection() {
         try {
             const userDoc = await db.collection('users').doc(currentUser.id).get();
@@ -3953,31 +3690,6 @@
             
             document.getElementById('walletBalance').textContent = balance.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
-            
-            // Update welcome bonus status
-            const welcomeBonusStatus = document.getElementById('welcomeBonusStatus');
-            if (userData.welcomeBonusUnlockDate) {
-                const unlockDate = new Date(userData.welcomeBonusUnlockDate);
-                const now = new Date();
-                
-                if (now < unlockDate) {
-                    // Bonus is still locked
-                    const daysLeft = Math.ceil((unlockDate - now) / (24 * 60 * 60 * 1000));
-                    document.getElementById('welcomeBonusStatusText').textContent = 
-                        `Your 5,000 UGX welcome bonus is locked for ${daysLeft} more days`;
-                    document.getElementById('welcomeBonusUnlockTime').textContent = 
-                        `Unlocks in ${daysLeft} days`;
-                    welcomeBonusStatus.classList.remove('hidden');
-                } else {
-                    // Bonus is unlocked
-                    document.getElementById('welcomeBonusStatusText').textContent = 
-                        'Your 5,000 UGX welcome bonus is now available for withdrawal!';
-                    document.getElementById('welcomeBonusUnlockTime').textContent = 'Available now';
-                    welcomeBonusStatus.classList.remove('hidden');
-                }
-            } else {
-                welcomeBonusStatus.classList.add('hidden');
-            }
             
             // Wallet section updated successfully
             console.log('Wallet section updated');
@@ -4005,13 +3717,8 @@
     // User stats
     async function updateUserStats() {
         try {
-            if (!currentUser || !currentUser.id) {
-                console.log('updateUserStats: No current user or user ID');
-                return;
-            }
-            
             const userDoc = await db.collection('users').doc(currentUser.id).get();
-            currentUser = { id: currentUser.id, ...userDoc.data() };
+            currentUser = userDoc.data();
 
             const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
             const vaults = vaultsSnapshot.docs.map(doc => doc.data());
@@ -4274,13 +3981,8 @@
     // Vault section
     async function updateVaultSection() {
         try {
-            if (!currentUser || !currentUser.id) return;
-            
-            renderVaultPlans(); // Render plans dynamically
-            
             const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            const currentBalance = userData ? userData.balance || 0 : 0;
+            const currentBalance = userDoc.data().balance || 0;
             
             document.getElementById('vaultBalance').textContent = currentBalance.toLocaleString();
             
@@ -4289,31 +3991,15 @@
                 const planName = card.querySelector('.plan-name').textContent.toLowerCase();
                 let planAmount = 0;
                 
-                // Map plan names to amounts
-                if (planName.includes('seed')) planAmount = 45000;
-                else if (planName.includes('rising')) planAmount = 180000;
-                else if (planName.includes('nova')) planAmount = 600000;
-                else if (planName.includes('mastermind')) planAmount = 1800000;
-                else if (planName.includes('titan')) planAmount = 5000000;
-                else if (planName.includes('king')) planAmount = 10000000;
-                else if (planName.includes('emperor')) planAmount = 20000000;
-                else if (planName.includes('icon')) planAmount = 35000000;
-                else if (planName.includes('supreme')) planAmount = 60000000;
-                else if (planName.includes('legendary')) planAmount = 90000000;
+                if (planName.includes('bronze')) planAmount = 50000;
+                else if (planName.includes('silver')) planAmount = 100000;
+                else if (planName.includes('gold')) planAmount = 250000;
+                else if (planName.includes('platinum')) planAmount = 500000;
                 
-                // Check activation status
-                if (!userData || !userData.isActivated) {
+                if (currentBalance < planAmount) {
                     card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else if (currentBalance < planAmount) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
                 } else {
                     card.classList.remove('disabled');
-                    card.style.opacity = '1';
-                    card.style.cursor = 'pointer';
                 }
             });
         } catch (error) {
@@ -4324,35 +4010,18 @@
     function selectPlan(plan) {
         const planCard = event.target.closest('.plan-card');
         if (planCard && planCard.classList.contains('disabled')) {
-            // Check if user is activated
-            if (currentUser) {
-                db.collection('users').doc(currentUser.id).get().then(doc => {
-                    const userData = doc.data();
-                    if (!userData || !userData.isActivated) {
-                        alert('You must activate your account before purchasing vault plans. Please activate your account first.');
-                        return;
-                    } else {
-                        alert('Insufficient funds. Please deposit more money first.');
-                        return;
-                    }
-                });
-            } else {
-                alert('You must login to purchase vault plans.');
-                return;
-            }
+            alert('Insufficient funds. Please deposit more money first.');
+            return;
         }
         
         selectedPlan = plan;
         const planData = vaultPlans[plan];
         const profit = planData.amount * planData.profit;
         const total = planData.amount + profit;
-        const dailyProfit = planData.amount * (planData.dailyROI / 100);
 
         document.getElementById('confirmPlanName').textContent = planData.name;
         document.getElementById('confirmAmount').textContent = planData.amount.toLocaleString();
         document.getElementById('confirmDuration').textContent = planData.days + ' days';
-        document.getElementById('confirmDailyROI').textContent = planData.dailyROI;
-        document.getElementById('confirmDailyProfit').textContent = dailyProfit.toLocaleString();
         document.getElementById('confirmProfit').textContent = profit.toLocaleString();
         document.getElementById('confirmTotal').textContent = total.toLocaleString();
 
@@ -4366,16 +4035,6 @@
 
     async function purchaseVault() {
         if (!selectedPlan) return;
-
-        // Check if user is activated
-        if (currentUser) {
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            if (!userData || !userData.isActivated) {
-                alert('You must activate your account before purchasing vault plans. Please activate your account first.');
-                return;
-            }
-        }
 
         const purchaseBtn = document.getElementById('purchaseBtn');
         const originalText = purchaseBtn.textContent;
@@ -5118,195 +4777,11 @@
     }
 
     // Function to add sample candidates (for admin use)
-    // Activation System Functions
-    async function activateAccount() {
-        const paymentMethod = document.getElementById('activationPaymentMethod').value;
-        
-        if (!paymentMethod) {
-            showAlert('activationAlert', 'Please select a payment method', 'error');
-            return;
-        }
-
-        try {
-            // Simulate payment processing
-            showAlert('activationAlert', 'Processing payment of 20,000 UGX...', 'info');
-            
-            // Calculate withdrawal unlock date (1 week from now)
-            const withdrawalUnlockDate = new Date();
-            withdrawalUnlockDate.setDate(withdrawalUnlockDate.getDate() + 7);
-            
-            // Update user activation status
-            await db.collection('users').doc(currentUser.id).update({
-                isActivated: true,
-                activationDate: new Date().toISOString(),
-                activationPaymentMethod: paymentMethod,
-                activationFee: 20000,
-                welcomeBonus: 5000,
-                welcomeBonusUnlockDate: withdrawalUnlockDate.toISOString(),
-                balance: firebase.firestore.FieldValue.increment(5000)
-            });
-
-            // Create transaction records
-            await db.collection('transactions').add({
-                userId: currentUser.id,
-                type: 'activation_fee',
-                amount: -20000,
-                description: 'Account activation fee',
-                timestamp: new Date().toISOString(),
-                status: 'completed'
-            });
-
-            await db.collection('transactions').add({
-                userId: currentUser.id,
-                type: 'welcome_bonus',
-                amount: 5000,
-                description: 'Welcome bonus (withdrawable after 1 week)',
-                timestamp: new Date().toISOString(),
-                status: 'completed',
-                withdrawalUnlockDate: withdrawalUnlockDate.toISOString()
-            });
-
-            showAlert('activationAlert', 'Account activated successfully! 5,000 UGX welcome bonus added! (Withdrawable after 1 week)', 'success');
-            
-            // Update UI
-            setTimeout(() => {
-                updateUserStats();
-                checkActivationStatus();
-            }, 1000);
-
-        } catch (error) {
-            console.error('Error activating account:', error);
-            showAlert('activationAlert', 'Failed to activate account: ' + error.message, 'error');
-        }
-    }
-
-   async function checkActivationStatus() {
-       if (!currentUser || !currentUser.id) {
-           console.log('checkActivationStatus: No current user or user ID');
-           return;
-       }
-   
-       try {
-           console.log('checkActivationStatus: Checking activation for user:', currentUser.email);
-           const userDoc = await db.collection('users').doc(currentUser.id).get();
-           const userData = userDoc.data();
-           
-           console.log('checkActivationStatus: User data from DB:', userData);
-           console.log('checkActivationStatus: isActivated:', userData?.isActivated);
-           
-           if (userData && userData.isActivated) {
-               // Hide activation sections
-               const activationSection = document.getElementById('activationRequiredSection');
-               const earningsSection = document.getElementById('earningsPreviewSection');
-               const welcomeMessage = document.getElementById('welcomeBonusMessage');
-               const activationCarousel = document.getElementById('activationCarousel');
-               const homeSection = document.getElementById('homeSection');
-               
-               if (activationSection) activationSection.classList.add('hidden');
-               if (earningsSection) earningsSection.classList.add('hidden');
-               if (welcomeMessage) welcomeMessage.classList.add('hidden');
-               if (activationCarousel) activationCarousel.classList.add('hidden');
-               
-               // Show home
-               if (homeSection) homeSection.classList.remove('hidden');
-               
-               loadActivationCarousel();
-           } else {
-               console.log('checkActivationStatus: User is not activated, showing activation screen');
-               // Show ONLY activation section
-               const activationSection = document.getElementById('activationRequiredSection');
-               const earningsSection = document.getElementById('earningsPreviewSection');
-               const welcomeMessage = document.getElementById('welcomeBonusMessage');
-               const activationCarousel = document.getElementById('activationCarousel');
-               const homeSection = document.getElementById('homeSection');
-               
-               if (activationSection) activationSection.classList.remove('hidden');
-               
-               // Hide everything else
-               if (earningsSection) earningsSection.classList.add('hidden');
-               if (welcomeMessage) welcomeMessage.classList.add('hidden');
-               if (activationCarousel) activationCarousel.classList.add('hidden');
-               if (homeSection) homeSection.classList.add('hidden');
-               
-               ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
-                   const el = document.getElementById(section + 'Section');
-                   if (el) el.classList.add('hidden');
-               });
-           }
-       } catch (error) {
-           console.error('Error checking activation status:', error);
-       }
-   }
-
-    async function loadActivationCarousel() {
-        try {
-            // Get recently activated users
-            const usersSnapshot = await db.collection('users')
-                .where('isActivated', '==', true)
-                .orderBy('activationDate', 'desc')
-                .limit(20)
-                .get();
-
-            const carouselContent = document.getElementById('carouselContent');
-            carouselContent.innerHTML = '';
-
-            if (usersSnapshot.empty) {
-                carouselContent.innerHTML = '<span style="color: var(--gray);">No recent activations</span>';
-                return;
-            }
-
-            const users = usersSnapshot.docs.map(doc => doc.data());
-            
-            // Create carousel items
-            users.forEach(user => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display: inline-block; margin-right: 2rem; padding: 0.5rem 1rem; background: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;';
-                item.innerHTML = `
-                    <span style="color: var(--primary); font-weight: 600;">${user.name || user.email.split('@')[0]}</span>
-                    <span style="color: var(--gray); font-size: 0.8rem; margin-left: 0.5rem;">just activated</span>
-                `;
-                carouselContent.appendChild(item);
-            });
-
-            // Duplicate items for seamless scrolling
-            const items = carouselContent.innerHTML;
-            carouselContent.innerHTML = items + items + items;
-
-        } catch (error) {
-            console.error('Error loading activation carousel:', error);
-        }
-    }
-
     // Admin Candidates Management Functions
-    function convertFileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    function previewPicture(input) {
-        const preview = document.getElementById('picturePreview');
-        const previewImage = document.getElementById('previewImage');
-        
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImage.src = e.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        } else {
-            preview.style.display = 'none';
-        }
-    }
-
     async function addCandidate() {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const pictureFile = document.getElementById('candidatePicture').files[0];
+            const picture = document.getElementById('candidatePicture').value.trim();
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -5326,15 +4801,9 @@
                 return;
             }
 
-            // Convert picture file to base64 if provided
-            let pictureBase64 = null;
-            if (pictureFile) {
-                pictureBase64 = await convertFileToBase64(pictureFile);
-            }
-
             await db.collection('electionCandidates').add({
                 name: name,
-                picture: pictureBase64,
+                picture: picture || null,
                 title: title,
                 category: category,
                 district: district,
@@ -5354,7 +4823,6 @@
             // Reset form
             document.getElementById('candidateName').value = '';
             document.getElementById('candidatePicture').value = '';
-            document.getElementById('picturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -5466,7 +4934,7 @@
             
             // Populate form with existing data
             document.getElementById('candidateName').value = candidate.name;
-            // Note: File inputs can't be pre-populated for security reasons
+            document.getElementById('candidatePicture').value = candidate.picture || '';
             document.getElementById('candidateTitle').value = candidate.title;
             document.getElementById('candidateCategory').value = candidate.category;
             document.getElementById('candidateDistrict').value = candidate.district;
@@ -5493,7 +4961,7 @@
     async function updateCandidate(candidateId) {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const pictureFile = document.getElementById('candidatePicture').files[0];
+            const picture = document.getElementById('candidatePicture').value.trim();
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -5513,14 +4981,9 @@
                 return;
             }
 
-            // Convert picture file to base64 if provided
-            let pictureBase64 = null;
-            if (pictureFile) {
-                pictureBase64 = await convertFileToBase64(pictureFile);
-            }
-
-            const updateData = {
+            await db.collection('electionCandidates').doc(candidateId).update({
                 name: name,
+                picture: picture || null,
                 title: title,
                 category: category,
                 district: district,
@@ -5529,21 +4992,13 @@
                 party: party || null,
                 electionDate: electionDate || 'TBD',
                 description: description || null
-            };
-
-            // Only update picture if a new file is provided
-            if (pictureBase64) {
-                updateData.picture = pictureBase64;
-            }
-
-            await db.collection('electionCandidates').doc(candidateId).update(updateData);
+            });
 
             alert('Candidate updated successfully!');
             
             // Reset form and button
             document.getElementById('candidateName').value = '';
             document.getElementById('candidatePicture').value = '';
-            document.getElementById('picturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -5553,11 +5008,9 @@
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
             
-            const addBtn = document.querySelector('button[onclick*="addCandidate"]');
-            if (addBtn) {
-                addBtn.textContent = 'Add Candidate';
-                addBtn.onclick = () => addCandidate();
-            }
+            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
+            addBtn.textContent = 'Add Candidate';
+            addBtn.onclick = () => addCandidate();
             
             updateAdminCandidates();
         } catch (error) {
@@ -6079,16 +5532,15 @@
                 return;
             }
 
-            // Check welcome bonus withdrawal restriction (1 week)
-            if (userData.welcomeBonusUnlockDate) {
-                const unlockDate = new Date(userData.welcomeBonusUnlockDate);
-                const now = new Date();
-                
-                if (now < unlockDate) {
-                    const daysLeft = Math.ceil((unlockDate - now) / (24 * 60 * 60 * 1000));
-                    alert(`Your welcome bonus (5,000 UGX) can only be withdrawn after ${daysLeft} more days`);
-                    return;
-                }
+            // Check 30-day waiting period from activation
+            const activationDate = new Date(userData.activationDate || userData.joinedDate);
+            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+            const now = new Date();
+
+            if (now < thirtyDaysLater) {
+                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
+                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
+                return;
             }
 
             // Check if it's weekend (Saturday or Sunday)
@@ -6980,11 +6432,9 @@
             document.getElementById('adminTaskDay').value = '';
             document.getElementById('adminTaskRequiresProof').checked = true;
             
-            const createBtn = document.querySelector('button[onclick*="createTask"]');
-            if (createBtn) {
-                createBtn.textContent = '📝 Create Task';
-                createBtn.onclick = () => createTask();
-            }
+            const createBtn = document.querySelector('button[onclick="updateTask(\'' + taskId + '\')"]');
+            createBtn.textContent = '📝 Create Task';
+            createBtn.onclick = () => createTask();
             
             updateAdminTasks();
         } catch (error) {
@@ -7184,3 +6634,4 @@
     window.addEventListener('load', init);
 </script>
 </body>
+</html>
