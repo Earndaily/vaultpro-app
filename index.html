@@ -1203,6 +1203,7 @@
                 <div class="nav-link" onclick="showSection('streak')">Daily Streak</div>
                 <div class="nav-link" onclick="showSection('tasks')">Daily Tasks</div>
                 <div class="nav-link" onclick="showSection('wallet')">Wallet</div>
+                <div class="nav-link" onclick="showSection('stake')">Stake</div>
                 <div class="nav-link" onclick="logout()">Logout</div>
             </div>
         </div>
@@ -2099,6 +2100,7 @@
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Add New Candidate</h3>
                     <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
+                    <input type="url" id="candidatePicture" placeholder="Candidate Picture URL (optional)" />
                     <input type="text" id="candidateTitle" placeholder="Position (e.g., President, MP, Mayor, LC5 Chairman)" />
                     <select id="candidateCategory">
                         <option value="">Select Category</option>
@@ -2176,7 +2178,7 @@
             <div class="bottom-nav-icon">👤</div>
             <div class="bottom-nav-label">Profile</div>
         </div>
-        <div class="bottom-nav-item" onclick="openStakeModal()" data-section="stake">
+        <div class="bottom-nav-item" onclick="showSection('stake')" data-section="stake">
             <div class="bottom-nav-icon">🎯</div>
             <div class="bottom-nav-label">Stake</div>
         </div>
@@ -2254,49 +2256,47 @@
         </div>
     </div>
 
-    <!-- Stake Modal -->
-    <div id="stakeModal" class="modal hidden">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h2>🎯 Political Stake</h2>
-                <button class="modal-close" onclick="closeStakeModal()">&times;</button>
-            </div>
-            
-            <div class="modal-body">
-                <div id="stakeAlert"></div>
+    <!-- Stake Section -->
+    <div id="stakeSection" class="hidden">
+        <div class="card">
+            <h2>🎯 Political Stake</h2>
+            <div id="stakeAlert"></div>
                 
                 <!-- Stake Info -->
-                <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                    <h3 style="color: #92400e; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                        🏛️ Election Betting
-                    </h3>
-                    <div style="display: grid; gap: 0.5rem; color: #92400e; font-size: 0.9rem;">
-                        <p style="margin: 0;"><strong>💰 Minimum Stake:</strong> 10,000 UGX</p>
-                        <p style="margin: 0;"><strong>🎁 Early Bonus:</strong> 30% extra for early stakers</p>
-                        <p style="margin: 0;"><strong>🎯 Win Multiplier:</strong> Stake × Odds if your candidate wins</p>
+                <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 16px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <h3 style="color: #92400e; margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">🏛️ Political Betting Platform</h3>
+                        <p style="color: #92400e; margin: 0; font-size: 1rem; opacity: 0.8;">Stake on your preferred candidates and win big!</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; color: #92400e; font-size: 0.9rem;">
+                        <div style="background: rgba(255, 255, 255, 0.3); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💰</div>
+                            <div style="font-weight: 600;">Minimum Stake</div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">10,000 UGX</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.3); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎁</div>
+                            <div style="font-weight: 600;">Early Bonus</div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">30% Extra</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.3); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎯</div>
+                            <div style="font-weight: 600;">Win Multiplier</div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">Stake × Odds</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Election Categories -->
+                <!-- Election Categories Filter -->
                 <div style="margin-bottom: 1.5rem;">
-                    <h3>📊 Election Categories</h3>
-                    <div class="grid grid-2" style="gap: 1rem;">
-                        <button class="btn btn-secondary" onclick="filterCandidates('president')" id="filterPresident">
-                            🏛️ President
-                        </button>
-                        <button class="btn btn-secondary" onclick="filterCandidates('mp')" id="filterMP">
-                            🏛️ Member of Parliament
-                        </button>
-                        <button class="btn btn-secondary" onclick="filterCandidates('mayor')" id="filterMayor">
-                            🏙️ City Mayor
-                        </button>
-                        <button class="btn btn-secondary" onclick="filterCandidates('lc5')" id="filterLC5">
-                            🏛️ LC5 Chairman
-                        </button>
-                        <button class="btn btn-secondary" onclick="filterCandidates('all')" id="filterAll">
-                            📋 All Candidates
-                        </button>
-                    </div>
+                    <h3>📊 Filter by Category</h3>
+                    <select id="categoryFilter" onchange="filterCandidates(this.value)" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; background: white;">
+                        <option value="all">📋 All Candidates</option>
+                        <option value="president">🏛️ President</option>
+                        <option value="mp">🏛️ Member of Parliament</option>
+                        <option value="mayor">🏙️ City Mayor</option>
+                        <option value="lc5">🏛️ LC5 Chairman</option>
+                    </select>
                 </div>
 
                 <!-- Candidates List -->
@@ -3599,7 +3599,7 @@
     }
 
     function showSection(section) {
-        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile'].forEach(s => {
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
                 el.classList.add('hidden');
@@ -3624,6 +3624,10 @@
 
         if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
+        else if (section === 'stake') {
+            loadCandidates();
+            loadMyStakes();
+        }
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') updateTasksSection();
@@ -4475,10 +4479,11 @@
             return;
         }
 
-        // Group candidates by position/title
+        // Group candidates by position/title and district for more precise grouping
         const groupedCandidates = {};
         candidates.forEach(candidate => {
-            const key = candidate.title;
+            // Create a more specific key that includes both title and district for better grouping
+            const key = `${candidate.title} - ${candidate.district || candidate.region}`;
             if (!groupedCandidates[key]) {
                 groupedCandidates[key] = [];
             }
@@ -4486,22 +4491,61 @@
         });
 
         const candidatesHTML = Object.entries(groupedCandidates).map(([position, positionCandidates]) => `
-            <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1rem 0; color: var(--primary); text-align: center;">${position}</h3>
-                <div style="display: grid; gap: 1rem;">
-                    ${positionCandidates.map(candidate => `
-                        <div class="candidate-card" style="margin-bottom: 0; padding: 1rem; border: 1px solid #e5e7eb;">
-                            <div class="candidate-header">
-                                <div class="candidate-info">
-                                    <h4 style="margin: 0 0 0.25rem 0;">${candidate.name}</h4>
-                                    <p style="margin: 0; color: var(--gray); font-size: 0.875rem;">📍 ${candidate.district || candidate.region}</p>
-                                    ${candidate.party ? `<p style="margin: 0; color: var(--gray); font-size: 0.75rem;">Party: ${candidate.party}</p>` : ''}
-                                </div>
-                                <div class="odds-badge" style="font-size: 1rem; padding: 0.5rem 0.75rem;">${candidate.odds}x</div>
+            <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 2px solid #e2e8f0; border-radius: 16px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="margin: 0 0 0.5rem 0; color: var(--primary); font-size: 1.5rem; font-weight: 700;">${position}</h2>
+                    <p style="margin: 0; color: var(--gray); font-size: 0.9rem;">${positionCandidates.length} candidate${positionCandidates.length > 1 ? 's' : ''} competing</p>
+                </div>
+                
+                <div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                    ${positionCandidates.map((candidate, index) => `
+                        <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; transition: all 0.3s ease; position: relative; overflow: hidden;" 
+                             onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(99, 102, 241, 0.15)'"
+                             onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            
+                            <!-- Candidate Number Badge -->
+                            <div style="position: absolute; top: 1rem; right: 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                ${index + 1}
                             </div>
                             
-                            <button class="btn stake-button" style="width: 100%; margin-top: 0.75rem;" onclick="stakeOnCandidate('${candidate.id}')">
-                                🎯 Stake on ${candidate.name}
+                            <!-- Candidate Info -->
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                    ${candidate.picture ? `
+                                        <img src="${candidate.picture}" alt="${candidate.name}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;" />
+                                    ` : `
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.2rem;">
+                                            ${candidate.name.charAt(0)}
+                                        </div>
+                                    `}
+                                    <h3 style="margin: 0; color: var(--text); font-size: 1.25rem; font-weight: 600; flex: 1;">${candidate.name}</h3>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <span style="color: var(--gray); font-size: 0.875rem;">📍</span>
+                                    <span style="color: var(--gray); font-size: 0.875rem;">${candidate.district || candidate.region}</span>
+                                </div>
+                                ${candidate.party ? `
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span style="color: var(--gray); font-size: 0.875rem;">🏛️</span>
+                                        <span style="color: var(--gray); font-size: 0.875rem; font-weight: 500;">${candidate.party}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <!-- Odds Display -->
+                            <div style="text-align: center; margin-bottom: 1.5rem;">
+                                <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1rem; border-radius: 12px; display: inline-block;">
+                                    <div style="font-size: 0.875rem; margin-bottom: 0.25rem; opacity: 0.9;">Win Multiplier</div>
+                                    <div style="font-size: 2rem; font-weight: 700;">${candidate.odds}x</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Stake Button -->
+                            <button class="btn" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; background: linear-gradient(135deg, var(--success), #10b981); border: none; border-radius: 12px; color: white; cursor: pointer; transition: all 0.3s ease;" 
+                                    onclick="stakeOnCandidate('${candidate.id}')"
+                                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'"
+                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                🎯 Stake
                             </button>
                         </div>
                     `).join('')}
@@ -4515,16 +4559,10 @@
     function filterCandidates(category) {
         currentFilter = category;
         
-        // Update filter buttons
-        document.querySelectorAll('[id^="filter"]').forEach(btn => {
-            btn.classList.remove('btn');
-            btn.classList.add('btn-secondary');
-        });
-        
-        const activeBtn = document.getElementById(`filter${category.charAt(0).toUpperCase() + category.slice(1)}`);
-        if (activeBtn) {
-            activeBtn.classList.remove('btn-secondary');
-            activeBtn.classList.add('btn');
+        // Update dropdown selection
+        const dropdown = document.getElementById('categoryFilter');
+        if (dropdown) {
+            dropdown.value = category;
         }
 
         // Reload and filter candidates
@@ -4743,6 +4781,7 @@
     async function addCandidate() {
         try {
             const name = document.getElementById('candidateName').value.trim();
+            const picture = document.getElementById('candidatePicture').value.trim();
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -4764,6 +4803,7 @@
 
             await db.collection('electionCandidates').add({
                 name: name,
+                picture: picture || null,
                 title: title,
                 category: category,
                 district: district,
@@ -4782,6 +4822,7 @@
             
             // Reset form
             document.getElementById('candidateName').value = '';
+            document.getElementById('candidatePicture').value = '';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -4883,6 +4924,98 @@
             }
         } catch (error) {
             console.error('Error updating admin stakes:', error);
+        }
+    }
+
+    async function editCandidate(candidateId) {
+        try {
+            const candidateDoc = await db.collection('electionCandidates').doc(candidateId).get();
+            const candidate = candidateDoc.data();
+            
+            // Populate form with existing data
+            document.getElementById('candidateName').value = candidate.name;
+            document.getElementById('candidatePicture').value = candidate.picture || '';
+            document.getElementById('candidateTitle').value = candidate.title;
+            document.getElementById('candidateCategory').value = candidate.category;
+            document.getElementById('candidateDistrict').value = candidate.district;
+            document.getElementById('candidateRegion').value = candidate.region;
+            document.getElementById('candidateOdds').value = candidate.odds;
+            document.getElementById('candidateParty').value = candidate.party || '';
+            document.getElementById('candidateElectionDate').value = candidate.electionDate || '';
+            document.getElementById('candidateDescription').value = candidate.description || '';
+            
+            // Change button text and onclick
+            const addBtn = document.querySelector('button[onclick="addCandidate()"]');
+            addBtn.textContent = 'Update Candidate';
+            addBtn.onclick = () => updateCandidate(candidateId);
+            
+            // Scroll to form
+            document.getElementById('candidateName').scrollIntoView({ behavior: 'smooth' });
+            
+        } catch (error) {
+            console.error('Error loading candidate for edit:', error);
+            alert('Failed to load candidate data: ' + error.message);
+        }
+    }
+
+    async function updateCandidate(candidateId) {
+        try {
+            const name = document.getElementById('candidateName').value.trim();
+            const picture = document.getElementById('candidatePicture').value.trim();
+            const title = document.getElementById('candidateTitle').value.trim();
+            const category = document.getElementById('candidateCategory').value;
+            const district = document.getElementById('candidateDistrict').value.trim();
+            const region = document.getElementById('candidateRegion').value.trim();
+            const odds = parseFloat(document.getElementById('candidateOdds').value);
+            const party = document.getElementById('candidateParty').value.trim();
+            const electionDate = document.getElementById('candidateElectionDate').value;
+            const description = document.getElementById('candidateDescription').value.trim();
+
+            if (!name || !title || !category || !district || !region || !odds) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            if (odds < 1) {
+                alert('Odds must be at least 1.0');
+                return;
+            }
+
+            await db.collection('electionCandidates').doc(candidateId).update({
+                name: name,
+                picture: picture || null,
+                title: title,
+                category: category,
+                district: district,
+                region: region,
+                odds: odds,
+                party: party || null,
+                electionDate: electionDate || 'TBD',
+                description: description || null
+            });
+
+            alert('Candidate updated successfully!');
+            
+            // Reset form and button
+            document.getElementById('candidateName').value = '';
+            document.getElementById('candidatePicture').value = '';
+            document.getElementById('candidateTitle').value = '';
+            document.getElementById('candidateCategory').value = '';
+            document.getElementById('candidateDistrict').value = '';
+            document.getElementById('candidateRegion').value = '';
+            document.getElementById('candidateOdds').value = '';
+            document.getElementById('candidateParty').value = '';
+            document.getElementById('candidateElectionDate').value = '';
+            document.getElementById('candidateDescription').value = '';
+            
+            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
+            addBtn.textContent = 'Add Candidate';
+            addBtn.onclick = () => addCandidate();
+            
+            updateAdminCandidates();
+        } catch (error) {
+            console.error('Error updating candidate:', error);
+            alert('Failed to update candidate: ' + error.message);
         }
     }
 
@@ -6186,6 +6319,9 @@
                             ${task.link ? `<p style="color: var(--primary); font-size: 0.875rem; word-break: break-all;"><strong>Link:</strong> ${task.link}</p>` : ''}
                         </div>
                         <div class="task-action">
+                            <button class="btn" style="background: var(--warning); padding: 0.5rem 1rem; font-size: 0.875rem; margin-right: 0.5rem;" onclick="editTask('${task.id}')">
+                                ✏️ Edit
+                            </button>
                             <button class="btn" style="background: var(--error); padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="deleteTask('${task.id}')">
                                 🗑️ Delete
                             </button>
@@ -6228,6 +6364,82 @@
             }
         } catch (error) {
             console.error("Error updating admin tasks:", error);
+        }
+    }
+
+    async function editTask(taskId) {
+        try {
+            const taskDoc = await db.collection('tasks').doc(taskId).get();
+            const task = taskDoc.data();
+            
+            // Populate form with existing data
+            document.getElementById('adminTaskTitle').value = task.title;
+            document.getElementById('adminTaskDescription').value = task.description;
+            document.getElementById('adminTaskLink').value = task.link || '';
+            document.getElementById('adminTaskReward').value = task.reward;
+            document.getElementById('adminTaskTimer').value = task.timer || 60;
+            document.getElementById('adminTaskDay').value = task.day;
+            document.getElementById('adminTaskRequiresProof').checked = task.requiresProof;
+            
+            // Change button text and onclick
+            const createBtn = document.querySelector('button[onclick="createTask()"]');
+            createBtn.textContent = 'Update Task';
+            createBtn.onclick = () => updateTask(taskId);
+            
+            // Scroll to form
+            document.getElementById('adminTaskTitle').scrollIntoView({ behavior: 'smooth' });
+            
+        } catch (error) {
+            console.error('Error loading task for edit:', error);
+            alert('Failed to load task data: ' + error.message);
+        }
+    }
+
+    async function updateTask(taskId) {
+        try {
+            const title = document.getElementById('adminTaskTitle').value.trim();
+            const description = document.getElementById('adminTaskDescription').value.trim();
+            const link = document.getElementById('adminTaskLink').value.trim();
+            const reward = parseInt(document.getElementById('adminTaskReward').value);
+            const timer = parseInt(document.getElementById('adminTaskTimer').value);
+            const day = document.getElementById('adminTaskDay').value;
+            const requiresProof = document.getElementById('adminTaskRequiresProof').checked;
+
+            if (!title || !description || !reward || !day) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            await db.collection('tasks').doc(taskId).update({
+                title: title,
+                description: description,
+                link: link || null,
+                reward: reward,
+                timer: timer,
+                day: day,
+                requiresProof: requiresProof,
+                updatedDate: new Date().toISOString()
+            });
+
+            alert('Task updated successfully!');
+            
+            // Reset form and button
+            document.getElementById('adminTaskTitle').value = '';
+            document.getElementById('adminTaskDescription').value = '';
+            document.getElementById('adminTaskLink').value = '';
+            document.getElementById('adminTaskReward').value = '';
+            document.getElementById('adminTaskTimer').value = '60';
+            document.getElementById('adminTaskDay').value = '';
+            document.getElementById('adminTaskRequiresProof').checked = true;
+            
+            const createBtn = document.querySelector('button[onclick="updateTask(\'' + taskId + '\')"]');
+            createBtn.textContent = '📝 Create Task';
+            createBtn.onclick = () => createTask();
+            
+            updateAdminTasks();
+        } catch (error) {
+            console.error('Error updating task:', error);
+            alert('Failed to update task: ' + error.message);
         }
     }
 
