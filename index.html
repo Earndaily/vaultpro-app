@@ -9,13 +9,13 @@
         box-sizing: border-box;
     }
 
-        :root {
-        --primary: #2563eb;
-        --primary-dark: #1d4ed8;
-        --secondary: #7c3aed;
-        --success: #059669;
-        --warning: #d97706;
-        --error: #dc2626;
+    :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --secondary: #ec4899;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --error: #ef4444;
         --dark: #1f2937;
         --light: #f9fafb;
         --gray: #6b7280;
@@ -26,7 +26,7 @@
 
     body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-        background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         line-height: 1.6;
         color: var(--dark);
@@ -238,7 +238,7 @@
 
     .plan-card.selected {
         border-color: var(--primary);
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
     }
 
     .plan-card.disabled {
@@ -250,12 +250,6 @@
     .plan-card.disabled:hover {
         transform: none;
         box-shadow: none;
-    }
-
-    /* Carousel Animation */
-    @keyframes scroll {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
     }
 
     .plan-name {
@@ -318,7 +312,7 @@
     }
 
     .nav-link:hover {
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
         color: var(--primary);
     }
 
@@ -364,7 +358,7 @@
     }
 
     .bottom-nav-item.active {
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
         color: var(--primary);
     }
 
@@ -582,7 +576,7 @@
 
     .candidate-card.selected {
         border-color: var(--primary);
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
     }
 
     .candidate-header {
@@ -696,7 +690,7 @@
 
     /* Referral Link */
     .referral-link {
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
         padding: 1.5rem;
         border-radius: 12px;
         display: flex;
@@ -893,7 +887,7 @@
     }
 
     .task-timer {
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
         border: 2px solid var(--primary);
         border-radius: 12px;
         padding: 1rem;
@@ -928,12 +922,12 @@
         height: 100%;
         background-color: rgba(0,0,0,0.5);
         backdrop-filter: blur(4px);
-        align-items: center;
-        justify-content: center;
     }
 
     .modal.show {
-        display: flex !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .modal.hidden {
@@ -1056,7 +1050,7 @@
 
     .schedule-day.active {
         border-color: var(--primary);
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
     }
 
     .schedule-day-name {
@@ -1200,81 +1194,17 @@
             <div class="logo">VaultPro</div>
             <div class="user-info" id="userInfo" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span id="userNameDisplay" style="font-weight: 600; color: var(--primary);"></span>
+                <span id="activationStatus" style="display: none;">✅</span>
             </div>
             <div class="nav-links">
                 <div class="nav-link" onclick="showSection('home')">Home</div>
-                <div class="nav-link" onclick="showSection('vault')">Vault Plans</div>
                 <div class="nav-link" onclick="showSection('referrals')">Referrals</div>
                 <div class="nav-link" onclick="showSection('streak')">Daily Streak</div>
                 <div class="nav-link" onclick="showSection('tasks')">Daily Tasks</div>
                 <div class="nav-link" onclick="showSection('wallet')">Wallet</div>
                 <div class="nav-link" onclick="showSection('stake')">Stake</div>
+                <div class="nav-link" onclick="showSection('vault')">Vault Plans</div>
                 <div class="nav-link" onclick="logout()">Logout</div>
-            </div>
-        </div>
-
-        <!-- Welcome Bonus Message -->
-        <div id="welcomeBonusMessage" class="hidden" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; text-align: center; margin: 0; border-radius: 0; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                <div style="font-size: 2rem;">🎉</div>
-                <div>
-                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Welcome to VaultPro!</h3>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">You have a special welcome bonus waiting for you!</p>
-                </div>
-                <div id="welcomeBonusAmount" style="font-size: 1.5rem; font-weight: 800; filter: blur(8px); transition: filter 0.3s ease;">5,000 UGX</div>
-            </div>
-        </div>
-
-        <!-- Activation Carousel -->
-        <div id="activationCarousel" class="hidden" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1)); padding: 0.75rem; border-bottom: 2px solid #e5e7eb; overflow: hidden; position: relative;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <span style="color: var(--primary); font-weight: 600;">🔥</span>
-                <span style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">Recently Activated Users:</span>
-            </div>
-            <div id="carouselContent" style="display: flex; animation: scroll 30s linear infinite; white-space: nowrap;">
-                <!-- Carousel items will be populated by JavaScript -->
-            </div>
-        </div>
-
-
-        <!-- Earnings Preview Section -->
-        <div id="earningsPreviewSection" class="hidden" style="padding: 2rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border-radius: 12px; margin: 1rem; border: 2px solid #10b981;">
-            <h2 style="text-align: center; color: #059669; margin-bottom: 2rem; font-size: 1.75rem;">💰 What You'll Earn After Activation</h2>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">📺</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Watch Videos</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+2,000 UGX/day</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Simple video watching tasks</p>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">👥</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Refer Friends</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+5,000 UGX/referral</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Earn from each successful referral</p>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">💎</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Invest & Earn</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+1.7-2.0% daily</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Passive income from investments</p>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎯</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Betting & Stakes</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+3,000 UGX/day</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Strategic betting opportunities</p>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 12px;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">🎯 Total Daily Potential</h3>
-                <div style="font-size: 2.5rem; font-weight: 800; margin: 0;">10,000+ UGX</div>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Start earning immediately after activation!</p>
             </div>
         </div>
 
@@ -1283,6 +1213,18 @@
             <!-- Referral Alert -->
             <div id="referralAlert"></div>
             
+            <!-- Activation Section -->
+            <div class="card" id="activationCard" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h2 style="color: #92400e; margin: 0;">🔒 Account Not Activated</h2>
+                        <p style="color: #92400e; margin: 0.5rem 0;">Complete your registration to unlock all features</p>
+                    </div>
+                    <button class="btn" style="background: #f59e0b; color: white;" onclick="showActivationPayment()">
+                        Pay 20,000 UGX
+                    </button>
+                </div>
+            </div>
 
             <div class="card">
                 <h2>📊 Dashboard</h2>
@@ -1328,6 +1270,41 @@
                 </div>
             </div>
 
+            <!-- Activation Payment Section (only shown for unactivated users) -->
+            <div id="activationPaymentSection" class="card hidden" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; text-align: center;">
+                <h3 style="color: #92400e; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                    🔒 Account Activation Required
+                </h3>
+                <p style="color: #92400e; margin-bottom: 1.5rem;">
+                    Complete your account activation by paying the 20,000 UGX registration fee to unlock all features.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">💰 Activation Fee</h4>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">20,000 UGX</div>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">🎁 What You Get</h4>
+                        <ul style="color: #6b7280; margin: 0; padding-left: 1rem; font-size: 0.875rem; text-align: left;">
+                            <li>Access to all vault plans</li>
+                            <li>Daily tasks and rewards</li>
+                            <li>Referral bonuses</li>
+                            <li>Withdrawal privileges</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <button class="btn activation-payment-element" style="background: #059669; color: white; padding: 1rem 2rem; font-size: 1.1rem; margin-bottom: 1rem;" onclick="showActivationModal()">
+                    💳 Pay Activation Fee Now
+                </button>
+                
+                <div style="padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 6px;">
+                    <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
+                        <strong>📱 Quick & Easy:</strong> Click the button above to get payment instructions and submit your payment proof.
+                    </p>
+                </div>
+            </div>
 
             <div class="card">
                 <div class="collapsible-section">
@@ -1362,120 +1339,6 @@
             </div>
         </div>
 
-        <!-- Vault Plans Section -->
-        <div id="vaultSection" class="hidden">
-            <div class="card">
-                <h2>Choose Your Vault Plan</h2>
-                <p style="color: var(--gray); margin-bottom: 1rem;">Select a plan and watch your investment grow!</p>
-                <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1)); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 2px solid #e5e7eb;">
-                    <strong>Your Current Balance: <span id="vaultBalance" style="color: var(--primary); font-size: 1.5rem;">0</span> UGX</strong>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-                    <div class="plan-card" onclick="selectPlan('seed')">
-                        <div class="plan-name">🌱 Seed</div>
-                        <div class="plan-amount">45,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.7%</p>
-                        <div class="plan-profit">+765 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +22,950 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('rising')">
-                        <div class="plan-name">🌅 Rising</div>
-                        <div class="plan-amount">180,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.7%</p>
-                        <div class="plan-profit">+3,060 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +91,800 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('nova')">
-                        <div class="plan-name">💡 Nova</div>
-                        <div class="plan-amount">600,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+10,800 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +324,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('mastermind')">
-                        <div class="plan-name">🧠 Mastermind</div>
-                        <div class="plan-amount">1,800,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+32,400 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +972,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('titan')">
-                        <div class="plan-name">💪 Titan</div>
-                        <div class="plan-amount">5,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+90,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +2,700,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('king')">
-                        <div class="plan-name">👑 King</div>
-                        <div class="plan-amount">10,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+180,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +5,400,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('emperor')">
-                        <div class="plan-name">🦅 Emperor</div>
-                        <div class="plan-amount">20,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.8%</p>
-                        <div class="plan-profit">+360,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +10,800,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('icon')">
-                        <div class="plan-name">💫 Icon</div>
-                        <div class="plan-amount">35,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 1.9%</p>
-                        <div class="plan-profit">+665,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +19,950,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('supreme')">
-                        <div class="plan-name">🔱 Supreme</div>
-                        <div class="plan-amount">60,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 2.0%</p>
-                        <div class="plan-profit">+1,200,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +36,000,000 UGX</small>
-                    </div>
-                    
-                    <div class="plan-card" onclick="selectPlan('legendary')">
-                        <div class="plan-name">🕊️ Legendary</div>
-                        <div class="plan-amount">90,000,000 UGX</div>
-                        <p style="color: var(--gray); margin: 0.5rem 0;">Daily ROI: 2.0%</p>
-                        <div class="plan-profit">+1,800,000 UGX/day</div>
-                        <small style="color: var(--gray);">30-Day: +54,000,000 UGX</small>
-                    </div>
-                </div>
-
-                <div id="selectedPlanDetails" class="hidden mt-3">
-                    <h3>Confirm Your Investment</h3>
-                    <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05)); padding: 1.5rem; border-radius: 12px; margin: 1rem 0; border: 2px solid #e5e7eb;">
-                        <p><strong>Plan:</strong> <span id="confirmPlanName"></span></p>
-                        <p><strong>Amount:</strong> <span id="confirmAmount"></span> UGX</p>
-                        <p><strong>Duration:</strong> <span id="confirmDuration"></span></p>
-                        <p><strong>Daily ROI:</strong> <span id="confirmDailyROI"></span>%</p>
-                        <p><strong>Daily Profit:</strong> <span id="confirmDailyProfit"></span> UGX</p>
-                        <p><strong>Expected Profit:</strong> <span id="confirmProfit"></span> UGX</p>
-                        <p><strong>Total Return:</strong> <span id="confirmTotal"></span> UGX</p>
-                    </div>
-                    <select id="vaultPaymentMethod">
-                        <option value="">Select Payment Method</option>
-                        <option value="balance">Use Wallet Balance</option>
-                        <option value="momo">Mobile Money</option>
-                        <option value="card">Credit/Debit Card</option>
-                    </select>
-                    <button class="btn btn-block mt-2" id="purchaseBtn" onclick="purchaseVault()">
-                        Confirm Purchase
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <!-- Referrals Section -->
         <div id="referralsSection" class="hidden">
@@ -1671,23 +1534,6 @@
                         <div class="stat-label">Points Balance</div>
                         <div class="stat-value" id="walletPointsBalance">0</div>
                         <div class="stat-unit">Points</div>
-                    </div>
-                </div>
-
-                <!-- Welcome Bonus Status -->
-                <div id="welcomeBonusStatus" class="hidden" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border: 2px solid #10b981; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 2rem;">🎁</div>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #059669;">Welcome Bonus Status</h4>
-                            <p style="margin: 0; color: #6b7280; font-size: 0.9rem;" id="welcomeBonusStatusText">
-                                Your 5,000 UGX welcome bonus is locked for 7 days
-                            </p>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;" id="welcomeBonusAmount">5,000 UGX</div>
-                            <div style="font-size: 0.8rem; color: #6b7280;" id="welcomeBonusUnlockTime">Unlocks in 7 days</div>
-                        </div>
                     </div>
                 </div>
 
@@ -2124,7 +1970,7 @@
                 <h2>Task Management</h2>
                 
                 <!-- Create New Task -->
-                <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Create New Task</h3>
                     <input type="text" id="adminTaskTitle" placeholder="Task Title (e.g., Follow our TikTok)" />
                     <textarea id="adminTaskDescription" placeholder="Task Description and Instructions" rows="3" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
@@ -2187,7 +2033,7 @@
                 <h2>Election Candidates Management</h2>
                 
                 <!-- Create New Candidate -->
-                <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Add New Candidate</h3>
                     <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
                     <input type="file" id="candidatePicture" accept="image/*" style="padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white;" onchange="previewPicture(this)" />
@@ -2253,10 +2099,6 @@
             <div class="bottom-nav-icon">🏠</div>
             <div class="bottom-nav-label">Home</div>
         </div>
-        <div class="bottom-nav-item" onclick="showSection('vault')" data-section="vault">
-            <div class="bottom-nav-icon">🏦</div>
-            <div class="bottom-nav-label">Vault</div>
-        </div>
         <div class="bottom-nav-item" onclick="showSection('tasks')" data-section="tasks">
             <div class="bottom-nav-icon">✅</div>
             <div class="bottom-nav-label">Tasks</div>
@@ -2276,6 +2118,10 @@
         <div class="bottom-nav-item" onclick="showSection('stake')" data-section="stake">
             <div class="bottom-nav-icon">🎯</div>
             <div class="bottom-nav-label">Stake</div>
+        </div>
+        <div class="bottom-nav-item" onclick="showSection('vault')" data-section="vault">
+            <div class="bottom-nav-icon">🏦</div>
+            <div class="bottom-nav-label">Vault</div>
         </div>
     </div>
 </div>
@@ -2380,6 +2226,7 @@
                             <div style="font-size: 1.1rem; font-weight: 700;">Stake × Odds</div>
                         </div>
                     </div>
+
                 </div>
 
                 <!-- Election Categories Filter -->
@@ -2405,6 +2252,53 @@
                     <h3>📋 My Stakes</h3>
                     <div id="myStakesList">
                         <p class="text-center" style="color: var(--gray); padding: 1rem;">No stakes placed yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vault Plans Section -->
+    <div id="vaultSection" class="hidden">
+        <div class="card">
+            <h2>🏦 Vault Plans</h2>
+            <div id="vaultAlert"></div>
+                
+                <!-- Vault Info -->
+                <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); border: 2px solid #3b82f6; border-radius: 16px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <h3 style="color: #1e40af; margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">💎 Investment Vault Platform</h3>
+                        <p style="color: #1e40af; margin: 0; font-size: 1rem; opacity: 0.8;">Choose your investment tier and start earning daily returns!</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; color: #1e40af; font-size: 0.9rem;">
+                        <div style="background: rgba(255, 255, 255, 0.3); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💰</div>
+                            <div style="font-weight: 600;">Minimum Entry</div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">45,000 UGX</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.3); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📈</div>
+                            <div style="font-weight: 600;">Daily ROI</div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">1.7% - 2.0%</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.3); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎯</div>
+                            <div style="font-weight: 600;">30-Day Profit</div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">≈50% Return</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vault Plans List -->
+                <div id="vaultPlansList">
+                    <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading vault plans...</p>
+                </div>
+                
+                <!-- My Investments -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+                    <h3>📋 My Investments</h3>
+                    <div id="myInvestmentsList">
+                        <p class="text-center" style="color: var(--gray); padding: 1rem;">No investments yet</p>
                     </div>
                 </div>
             </div>
@@ -2536,16 +2430,10 @@
     }
 
     const vaultPlans = {
-        seed: { name: '🌱 Seed', amount: 45000, days: 30, profit: 0.51, dailyROI: 1.7 },
-        rising: { name: '🌅 Rising', amount: 180000, days: 30, profit: 0.51, dailyROI: 1.7 },
-        nova: { name: '💡 Nova', amount: 600000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        mastermind: { name: '🧠 Mastermind', amount: 1800000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        titan: { name: '💪 Titan', amount: 5000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        king: { name: '👑 King', amount: 10000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        emperor: { name: '🦅 Emperor', amount: 20000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        icon: { name: '💫 Icon', amount: 35000000, days: 30, profit: 0.57, dailyROI: 1.9 },
-        supreme: { name: '🔱 Supreme', amount: 60000000, days: 30, profit: 0.60, dailyROI: 2.0 },
-        legendary: { name: '🕊️ Legendary', amount: 90000000, days: 30, profit: 0.60, dailyROI: 2.0 }
+        bronze: { name: 'Bronze Vault', amount: 50000, days: 30, profit: 0.15 },
+        silver: { name: 'Silver Vault', amount: 100000, days: 60, profit: 0.35 },
+        gold: { name: 'Gold Vault', amount: 250000, days: 90, profit: 0.60 },
+        platinum: { name: 'Platinum Vault', amount: 500000, days: 180, profit: 1.20 }
     };
 
     // Initialize app
@@ -3188,7 +3076,7 @@
                 showUserDashboard();
                 // Check if user has activated their account
                 if (!currentUser.isActivated) {
-                    showAlert('loginAlert', 'Login successful! Welcome to VaultPro.', 'success');
+                    showAlert('loginAlert', 'Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to unlock all features.', 'error');
                 }
             }
 
@@ -3405,8 +3293,13 @@
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         
-        // Check activation status first
-        checkActivationStatus();
+        // Show home section immediately
+        showSection('home');
+        
+        // Ensure home section is shown after async operations
+        setTimeout(() => {
+            showSection('home');
+        }, 100);
         
         updateUserStats();
         updateFeatureAccess();
@@ -3689,28 +3582,6 @@
     }
 
     function showSection(section) {
-        // Check if user is activated before showing sections
-        if (currentUser) {
-            db.collection('users').doc(currentUser.uid).get().then(doc => {
-                const userData = doc.data();
-                if (!userData || !userData.isActivated) {
-                    // User not activated, show activation required
-                    checkActivationStatus();
-                    return;
-                }
-                
-                // User is activated, proceed with normal section display
-                displaySection(section);
-            }).catch(error => {
-                console.error('Error checking activation status:', error);
-                displaySection(section);
-            });
-        } else {
-            displaySection(section);
-        }
-    }
-
-    function displaySection(section) {
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
@@ -3740,7 +3611,9 @@
             loadCandidates();
             loadMyStakes();
         }
-        else if (section === 'vault') updateVaultSection();
+        else if (section === 'vault') {
+            displayVaultPlans();
+        }
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') updateTasksSection();
         else if (section === 'profile') {
@@ -3802,31 +3675,6 @@
             
             document.getElementById('walletBalance').textContent = balance.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
-            
-            // Update welcome bonus status
-            const welcomeBonusStatus = document.getElementById('welcomeBonusStatus');
-            if (userData.welcomeBonusUnlockDate) {
-                const unlockDate = new Date(userData.welcomeBonusUnlockDate);
-                const now = new Date();
-                
-                if (now < unlockDate) {
-                    // Bonus is still locked
-                    const daysLeft = Math.ceil((unlockDate - now) / (24 * 60 * 60 * 1000));
-                    document.getElementById('welcomeBonusStatusText').textContent = 
-                        `Your 5,000 UGX welcome bonus is locked for ${daysLeft} more days`;
-                    document.getElementById('welcomeBonusUnlockTime').textContent = 
-                        `Unlocks in ${daysLeft} days`;
-                    welcomeBonusStatus.classList.remove('hidden');
-                } else {
-                    // Bonus is unlocked
-                    document.getElementById('welcomeBonusStatusText').textContent = 
-                        'Your 5,000 UGX welcome bonus is now available for withdrawal!';
-                    document.getElementById('welcomeBonusUnlockTime').textContent = 'Available now';
-                    welcomeBonusStatus.classList.remove('hidden');
-                }
-            } else {
-                welcomeBonusStatus.classList.add('hidden');
-            }
             
             // Wallet section updated successfully
             console.log('Wallet section updated');
@@ -3897,9 +3745,6 @@
 
             updateVaultTable(vaults);
             
-            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
-                updateVaultSection();
-            }
         } catch (error) {
             console.error("Error updating user stats:", error);
         }
@@ -4036,7 +3881,6 @@
             
             alert(`Successfully withdrew ${netWithdrawalAmount.toLocaleString()} UGX from vault! (Admin fee: ${adminCommission.toLocaleString()} UGX)`);
             updateUserStats();
-            updateVaultSection();
             
         } catch (error) {
             console.error('Error withdrawing vault:', error);
@@ -4107,7 +3951,6 @@
             
             alert(`Successfully re-invested ${newAmount.toLocaleString()} UGX into a new ${vault.planName} vault!`);
             updateUserStats();
-            updateVaultSection();
             
         } catch (error) {
             console.error('Error re-investing vault:', error);
@@ -4116,138 +3959,8 @@
     }
 
     // Vault section
-    async function updateVaultSection() {
-        try {
-            if (!currentUser) return;
-            
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
-            const userData = userDoc.data();
-            const currentBalance = userData ? userData.balance || 0 : 0;
-            
-            document.getElementById('vaultBalance').textContent = currentBalance.toLocaleString();
-            
-            const planCards = document.querySelectorAll('.plan-card');
-            planCards.forEach(card => {
-                const planName = card.querySelector('.plan-name').textContent.toLowerCase();
-                let planAmount = 0;
-                
-                // Map new plan names to amounts
-                if (planName.includes('seed')) planAmount = 45000;
-                else if (planName.includes('rising')) planAmount = 180000;
-                else if (planName.includes('nova')) planAmount = 600000;
-                else if (planName.includes('mastermind')) planAmount = 1800000;
-                else if (planName.includes('titan')) planAmount = 5000000;
-                else if (planName.includes('king')) planAmount = 10000000;
-                else if (planName.includes('emperor')) planAmount = 20000000;
-                else if (planName.includes('icon')) planAmount = 35000000;
-                else if (planName.includes('supreme')) planAmount = 60000000;
-                else if (planName.includes('legendary')) planAmount = 90000000;
-                
-                // Check if user is activated
-                if (!userData || !userData.isActivated) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else if (currentBalance < planAmount) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else {
-                    card.classList.remove('disabled');
-                    card.style.opacity = '1';
-                    card.style.cursor = 'pointer';
-                }
-            });
-        } catch (error) {
-            console.error("Error updating vault section:", error);
-        }
-    }
 
-    function selectPlan(plan) {
-        const planCard = event.target.closest('.plan-card');
-        if (planCard && planCard.classList.contains('disabled')) {
-            // Check if user is activated
-            if (currentUser) {
-                db.collection('users').doc(currentUser.uid).get().then(doc => {
-                    const userData = doc.data();
-                    if (!userData || !userData.isActivated) {
-                        alert('You must activate your account before purchasing vault plans. Please activate your account first.');
-                        return;
-                    } else {
-                        alert('Insufficient funds. Please deposit more money first.');
-                        return;
-                    }
-                });
-            } else {
-                alert('You must login to purchase vault plans.');
-                return;
-            }
-        }
-        
-        selectedPlan = plan;
-        const planData = vaultPlans[plan];
-        const profit = planData.amount * planData.profit;
-        const total = planData.amount + profit;
-        const dailyProfit = planData.amount * (planData.dailyROI / 100);
-
-        document.getElementById('confirmPlanName').textContent = planData.name;
-        document.getElementById('confirmAmount').textContent = planData.amount.toLocaleString();
-        document.getElementById('confirmDuration').textContent = planData.days + ' days';
-        document.getElementById('confirmDailyROI').textContent = planData.dailyROI;
-        document.getElementById('confirmDailyProfit').textContent = dailyProfit.toLocaleString();
-        document.getElementById('confirmProfit').textContent = profit.toLocaleString();
-        document.getElementById('confirmTotal').textContent = total.toLocaleString();
-
-        document.getElementById('selectedPlanDetails').classList.remove('hidden');
-
-        document.querySelectorAll('.plan-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        planCard.classList.add('selected');
-    }
-
-    async function purchaseVault() {
-        if (!selectedPlan) return;
-
-        // Check if user is activated
-        if (currentUser) {
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
-            const userData = userDoc.data();
-            if (!userData || !userData.isActivated) {
-                alert('You must activate your account before purchasing vault plans. Please activate your account first.');
-                return;
-            }
-        }
-
-        const purchaseBtn = document.getElementById('purchaseBtn');
-        const originalText = purchaseBtn.textContent;
-        
-        // Prevent multiple clicks and show immediate feedback
-        purchaseBtn.disabled = true;
-        purchaseBtn.textContent = 'Processing...';
-        purchaseBtn.style.background = '#6b7280';
-        purchaseBtn.style.cursor = 'not-allowed';
-
-        try {
-            const paymentMethod = document.getElementById('vaultPaymentMethod').value;
-            if (!paymentMethod) {
-                showPurchaseError('Please select a payment method');
-                return;
-            }
-
-            const planData = vaultPlans[selectedPlan];
-            const profit = planData.amount * planData.profit;
-
-            // Show processing message
-            purchaseBtn.textContent = 'Checking balance...';
-
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const currentBalance = userDoc.data().balance || 0;
-            
-            if (currentBalance < planData.amount) {
-                showPurchaseError(`Insufficient balance. You need ${planData.amount.toLocaleString()} UGX.`);
-                return;
-            }
+    function showPurchaseSuccess(message) {
 
             // Show processing message
             purchaseBtn.textContent = 'Creating vault...';
@@ -4379,7 +4092,6 @@
                     card.classList.remove('selected');
                 });
                 updateUserStats();
-                updateVaultSection();
                 showSection('home');
                 
                 // Reset button
@@ -4739,6 +4451,110 @@
         candidatesList.innerHTML = candidatesHTML;
     }
 
+    function displayVaultPlans() {
+        const vaultPlansList = document.getElementById('vaultPlansList');
+        
+        const vaultPlans = [
+            { level: 1, title: "🌱 Seed", entry: 45000, dailyROI: 1.7, dailyProfit: 765, monthlyProfit: 22950 },
+            { level: 2, title: "🌅 Rising", entry: 180000, dailyROI: 1.7, dailyProfit: 3060, monthlyProfit: 91800 },
+            { level: 3, title: "💡 Nova", entry: 600000, dailyROI: 1.8, dailyProfit: 10800, monthlyProfit: 324000 },
+            { level: 4, title: "🧠 Mastermind", entry: 1800000, dailyROI: 1.8, dailyProfit: 32400, monthlyProfit: 972000 },
+            { level: 5, title: "💪 Titan", entry: 5000000, dailyROI: 1.8, dailyProfit: 90000, monthlyProfit: 2700000 },
+            { level: 6, title: "👑 King", entry: 10000000, dailyROI: 1.8, dailyProfit: 180000, monthlyProfit: 5400000 },
+            { level: 7, title: "🦅 Emperor", entry: 20000000, dailyROI: 1.8, dailyProfit: 360000, monthlyProfit: 10800000 },
+            { level: 8, title: "💫 Icon", entry: 35000000, dailyROI: 1.9, dailyProfit: 665000, monthlyProfit: 19950000 },
+            { level: 9, title: "🔱 Supreme", entry: 60000000, dailyROI: 2.0, dailyProfit: 1200000, monthlyProfit: 36000000 },
+            { level: 10, title: "🕊️ Legendary", entry: 90000000, dailyROI: 2.0, dailyProfit: 1800000, monthlyProfit: 54000000 }
+        ];
+
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">';
+        
+        vaultPlans.forEach(plan => {
+            html += `
+                <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 1rem; position: relative; transition: all 0.3s ease;" 
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" 
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                    
+                    <!-- Level Badge -->
+                    <div style="position: absolute; top: 0.75rem; right: 0.75rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
+                        ${plan.level}
+                    </div>
+                    
+                    <!-- Plan Title -->
+                    <div style="margin-bottom: 0.75rem; padding-right: 2rem;">
+                        <h3 style="margin: 0; color: var(--text); font-size: 1rem; font-weight: 600;">${plan.title}</h3>
+                    </div>
+                    
+                    <!-- Entry Amount -->
+                    <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #f59e0b; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; text-align: center;">
+                        <div style="color: #92400e; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">Entry</div>
+                        <div style="color: #92400e; font-size: 1rem; font-weight: 700;">${plan.entry.toLocaleString()} UGX</div>
+                    </div>
+                    
+                    <!-- Daily ROI -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <span style="color: var(--gray); font-size: 0.75rem;">Daily ROI:</span>
+                        <span style="color: var(--primary); font-weight: 600; font-size: 0.75rem;">${plan.dailyROI}%</span>
+                    </div>
+                    
+                    <!-- Daily Profit -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <span style="color: var(--gray); font-size: 0.75rem;">Daily:</span>
+                        <span style="color: var(--success); font-weight: 600; font-size: 0.75rem;">${plan.dailyProfit.toLocaleString()}</span>
+                    </div>
+                    
+                    <!-- Monthly Profit -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span style="color: var(--gray); font-size: 0.75rem;">30-Day:</span>
+                        <span style="color: var(--success); font-weight: 700; font-size: 0.75rem;">${plan.monthlyProfit.toLocaleString()}</span>
+                    </div>
+                    
+                    <!-- Invest Button -->
+                    <button onclick="investInPlan(${plan.level})" 
+                            style="width: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;"
+                            onmouseover="this.style.transform='scale(1.02)'" 
+                            onmouseout="this.style.transform='scale(1)'">
+                        💰 Invest
+                    </button>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        vaultPlansList.innerHTML = html;
+    }
+
+    function investInPlan(level) {
+        if (!currentUser) {
+            showAlert('vaultAlert', 'Please login to invest in vault plans', 'error');
+            return;
+        }
+
+        const vaultPlans = [
+            { level: 1, title: "🌱 Seed", entry: 45000, dailyROI: 1.7, dailyProfit: 765, monthlyProfit: 22950 },
+            { level: 2, title: "🌅 Rising", entry: 180000, dailyROI: 1.7, dailyProfit: 3060, monthlyProfit: 91800 },
+            { level: 3, title: "💡 Nova", entry: 600000, dailyROI: 1.8, dailyProfit: 10800, monthlyProfit: 324000 },
+            { level: 4, title: "🧠 Mastermind", entry: 1800000, dailyROI: 1.8, dailyProfit: 32400, monthlyProfit: 972000 },
+            { level: 5, title: "💪 Titan", entry: 5000000, dailyROI: 1.8, dailyProfit: 90000, monthlyProfit: 2700000 },
+            { level: 6, title: "👑 King", entry: 10000000, dailyROI: 1.8, dailyProfit: 180000, monthlyProfit: 5400000 },
+            { level: 7, title: "🦅 Emperor", entry: 20000000, dailyROI: 1.8, dailyProfit: 360000, monthlyProfit: 10800000 },
+            { level: 8, title: "💫 Icon", entry: 35000000, dailyROI: 1.9, dailyProfit: 665000, monthlyProfit: 19950000 },
+            { level: 9, title: "🔱 Supreme", entry: 60000000, dailyROI: 2.0, dailyProfit: 1200000, monthlyProfit: 36000000 },
+            { level: 10, title: "🕊️ Legendary", entry: 90000000, dailyROI: 2.0, dailyProfit: 1800000, monthlyProfit: 54000000 }
+        ];
+
+        const plan = vaultPlans.find(p => p.level === level);
+        if (!plan) {
+            showAlert('vaultAlert', 'Invalid vault plan selected', 'error');
+            return;
+        }
+
+        if (confirm(`Invest in ${plan.title}?\n\nEntry Amount: ${plan.entry.toLocaleString()} UGX\nDaily ROI: ${plan.dailyROI}%\nDaily Profit: ${plan.dailyProfit.toLocaleString()} UGX\n30-Day Profit: ${plan.monthlyProfit.toLocaleString()} UGX`)) {
+            // Here you would implement the actual investment logic
+            showAlert('vaultAlert', `Investment in ${plan.title} initiated! Entry amount: ${plan.entry.toLocaleString()} UGX`, 'success');
+        }
+    }
+
     function filterCandidates(category) {
         currentFilter = category;
         
@@ -4960,145 +4776,6 @@
     }
 
     // Function to add sample candidates (for admin use)
-    // Activation System Functions
-    async function activateAccount() {
-        const paymentMethod = document.getElementById('activationPaymentMethod').value;
-        
-        if (!paymentMethod) {
-            showAlert('activationAlert', 'Please select a payment method', 'error');
-            return;
-        }
-
-        try {
-            // Simulate payment processing
-            showAlert('activationAlert', 'Processing payment of 20,000 UGX...', 'info');
-            
-            // Calculate withdrawal unlock date (1 week from now)
-            const withdrawalUnlockDate = new Date();
-            withdrawalUnlockDate.setDate(withdrawalUnlockDate.getDate() + 7);
-            
-            // Update user activation status
-            await db.collection('users').doc(currentUser.uid).update({
-                isActivated: true,
-                activationDate: new Date().toISOString(),
-                activationPaymentMethod: paymentMethod,
-                activationFee: 20000,
-                welcomeBonus: 5000,
-                welcomeBonusUnlockDate: withdrawalUnlockDate.toISOString(),
-                balance: firebase.firestore.FieldValue.increment(5000)
-            });
-
-            // Create transaction records
-            await db.collection('transactions').add({
-                userId: currentUser.uid,
-                type: 'activation_fee',
-                amount: -20000,
-                description: 'Account activation fee',
-                timestamp: new Date().toISOString(),
-                status: 'completed'
-            });
-
-            await db.collection('transactions').add({
-                userId: currentUser.uid,
-                type: 'welcome_bonus',
-                amount: 5000,
-                description: 'Welcome bonus (withdrawable after 1 week)',
-                timestamp: new Date().toISOString(),
-                status: 'completed',
-                withdrawalUnlockDate: withdrawalUnlockDate.toISOString()
-            });
-
-            showAlert('activationAlert', 'Account activated successfully! 5,000 UGX welcome bonus added! (Withdrawable after 1 week)', 'success');
-            
-            // Update UI
-            setTimeout(() => {
-                updateUserStats();
-                checkActivationStatus();
-            }, 1000);
-
-        } catch (error) {
-            console.error('Error activating account:', error);
-            showAlert('activationAlert', 'Failed to activate account: ' + error.message, 'error');
-        }
-    }
-
-    async function checkActivationStatus() {
-        if (!currentUser) return;
-
-        try {
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
-            const userData = userDoc.data();
-            
-            if (userData && userData.isActivated) {
-                // User is activated - show normal dashboard
-                document.getElementById('activationRequiredSection').classList.add('hidden');
-                document.getElementById('earningsPreviewSection').classList.add('hidden');
-                document.getElementById('welcomeBonusMessage').classList.add('hidden');
-                document.getElementById('activationCarousel').classList.add('hidden');
-                
-                // Show welcome bonus unblurred
-                document.getElementById('welcomeBonusAmount').style.filter = 'none';
-                document.getElementById('activationStatus').style.display = 'inline';
-                
-                // Load carousel for activated users
-                loadActivationCarousel();
-            } else {
-                // User not activated - show activation form
-                document.getElementById('activationRequiredSection').classList.remove('hidden');
-                document.getElementById('earningsPreviewSection').classList.remove('hidden');
-                document.getElementById('welcomeBonusMessage').classList.remove('hidden');
-                document.getElementById('activationCarousel').classList.remove('hidden');
-                
-                // Hide all other sections except vault (users can view plans but not purchase)
-                ['home', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
-                    const el = document.getElementById(section + 'Section');
-                    if (el) el.classList.add('hidden');
-                });
-            }
-        } catch (error) {
-            console.error('Error checking activation status:', error);
-        }
-    }
-
-    async function loadActivationCarousel() {
-        try {
-            // Get recently activated users
-            const usersSnapshot = await db.collection('users')
-                .where('isActivated', '==', true)
-                .orderBy('activationDate', 'desc')
-                .limit(20)
-                .get();
-
-            const carouselContent = document.getElementById('carouselContent');
-            carouselContent.innerHTML = '';
-
-            if (usersSnapshot.empty) {
-                carouselContent.innerHTML = '<span style="color: var(--gray);">No recent activations</span>';
-                return;
-            }
-
-            const users = usersSnapshot.docs.map(doc => doc.data());
-            
-            // Create carousel items
-            users.forEach(user => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display: inline-block; margin-right: 2rem; padding: 0.5rem 1rem; background: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;';
-                item.innerHTML = `
-                    <span style="color: var(--primary); font-weight: 600;">${user.name || user.email.split('@')[0]}</span>
-                    <span style="color: var(--gray); font-size: 0.8rem; margin-left: 0.5rem;">just activated</span>
-                `;
-                carouselContent.appendChild(item);
-            });
-
-            // Duplicate items for seamless scrolling
-            const items = carouselContent.innerHTML;
-            carouselContent.innerHTML = items + items + items;
-
-        } catch (error) {
-            console.error('Error loading activation carousel:', error);
-        }
-    }
-
     // Admin Candidates Management Functions
     function convertFileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -5622,7 +5299,7 @@
                                 <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
                                 <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
                                 <p style="color: var(--gray); font-size: 0.875rem;">Timer: ${task.timer || 60} seconds</p>
-                                ${task.link ? `<a href="${task.link}" target="_blank" style="color: var(--primary); font-size: 0.875rem;">📱 Open Link</a>` : ''}
+                                ${task.link ? `<p style="color: var(--primary); font-size: 0.875rem; margin: 0.5rem 0;">📱 Link will open automatically when you start the task</p>` : ''}
                             </div>
                             <div class="task-action">
                                 <button class="btn btn-success" id="btn-${task.id}" onclick="startTaskTimer('${task.id}', ${task.reward}, ${task.requiresProof}, ${task.timer || 60})">
@@ -5712,167 +5389,99 @@
         }
     }
 
-    function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
+    async function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
         // Skip activation checks for admin users
         if (!currentUser.isAdmin && !currentUser.isActivated) {
-            alert('Please activate your account to access tasks.');
+            alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
             return;
+        }
+
+        // Get task details to open the link
+        const taskDoc = await db.collection('tasks').doc(taskId).get();
+        if (!taskDoc.exists) {
+            alert('Task not found');
+            return;
+        }
+        
+        const task = taskDoc.data();
+        
+        // Open the task link in a new tab
+        if (task.link) {
+            window.open(task.link, '_blank');
         }
 
         const button = document.getElementById(`btn-${taskId}`);
         const timerDiv = document.getElementById(`timer-${taskId}`);
         const countdownDiv = document.getElementById(`countdown-${taskId}`);
         
-        // Get task details to find the link
-        db.collection('tasks').doc(taskId).get().then(taskDoc => {
-            if (taskDoc.exists) {
-                const task = taskDoc.data();
-                
-                // Open the task link in a new tab if it exists
-                if (task.link) {
-                    window.open(task.link, '_blank');
-                }
-                
-                // Disable button and show timer
-                button.disabled = true;
-                button.textContent = 'Timer Running...';
-                timerDiv.classList.remove('hidden');
-                
-                let timeLeft = timerDuration;
-                countdownDiv.textContent = timeLeft;
-                
-                const countdown = setInterval(() => {
-                    timeLeft--;
-                    countdownDiv.textContent = timeLeft;
-                    
-                    if (timeLeft <= 0) {
-                        clearInterval(countdown);
-                        // Timer finished, now allow task completion
-                        button.disabled = false;
-                        button.textContent = 'Complete Task';
-                        button.onclick = () => submitTask(taskId, reward, requiresProof);
-                        timerDiv.classList.add('hidden');
-                    }
-                }, 1000);
+        // Disable button and show timer
+        button.disabled = true;
+        button.textContent = 'Timer Running...';
+        timerDiv.classList.remove('hidden');
+        
+        let timeLeft = timerDuration;
+        countdownDiv.textContent = timeLeft;
+        
+        const countdown = setInterval(async () => {
+            timeLeft--;
+            countdownDiv.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                // Timer finished, automatically award the user
+                await awardTaskReward(taskId, reward);
+                button.disabled = false;
+                button.textContent = 'Completed ✓';
+                button.style.background = 'var(--success)';
+                timerDiv.classList.add('hidden');
             }
-        }).catch(error => {
-            console.error('Error getting task details:', error);
-            alert('Error starting task. Please try again.');
-        });
+        }, 1000);
     }
 
-    function showScreenshotUploadModal(taskId, reward, taskTitle) {
-        // Create modal for screenshot upload
-        const modal = document.createElement('div');
-        modal.id = 'screenshotModal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        `;
-        
-        modal.innerHTML = `
-            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
-                <h3 style="margin: 0 0 1rem 0; color: var(--primary);">📷 Upload Task Proof</h3>
-                <p style="color: var(--gray); margin-bottom: 1.5rem;">Upload a screenshot showing you completed the task: <strong>${taskTitle}</strong></p>
-                
-                <div style="border: 2px dashed #e5e7eb; border-radius: 8px; padding: 2rem; text-align: center; margin-bottom: 1rem;">
-                    <input type="file" id="taskScreenshotInput" accept="image/*" style="display: none;" onchange="previewTaskScreenshot(event)">
-                    <button type="button" onclick="document.getElementById('taskScreenshotInput').click()" style="background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 1rem;">
-                        📁 Choose Screenshot
-                    </button>
-                    <p style="color: var(--gray); margin: 0.5rem 0 0 0; font-size: 0.875rem;">PNG, JPG, or GIF up to 5MB</p>
-                </div>
-                
-                <div id="screenshotPreview" style="display: none; margin-bottom: 1rem;">
-                    <img id="previewImage" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #e5e7eb;">
-                </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" onclick="closeScreenshotModal()" style="background: #6b7280; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">
-                        Cancel
-                    </button>
-                    <button type="button" id="submitTaskProofBtn" onclick="submitTaskWithScreenshot('${taskId}', ${reward})" disabled style="background: var(--success); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; opacity: 0.5;">
-                        Submit Proof
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    }
-
-    function previewTaskScreenshot(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById('screenshotPreview');
-                const img = document.getElementById('previewImage');
-                const submitBtn = document.getElementById('submitTaskProofBtn');
-                
-                img.src = e.target.result;
-                preview.style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function closeScreenshotModal() {
-        const modal = document.getElementById('screenshotModal');
-        if (modal) {
-            modal.remove();
-        }
-    }
-
-    async function submitTaskWithScreenshot(taskId, reward) {
-        const fileInput = document.getElementById('taskScreenshotInput');
-        const file = fileInput.files[0];
-        
-        if (!file) {
-            alert('Please select a screenshot first');
-            return;
-        }
-        
+    async function awardTaskReward(taskId, reward) {
         try {
-            // Convert file to base64
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const screenshotBase64 = e.target.result;
-                
-                // Get task details
-                const taskDoc = await db.collection('tasks').doc(taskId).get();
-                const task = taskDoc.data();
-                
-                // Create submission for admin review
-                await db.collection('taskSubmissions').add({
-                    userId: currentUser.id,
-                    userName: currentUser.fullName,
-                    userEmail: currentUser.email,
-                    taskId: taskId,
-                    taskTitle: task.title,
-                    reward: reward,
-                    proof: screenshotBase64,
-                    status: 'pending',
-                    submittedDate: new Date().toISOString()
-                });
-                
-                closeScreenshotModal();
-                alert('Task submission sent for review! You will be notified when approved.');
-            };
-            reader.readAsDataURL(file);
+            // Get task details
+            const taskDoc = await db.collection('tasks').doc(taskId).get();
+            if (!taskDoc.exists) {
+                console.error('Task not found');
+                return;
+            }
+            
+            const task = taskDoc.data();
+            
+            // Get user data
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
+            const currentBalance = userData.balance || 0;
+
+            // Update user balance
+            await db.collection('users').doc(currentUser.id).update({
+                balance: currentBalance + reward,
+                totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
+            });
+
+            // Create transaction record
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                userEmail: currentUser.email,
+                type: 'task_reward',
+                amount: reward,
+                description: `Task completed: ${task.title}`,
+                taskId: taskId,
+                status: 'completed',
+                date: new Date().toISOString()
+            });
+
+            // Update user stats
+            updateUserStats();
+            
+            // Show success message
+            showAlert('taskAlert', `Task completed! You earned ${reward.toLocaleString()} UGX`, 'success');
+            
         } catch (error) {
-            console.error('Error submitting task:', error);
-            alert('Error submitting task. Please try again.');
+            console.error('Error awarding task reward:', error);
+            showAlert('taskAlert', 'Failed to award reward: ' + error.message, 'error');
         }
     }
 
@@ -5880,7 +5489,7 @@
         try {
             // Skip activation checks for admin users
             if (!currentUser.isAdmin && !currentUser.isActivated) {
-                alert('Please activate your account to access tasks.');
+                alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
                 return;
             }
 
@@ -5894,8 +5503,26 @@
             const task = taskDoc.data();
             
             if (requiresProof) {
-                // For tasks requiring proof, show screenshot upload modal
-                showScreenshotUploadModal(taskId, reward, task.title);
+                // For tasks requiring proof, create a submission for admin review
+                const proof = prompt('Please provide proof of completion (e.g., screenshot link, description):');
+                if (!proof) {
+                    alert('Proof is required for this task');
+                    return;
+                }
+                
+                await db.collection('taskSubmissions').add({
+                    userId: currentUser.id,
+                    userName: currentUser.fullName,
+                    userEmail: currentUser.email,
+                    taskId: taskId,
+                    taskTitle: task.title,
+                    reward: reward,
+                    proof: proof,
+                    status: 'pending',
+                    submittedDate: new Date().toISOString()
+                });
+                
+                alert('Task submission sent for review! You will be notified when approved.');
             } else {
                 // For tasks not requiring proof, auto-approve
                 const userDoc = await db.collection('users').doc(currentUser.id).get();
@@ -6013,16 +5640,15 @@
                 return;
             }
 
-            // Check welcome bonus withdrawal restriction (1 week)
-            if (userData.welcomeBonusUnlockDate) {
-                const unlockDate = new Date(userData.welcomeBonusUnlockDate);
-                const now = new Date();
-                
-                if (now < unlockDate) {
-                    const daysLeft = Math.ceil((unlockDate - now) / (24 * 60 * 60 * 1000));
-                    alert(`Your welcome bonus (5,000 UGX) can only be withdrawn after ${daysLeft} more days`);
-                    return;
-                }
+            // Check 30-day waiting period from activation
+            const activationDate = new Date(userData.activationDate || userData.joinedDate);
+            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+            const now = new Date();
+
+            if (now < thirtyDaysLater) {
+                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
+                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
+                return;
             }
 
             // Check if it's weekend (Saturday or Sunday)
@@ -7118,4 +6744,5 @@
     window.addEventListener('load', init);
 </script>
 </body>
+</html>
 </html>
