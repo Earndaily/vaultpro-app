@@ -1238,205 +1238,64 @@
         </div>
 
         <!-- Activation Required Section -->
-        <div id="activationRequiredSection" class="hidden" style="padding: 2rem; text-align: center; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border: 2px solid #fecaca; border-radius: 12px; margin: 1rem;">
+<!-- Activation Required Section -->
+<div id="activationRequiredSection" class="hidden" style="max-width: 600px; margin: 2rem auto; padding: 2rem;">
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 2rem;">
             <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-            <h2 style="color: #dc2626; margin-bottom: 1rem;">Account Activation Required</h2>
-            <p style="color: #6b7280; margin-bottom: 2rem;">Activate your account to access all features and start earning!</p>
-            
-            <!-- Activation Form -->
-            <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-                <h3 style="margin-bottom: 1.5rem; color: var(--text);">Activate Your Account</h3>
-                <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Activation Fee: 20,000 UGX</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">One-time payment • Lifetime access</div>
-                </div>
-                
-                <select id="activationPaymentMethod" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
-                    <option value="">Select Payment Method</option>
-                    <option value="momo">Mobile Money (MTN/Airtel)</option>
-                    <option value="card">Credit/Debit Card</option>
+            <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Activate Your Account</h2>
+            <p style="color: var(--gray);">Complete payment to unlock all features</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Activation Fee: 20,000 UGX</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">One-time payment • Lifetime access</div>
+        </div>
+        
+        <form id="simpleActivationForm" onsubmit="submitSimpleActivation(event)">
+            <!-- Payment Method Selection -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
+                    Select Payment Method:
+                </label>
+                <select id="simplePaymentMethod" required style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" onchange="showPaymentNumber()">
+                    <option value="">Choose payment method...</option>
+                    <option value="airtel">Airtel Money</option>
+                    <option value="mtn">MTN Mobile Money</option>
                 </select>
-                
-                <button id="activateAccountBtn" class="btn btn-block" onclick="activateAccount()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; font-weight: 600; padding: 1rem; font-size: 1.1rem;">
-                    🚀 Activate Account Now
-                </button>
-                
-                <div id="activationAlert" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
-
-        <!-- Earnings Preview Section -->
-        <div id="earningsPreviewSection" class="hidden" style="padding: 2rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border-radius: 12px; margin: 1rem; border: 2px solid #10b981;">
-            <h2 style="text-align: center; color: #059669; margin-bottom: 2rem; font-size: 1.75rem;">💰 What You'll Earn After Activation</h2>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">📺</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Watch Videos</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+2,000 UGX/day</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Simple video watching tasks</p>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">👥</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Refer Friends</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+5,000 UGX/referral</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Earn from each successful referral</p>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">💎</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Invest & Earn</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+1.7-2.0% daily</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Passive income from investments</p>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
-                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎯</div>
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Betting & Stakes</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">+3,000 UGX/day</div>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">Strategic betting opportunities</p>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 12px;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">🎯 Total Daily Potential</h3>
-                <div style="font-size: 2.5rem; font-weight: 800; margin: 0;">10,000+ UGX</div>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Start earning immediately after activation!</p>
-            </div>
-        </div>
-
-        <!-- Home Section -->
-        <div id="homeSection">
-            <!-- Referral Alert -->
-            <div id="referralAlert"></div>
-            
-            <!-- Activation Section -->
-            <div class="card" id="activationCard" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; display: none;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <h2 style="color: #92400e; margin: 0;">🔒 Account Not Activated</h2>
-                        <p style="color: #92400e; margin: 0.5rem 0;">Complete your registration to unlock all features</p>
-                    </div>
-                    <button class="btn" style="background: #f59e0b; color: white;" onclick="showActivationPayment()">
-                        Pay 20,000 UGX
-                    </button>
-                </div>
             </div>
 
-            <div class="card">
-                <h2>📊 Dashboard</h2>
-                <div class="dashboard-grid">
-                    <div class="stat-card compact">
-                        <div class="stat-label">💰 Balance</div>
-                        <div class="stat-value" id="totalBalance">0</div>
-                        <div class="stat-unit">UGX</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">🏦 Vaults</div>
-                        <div class="stat-value" id="activeVaults">0</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">👥 Referrals</div>
-                        <div class="stat-value" id="totalReferrals">0</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">💵 Earnings</div>
-                        <div class="stat-value" id="referralEarnings">0</div>
-                        <div class="stat-unit">UGX</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">📈 Deposits</div>
-                        <div class="stat-value" id="totalDeposits">0</div>
-                        <div class="stat-unit">UGX</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">🔥 Streak</div>
-                        <div class="stat-value" id="currentStreak">0</div>
-                        <div class="stat-unit">Days</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">⭐ Points</div>
-                        <div class="stat-value" id="pointsBalance">0</div>
-                        <div class="stat-unit">Pts</div>
-                    </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">🎯 Tasks</div>
-                        <div class="stat-value" id="taskEarnings">0</div>
-                        <div class="stat-unit">UGX</div>
+            <!-- Payment Number Display -->
+            <div id="paymentNumberDisplay" class="hidden" style="margin-bottom: 1.5rem;">
+                <div style="background: #f0f9ff; border: 2px solid #0891b2; border-radius: 8px; padding: 1rem;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.875rem; color: #0c4a6e; margin-bottom: 0.5rem;">Send 20,000 UGX to:</div>
+                        <div id="displayPaymentNumber" style="font-size: 1.5rem; font-weight: 700; color: #0891b2; margin-bottom: 0.75rem;">-</div>
+                        <button type="button" class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="copyPaymentNumber()">
+                            📋 Copy Number
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Activation Payment Section (only shown for unactivated users) -->
-            <div id="activationPaymentSection" class="card hidden" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; text-align: center;">
-                <h3 style="color: #92400e; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                    🔒 Account Activation Required
-                </h3>
-                <p style="color: #92400e; margin-bottom: 1.5rem;">
-                    Complete your account activation by paying the 20,000 UGX registration fee to unlock all features.
-                </p>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
-                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">💰 Activation Fee</h4>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">20,000 UGX</div>
-                    </div>
-                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
-                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">🎁 What You Get</h4>
-                        <ul style="color: #6b7280; margin: 0; padding-left: 1rem; font-size: 0.875rem; text-align: left;">
-                            <li>Access to all vault plans</li>
-                            <li>Daily tasks and rewards</li>
-                            <li>Referral bonuses</li>
-                            <li>Withdrawal privileges</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <button class="btn activation-payment-element" style="background: #059669; color: white; padding: 1rem 2rem; font-size: 1.1rem; margin-bottom: 1rem;" onclick="showActivationModal()">
-                    💳 Pay Activation Fee Now
-                </button>
-                
-                <div style="padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 6px;">
-                    <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
-                        <strong>📱 Quick & Easy:</strong> Click the button above to get payment instructions and submit your payment proof.
-                    </p>
-                </div>
+            <!-- Screenshot Upload -->
+            <div id="screenshotUpload" class="hidden" style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
+                    Upload Payment Screenshot:
+                </label>
+                <input type="file" id="simplePaymentProof" accept="image/*" required style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+                <p style="color: #6b7280; font-size: 0.8rem; margin: 0.5rem 0 0 0;">Upload a clear screenshot of your payment confirmation</p>
             </div>
 
-            <div class="card">
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="collapsible-icon">▶</span>
-                            🏦 My Active Vaults
-                        </h3>
-                    </div>
-                    <div id="myActiveVaults" class="collapsible-content hidden">
-                        <div style="padding: 1rem 0;">
-                            <div class="table-responsive">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Plan</th>
-                                            <th>Amount</th>
-                                            <th>Duration</th>
-                                            <th>Expected Profit</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="vaultTableBody">
-                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <!-- Submit Button -->
+            <button type="submit" id="simpleSubmitBtn" class="btn btn-block hidden" style="background: linear-gradient(135deg, #10b981, #059669); padding: 1rem; font-size: 1.1rem;">
+                💳 Submit Payment
+            </button>
+        </form>
 
+        <div id="simpleActivationAlert" style="margin-top: 1rem;"></div>
+    </div>
+</div>
         <!-- Vault Plans Section -->
         <div id="vaultSection" class="hidden">
             <div class="card">
@@ -3794,6 +3653,105 @@
             }
         });
     }
+      function showPaymentNumber() {
+       const method = document.getElementById('simplePaymentMethod').value;
+       const numberDisplay = document.getElementById('paymentNumberDisplay');
+       const screenshotUpload = document.getElementById('screenshotUpload');
+       const submitBtn = document.getElementById('simpleSubmitBtn');
+       const displayNumber = document.getElementById('displayPaymentNumber');
+       
+       if (method) {
+           // Set the appropriate number
+           if (method === 'airtel') {
+               displayNumber.textContent = '0702377999';
+               displayNumber.setAttribute('data-number', '0702377999');
+           } else if (method === 'mtn') {
+               displayNumber.textContent = '0779710365';
+               displayNumber.setAttribute('data-number', '0779710365');
+           }
+           
+           // Show all fields
+           numberDisplay.classList.remove('hidden');
+           screenshotUpload.classList.remove('hidden');
+           submitBtn.classList.remove('hidden');
+       } else {
+           numberDisplay.classList.add('hidden');
+           screenshotUpload.classList.add('hidden');
+           submitBtn.classList.add('hidden');
+       }
+   }
+   
+   function copyPaymentNumber() {
+       const numberElement = document.getElementById('displayPaymentNumber');
+       const number = numberElement.getAttribute('data-number');
+       
+       navigator.clipboard.writeText(number).then(() => {
+           alert('Number copied: ' + number);
+       }).catch(() => {
+           // Fallback
+           const textArea = document.createElement('textarea');
+           textArea.value = number;
+           document.body.appendChild(textArea);
+           textArea.select();
+           document.execCommand('copy');
+           document.body.removeChild(textArea);
+           alert('Number copied: ' + number);
+       });
+   }
+   
+   async function submitSimpleActivation(event) {
+       event.preventDefault();
+       
+       const submitBtn = document.getElementById('simpleSubmitBtn');
+       submitBtn.disabled = true;
+       submitBtn.textContent = 'Submitting...';
+       
+       try {
+           const method = document.getElementById('simplePaymentMethod').value;
+           const paymentProof = document.getElementById('simplePaymentProof').files[0];
+           const paymentNumber = document.getElementById('displayPaymentNumber').getAttribute('data-number');
+           
+           if (!paymentProof) {
+               showAlert('simpleActivationAlert', 'Please upload payment screenshot', 'error');
+               submitBtn.disabled = false;
+               submitBtn.textContent = '💳 Submit Payment';
+               return;
+           }
+   
+           // Convert to base64
+           const base64Proof = await convertToBase64(paymentProof);
+   
+           // Submit to database
+           await db.collection('depositRequests').add({
+               userId: currentUser.id,
+               userName: currentUser.fullName,
+               userEmail: currentUser.email,
+               amount: 20000,
+               method: 'mobile_money',
+               paymentNumber: paymentNumber,
+               paymentProof: base64Proof,
+               requestDate: new Date().toISOString(),
+               status: 'pending',
+               type: 'activation_fee',
+               description: 'Account activation fee payment'
+           });
+   
+           showAlert('simpleActivationAlert', '✅ Payment submitted successfully! Your account will be activated within 24 hours after admin approval.', 'success');
+           
+           // Reset form
+           document.getElementById('simpleActivationForm').reset();
+           document.getElementById('paymentNumberDisplay').classList.add('hidden');
+           document.getElementById('screenshotUpload').classList.add('hidden');
+           submitBtn.classList.add('hidden');
+           
+       } catch (error) {
+           console.error('Error submitting activation:', error);
+           showAlert('simpleActivationAlert', 'Error: ' + error.message, 'error');
+       } finally {
+           submitBtn.disabled = false;
+           submitBtn.textContent = '💳 Submit Payment';
+       }
+   }
 
 
     function showAdminDashboard() {
@@ -5142,49 +5100,43 @@
         }
     }
 
-    async function checkActivationStatus() {
-        if (!currentUser || !currentUser.id) return;
-
-        try {
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            
-            if (userData && userData.isActivated) {
-                // User is activated - show normal dashboard
-                document.getElementById('activationRequiredSection').classList.add('hidden');
-                document.getElementById('earningsPreviewSection').classList.add('hidden');
-                document.getElementById('welcomeBonusMessage').classList.add('hidden');
-                document.getElementById('activationCarousel').classList.add('hidden');
-                
-                // Show home section
-                document.getElementById('homeSection').classList.remove('hidden');
-                
-                // Update activation status indicator
-                const statusEl = document.getElementById('activationStatus');
-                if (statusEl) statusEl.style.display = 'inline';
-                
-                // Load carousel for activated users
-                loadActivationCarousel();
-            } else {
-                // User not activated - show activation form
-                document.getElementById('activationRequiredSection').classList.remove('hidden');
-                document.getElementById('earningsPreviewSection').classList.remove('hidden');
-                document.getElementById('welcomeBonusMessage').classList.remove('hidden');
-                document.getElementById('activationCarousel').classList.remove('hidden');
-                
-                // Hide home section
-                document.getElementById('homeSection').classList.add('hidden');
-                
-                // Hide all other sections
-                ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
-                    const el = document.getElementById(section + 'Section');
-                    if (el) el.classList.add('hidden');
-                });
-            }
-        } catch (error) {
-            console.error('Error checking activation status:', error);
-        }
-    }
+   async function checkActivationStatus() {
+       if (!currentUser || !currentUser.id) return;
+   
+       try {
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           
+           if (userData && userData.isActivated) {
+               // Hide activation sections
+               document.getElementById('activationRequiredSection').classList.add('hidden');
+               document.getElementById('earningsPreviewSection').classList.add('hidden');
+               document.getElementById('welcomeBonusMessage').classList.add('hidden');
+               document.getElementById('activationCarousel').classList.add('hidden');
+               
+               // Show home
+               document.getElementById('homeSection').classList.remove('hidden');
+               
+               loadActivationCarousel();
+           } else {
+               // Show ONLY activation section
+               document.getElementById('activationRequiredSection').classList.remove('hidden');
+               
+               // Hide everything else
+               document.getElementById('earningsPreviewSection').classList.add('hidden');
+               document.getElementById('welcomeBonusMessage').classList.add('hidden');
+               document.getElementById('activationCarousel').classList.add('hidden');
+               document.getElementById('homeSection').classList.add('hidden');
+               
+               ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
+                   const el = document.getElementById(section + 'Section');
+                   if (el) el.classList.add('hidden');
+               });
+           }
+       } catch (error) {
+           console.error('Error checking activation status:', error);
+       }
+   }
 
     async function loadActivationCarousel() {
         try {
