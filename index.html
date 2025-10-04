@@ -2439,18 +2439,30 @@
                             currentUser = { id: user.uid, ...userDoc.data() };
                             console.log('Current user loaded:', currentUser.email);
                             
-                            // Update streak
-                            await updateUserStreak(user.uid, currentUser);
+                            // Update streak with timeout protection
+                            try {
+                                await Promise.race([
+                                    updateUserStreak(user.uid, currentUser),
+                                    new Promise((_, reject) => setTimeout(() => reject(new Error('Streak update timeout')), 10000))
+                                ]);
+                            } catch (streakError) {
+                                console.warn('Auth listener streak update failed or timed out:', streakError);
+                                // Continue with dashboard display even if streak update fails
+                            }
                             
                             // Clear processing flag
                             isProcessingReferral = false;
+                            
+                            // Ensure all auth pages are hidden first
+                            hideAllAuthPages();
                             
                             // Show appropriate dashboard
                             if (currentUser.isAdmin) {
                                 console.log('Showing admin dashboard');
                                 showAdminDashboard();
                             } else {
-                                console.log('Showing user dashboard');
+                                console.log('Showing user dashboard for user:', currentUser.email);
+                                console.log('User activation status:', currentUser.isActivated);
                                 showUserDashboard();
                             }
                         } else {
@@ -3146,6 +3158,8 @@
 
             // Let auth state listener handle the dashboard display
             console.log('Login successful, auth state listener will handle navigation');
+            console.log('Current user after login:', currentUser);
+            console.log('User is activated:', currentUser.isActivated);
 
             // Show temporary success message
             showAlert('loginAlert', 'Login successful! Loading dashboard...', 'success');
@@ -3366,14 +3380,22 @@
     function showUserDashboard() {
         console.log('showUserDashboard() called');
         
-        // Hide auth pages
-        document.getElementById('registerPage').classList.add('hidden');
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('loadingScreen').classList.add('hidden');
+        // Hide auth pages and other sections
+        const registerPage = document.getElementById('registerPage');
+        const loginPage = document.getElementById('loginPage');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const userDashboard = document.getElementById('userDashboard');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const firebaseSetup = document.getElementById('firebaseSetup');
+        
+        if (registerPage) registerPage.classList.add('hidden');
+        if (loginPage) loginPage.classList.add('hidden');
+        if (loadingScreen) loadingScreen.classList.add('hidden');
+        if (firebaseSetup) firebaseSetup.classList.add('hidden');
         
         // Show user dashboard
-        document.getElementById('userDashboard').classList.remove('hidden');
-        document.getElementById('adminDashboard').classList.add('hidden');
+        if (userDashboard) userDashboard.classList.remove('hidden');
+        if (adminDashboard) adminDashboard.classList.add('hidden');
         
         // Check activation status first
         checkActivationStatus();
@@ -3384,15 +3406,23 @@
         
         // Update profile
         if (currentUser) {
-            updateProfileSection();
+            try {
+                updateProfileSection();
+            } catch (error) {
+                console.warn('Error updating profile section:', error);
+            }
         }
         
         // Ensure sections are properly hidden
         ensureAllSectionsHidden();
         
         // Show home section if activated, otherwise activation screen will show
+        console.log('Checking activation status in showUserDashboard:', currentUser.isActivated);
         if (currentUser && currentUser.isActivated) {
+            console.log('User is activated, showing home section');
             document.getElementById('homeSection').classList.remove('hidden');
+        } else {
+            console.log('User is not activated, activation screen will be shown');
         }
         
         // Handle referral links
@@ -3781,10 +3811,19 @@
 
 
     function showAdminDashboard() {
-        document.getElementById('registerPage').classList.add('hidden');
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('userDashboard').classList.add('hidden');
-        document.getElementById('adminDashboard').classList.remove('hidden');
+        const registerPage = document.getElementById('registerPage');
+        const loginPage = document.getElementById('loginPage');
+        const userDashboard = document.getElementById('userDashboard');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const firebaseSetup = document.getElementById('firebaseSetup');
+        
+        if (registerPage) registerPage.classList.add('hidden');
+        if (loginPage) loginPage.classList.add('hidden');
+        if (userDashboard) userDashboard.classList.add('hidden');
+        if (loadingScreen) loadingScreen.classList.add('hidden');
+        if (firebaseSetup) firebaseSetup.classList.add('hidden');
+        if (adminDashboard) adminDashboard.classList.remove('hidden');
         
         updateAdminStats();
         showAdminSection('stats');
@@ -3895,6 +3934,16 @@
         });
     }
 
+    function hideAllAuthPages() {
+        const authPages = ['registerPage', 'loginPage', 'loadingScreen', 'firebaseSetup'];
+        authPages.forEach(pageId => {
+            const el = document.getElementById(pageId);
+            if (el) {
+                el.classList.add('hidden');
+            }
+        });
+    }
+
     async function updateWalletSection() {
         try {
             const userDoc = await db.collection('users').doc(currentUser.id).get();
@@ -3956,8 +4005,13 @@
     // User stats
     async function updateUserStats() {
         try {
+            if (!currentUser || !currentUser.id) {
+                console.log('updateUserStats: No current user or user ID');
+                return;
+            }
+            
             const userDoc = await db.collection('users').doc(currentUser.id).get();
-            currentUser = userDoc.data();
+            currentUser = { id: currentUser.id, ...userDoc.data() };
 
             const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
             const vaults = vaultsSnapshot.docs.map(doc => doc.data());
@@ -5127,32 +5181,52 @@
     }
 
    async function checkActivationStatus() {
-       if (!currentUser || !currentUser.id) return;
+       if (!currentUser || !currentUser.id) {
+           console.log('checkActivationStatus: No current user or user ID');
+           return;
+       }
    
        try {
+           console.log('checkActivationStatus: Checking activation for user:', currentUser.email);
            const userDoc = await db.collection('users').doc(currentUser.id).get();
            const userData = userDoc.data();
            
+           console.log('checkActivationStatus: User data from DB:', userData);
+           console.log('checkActivationStatus: isActivated:', userData?.isActivated);
+           
            if (userData && userData.isActivated) {
                // Hide activation sections
-               document.getElementById('activationRequiredSection').classList.add('hidden');
-               document.getElementById('earningsPreviewSection').classList.add('hidden');
-               document.getElementById('welcomeBonusMessage').classList.add('hidden');
-               document.getElementById('activationCarousel').classList.add('hidden');
+               const activationSection = document.getElementById('activationRequiredSection');
+               const earningsSection = document.getElementById('earningsPreviewSection');
+               const welcomeMessage = document.getElementById('welcomeBonusMessage');
+               const activationCarousel = document.getElementById('activationCarousel');
+               const homeSection = document.getElementById('homeSection');
+               
+               if (activationSection) activationSection.classList.add('hidden');
+               if (earningsSection) earningsSection.classList.add('hidden');
+               if (welcomeMessage) welcomeMessage.classList.add('hidden');
+               if (activationCarousel) activationCarousel.classList.add('hidden');
                
                // Show home
-               document.getElementById('homeSection').classList.remove('hidden');
+               if (homeSection) homeSection.classList.remove('hidden');
                
                loadActivationCarousel();
            } else {
+               console.log('checkActivationStatus: User is not activated, showing activation screen');
                // Show ONLY activation section
-               document.getElementById('activationRequiredSection').classList.remove('hidden');
+               const activationSection = document.getElementById('activationRequiredSection');
+               const earningsSection = document.getElementById('earningsPreviewSection');
+               const welcomeMessage = document.getElementById('welcomeBonusMessage');
+               const activationCarousel = document.getElementById('activationCarousel');
+               const homeSection = document.getElementById('homeSection');
+               
+               if (activationSection) activationSection.classList.remove('hidden');
                
                // Hide everything else
-               document.getElementById('earningsPreviewSection').classList.add('hidden');
-               document.getElementById('welcomeBonusMessage').classList.add('hidden');
-               document.getElementById('activationCarousel').classList.add('hidden');
-               document.getElementById('homeSection').classList.add('hidden');
+               if (earningsSection) earningsSection.classList.add('hidden');
+               if (welcomeMessage) welcomeMessage.classList.add('hidden');
+               if (activationCarousel) activationCarousel.classList.add('hidden');
+               if (homeSection) homeSection.classList.add('hidden');
                
                ['vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
                    const el = document.getElementById(section + 'Section');
