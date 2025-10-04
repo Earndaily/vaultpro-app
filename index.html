@@ -3310,9 +3310,16 @@
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         
+        // Show home section immediately
+        showSection('home');
+        
+        // Ensure home section is shown after async operations
+        setTimeout(() => {
+            showSection('home');
+        }, 100);
+        
         updateUserStats();
         updateFeatureAccess();
-        showSection('home');
         
         // Ensure profile section is properly initialized
         if (currentUser) {
@@ -4724,37 +4731,6 @@
     }
 
     // Function to add sample candidates (for admin use)
-    // Admin function to add sample candidates
-    async function addSampleCandidates() {
-        const candidates = [
-            {
-                name: "Yoweri Museveni",
-                title: "President",
-                district: "National",
-                region: "Uganda",
-                category: "president",
-                odds: 2.5,
-                opponents: ["Robert Kyagulanyi", "Patrick Amuriat"],
-                electionDate: "2026"
-            },
-            {
-                name: "Betty Amongi",
-                title: "Member of Parliament",
-                district: "Oyam South",
-                region: "Northern Uganda",
-                category: "mp",
-                odds: 2.0,
-                opponents: ["Samuel Okello"],
-                electionDate: "2026"
-            }
-        ];
-
-        for (const candidate of candidates) {
-            await db.collection('electionCandidates').add(candidate);
-        }
-        alert('Sample candidates added!');
-    }
-
     // Admin Candidates Management Functions
     async function addCandidate() {
         try {
