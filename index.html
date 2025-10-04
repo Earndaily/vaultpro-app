@@ -206,12 +206,13 @@
         background: white;
         border: 3px solid #e5e7eb;
         border-radius: var(--radius);
-        padding: 2rem;
+        padding: 1rem;
         text-align: center;
         cursor: pointer;
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+        min-height: 180px;
     }
 
     .plan-card::before {
@@ -253,24 +254,24 @@
     }
 
     .plan-name {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--dark);
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .plan-amount {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 800;
         color: var(--primary);
-        margin: 1rem 0;
+        margin: 0.5rem 0;
     }
 
     .plan-profit {
-        font-size: 1.125rem;
+        font-size: 1rem;
         color: var(--success);
         font-weight: 600;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
 
     /* Navigation */
@@ -562,8 +563,8 @@
         background: white;
         border: 2px solid #e5e7eb;
         border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
         transition: all 0.3s ease;
         cursor: pointer;
     }
@@ -583,25 +584,25 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
     }
 
     .candidate-info h3 {
         margin: 0 0 0.25rem 0;
         color: var(--text);
-        font-size: 1.25rem;
+        font-size: 1.125rem;
     }
 
     .candidate-title {
         color: var(--primary);
         font-weight: 600;
-        font-size: 0.875rem;
-        margin: 0 0 0.5rem 0;
+        font-size: 0.8125rem;
+        margin: 0 0 0.25rem 0;
     }
 
     .candidate-location {
         color: var(--gray);
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         margin: 0;
     }
 
@@ -952,6 +953,24 @@
         .share-dropdown-item {
             padding: 0.625rem 0.875rem;
             font-size: 0.8125rem;
+        }
+
+        /* Vault cards responsive */
+        .vault-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .plan-card {
+            padding: 0.75rem;
+            min-height: 160px;
+        }
+
+        .plan-name {
+            font-size: 1.125rem;
+        }
+
+        .plan-amount {
+            font-size: 1.25rem;
         }
     }
 
@@ -1512,14 +1531,11 @@
             <div class="card">
                 <h2>Choose Your Vault Plan</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Select a plan and watch your investment grow!</p>
-                <div style="background: #ff0000; color: white; padding: 10px; margin: 10px 0; text-align: center; font-weight: bold;">
-                    ✅ UPDATED VAULT PLANS - If you see this, the file is loading correctly!
-                </div>
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 2px solid #e5e7eb;">
                     <strong>Your Current Balance: <span id="vaultBalance" style="color: var(--primary); font-size: 1.5rem;">0</span> UGX</strong>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                <div class="vault-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                     <div class="plan-card" onclick="selectPlan('seed')">
                         <div class="plan-name">🌱 Seed</div>
                         <div class="plan-amount">45,000 UGX</div>
@@ -2583,12 +2599,6 @@
                     <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading candidates...</p>
                 </div>
                 
-                <!-- Debug: Add Sample Candidates Button (for testing) -->
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button class="btn btn-secondary" onclick="addSampleCandidates()" style="font-size: 0.8rem;">
-                        🧪 Add Sample Candidates (Testing)
-                    </button>
-                </div>
 
                 <!-- My Stakes -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
@@ -5673,14 +5683,31 @@
                 ...doc.data()
             }));
 
-            const tasks = allTasks.filter(task => task.day === today || task.day === 'all');
+            // Check which tasks are already completed today
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            
+            // Filter out completed tasks to hide them
+            const availableTasks = allTasks.filter(task => 
+                (task.day === today || task.day === 'all') && 
+                !completedTaskIds.includes(task.id)
+            );
 
             const tasksContainer = document.getElementById('tasksContainer');
             
-            if (tasks.length === 0) {
-                tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No tasks available today. Check back tomorrow!</p>';
+            if (availableTasks.length === 0) {
+                if (completedTaskIds.length > 0) {
+                    tasksContainer.innerHTML = '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all available tasks for today. Check back tomorrow for new tasks!</p>';
+                } else {
+                    tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No tasks available today. Check back tomorrow!</p>';
+                }
             } else {
-                tasksContainer.innerHTML = tasks.map(task => {
+                tasksContainer.innerHTML = availableTasks.map(task => {
                     return `
                         <div class="task-card" id="task-${task.id}">
                             <div class="task-info">
@@ -5703,25 +5730,6 @@
                     `;
                 }).join('');
             }
-
-            // Check which tasks are already completed today
-            const todayString = new Date().toDateString();
-            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
-                .where('userId', '==', currentUser.id)
-                .where('date', '==', todayString)
-                .get();
-            
-            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
-            
-            // Update task buttons based on completion status
-            tasks.forEach(task => {
-                const button = document.getElementById(`btn-${task.id}`);
-                if (button && completedTaskIds.includes(task.id)) {
-                    button.disabled = true;
-                    button.textContent = 'Completed Today';
-                    button.style.background = '#6b7280';
-                }
-            });
 
             // Update user submissions
             const submissionsSnapshot = await db.collection('taskSubmissions')
@@ -5813,9 +5821,30 @@
         
         const task = taskDoc.data();
         
-        // Open the link if it exists
+        // Open the link if it exists (with user interaction)
         if (task.link) {
-            window.open(task.link, '_blank');
+            try {
+                // Use a small timeout to ensure it's triggered by user interaction
+                setTimeout(() => {
+                    const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
+                    if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
+                        // Fallback: copy link to clipboard if popup blocked
+                        navigator.clipboard.writeText(task.link).then(() => {
+                            alert(`🔗 Link copied to clipboard!\n\nPopup was blocked by browser. Please paste this link: ${task.link}`);
+                        }).catch(() => {
+                            alert(`🔗 Please copy this link manually: ${task.link}`);
+                        });
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('Error opening link:', error);
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(task.link).then(() => {
+                    alert(`🔗 Link copied to clipboard!\n\nPlease paste this link: ${task.link}`);
+                }).catch(() => {
+                    alert(`🔗 Please copy this link manually: ${task.link}`);
+                });
+            }
         }
         
         // Disable button and show timer
@@ -5837,6 +5866,13 @@
                 button.textContent = 'Task Completed!';
                 button.style.background = '#10b981';
                 timerDiv.classList.add('hidden');
+                
+                // Add fade-out animation to the completed task
+                const taskCard = document.getElementById(`task-${taskId}`);
+                if (taskCard) {
+                    taskCard.style.transition = 'opacity 0.5s ease-out';
+                    taskCard.style.opacity = '0.3';
+                }
                 
                 // Automatically award the reward
                 awardTaskReward(taskId, reward, task.title);
