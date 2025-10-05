@@ -3851,28 +3851,58 @@
         });
     }
 
-    async function updateWalletSection() {
-        try {
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            const balance = userData.balance || 0;
-            const pointsBalance = userData.pointsBalance || 0;
-            
-            document.getElementById('walletBalance').textContent = balance.toLocaleString();
-            document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
-            
-            // Update deposit section with new functionality
-            await updateDepositSection();
-            
-            // Update wallet transaction history
-            await updateWalletTransactionHistory();
-            
-            // Wallet section updated successfully
-            console.log('Wallet section updated');
-        } catch (error) {
-            console.error("Error updating wallet section:", error);
-        }
-    }
+   async function updateWalletSection() {
+       try {
+           console.log('updateWalletSection called'); // Debug log
+           
+           if (!currentUser || !currentUser.id) {
+               console.error('No current user');
+               return;
+           }
+           
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           const balance = userData.balance || 0;
+           const pointsBalance = userData.pointsBalance || 0;
+           
+           console.log('Balance:', balance, 'Points:', pointsBalance); // Debug log
+           
+           // Update balance displays
+           const walletBalanceEl = document.getElementById('walletBalance');
+           const walletPointsBalanceEl = document.getElementById('walletPointsBalance');
+           const withdrawBalanceEl = document.getElementById('withdrawBalance');
+           const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
+           
+           if (walletBalanceEl) {
+               walletBalanceEl.textContent = balance.toLocaleString();
+               console.log('Updated walletBalance element');
+           } else {
+               console.error('walletBalance element not found');
+           }
+           
+           if (walletPointsBalanceEl) {
+               walletPointsBalanceEl.textContent = pointsBalance.toLocaleString();
+               console.log('Updated walletPointsBalance element');
+           } else {
+               console.error('walletPointsBalance element not found');
+           }
+           
+           if (withdrawBalanceEl) {
+               withdrawBalanceEl.textContent = balance.toLocaleString();
+           }
+           
+           if (withdrawPointsBalanceEl) {
+               withdrawPointsBalanceEl.textContent = pointsBalance.toLocaleString();
+           }
+           
+           // Update transaction history
+           await updateWalletTransactionHistory();
+           
+           console.log('Wallet section updated successfully');
+       } catch (error) {
+           console.error('Error updating wallet section:', error);
+       }
+   }
 
     function showAdminSection(section) {
         ['Stats', 'Users', 'Tasks', 'Transactions', 'Deposits', 'Withdrawals', 'Candidates'].forEach(s => {
