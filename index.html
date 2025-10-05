@@ -2740,6 +2740,7 @@
 
     // Initialize app
     async function init() {
+    try {
         document.getElementById('loadingScreen').classList.remove('hidden');
         
         if (!firebaseInitialized) {
@@ -2748,230 +2749,120 @@
             return;
         }
     
-            // Initialize app
-    async function init() {
-        try {
-            document.getElementById('loadingScreen').classList.remove('hidden');
+        document.getElementById('loadingScreen').classList.add('hidden');
+
+        // Check for referral code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+
+        if (refCode) {
+            console.log('Referral code detected:', refCode);
+            console.log('User agent:', navigator.userAgent);
+            console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
             
-            if (!firebaseInitialized) {
-                document.getElementById('loadingScreen').classList.add('hidden');
-                document.getElementById('firebaseSetup').classList.remove('hidden');
-                return;
-            }
-        
-            document.getElementById('loadingScreen').classList.add('hidden');
-
-            // Check for referral code in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
-
-            if (refCode) {
-                console.log('Referral code detected:', refCode);
-                console.log('User agent:', navigator.userAgent);
-                console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-                
-                // Set flag to prevent auth state listener interference
-                isProcessingReferral = true;
-                
-                // Add a longer delay for mobile browsers to ensure Firebase is fully ready
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                const initialDelay = isMobile ? 1500 : 500; // Longer delay for mobile
-                
-                const validateReferralCode = async (retries = 3) => {
-                    try {
-                        console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
-                        console.log('Firebase initialized:', firebaseInitialized);
-                        console.log('DB available:', !!db);
-                        console.log('Auth available:', !!auth);
+            // Set flag to prevent auth state listener interference
+            isProcessingReferral = true;
+            
+            // Add a longer delay for mobile browsers to ensure Firebase is fully ready
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const initialDelay = isMobile ? 1500 : 500; // Longer delay for mobile
+            
+            const validateReferralCode = async (retries = 3) => {
+                try {
+                    console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
+                    console.log('Firebase initialized:', firebaseInitialized);
+                    console.log('DB available:', !!db);
+                    console.log('Auth available:', !!auth);
+                    
+                    const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
+                    
+                    if (!referrerQuery.empty) {
+                        const referrerData = referrerQuery.docs[0].data();
                         
-                        const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
+                        // Auto-fill the invite code
+                        document.getElementById('inviteCode').value = refCode;
                         
-                        if (!referrerQuery.empty) {
-                            const referrerData = referrerQuery.docs[0].data();
-                            
-                            // Auto-fill the invite code
-                            document.getElementById('inviteCode').value = refCode;
-                            
-                            // Make the field look validated
-                            const inviteCodeField = document.getElementById('inviteCode');
-                            inviteCodeField.style.borderColor = 'var(--success)';
-                            inviteCodeField.style.background = '#f0fdf4';
-                            
-                            const lockIcon = document.getElementById('inviteCodeLock');
-                            if (lockIcon) lockIcon.style.display = 'block';
-                            
-                            // Show registration page
-                            showRegisterFromReferral();
-                            
-                            // Show welcome message
-                            showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
-                            
-                            // Clean up URL
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                            
-                            // Clear the processing flag
-                            isProcessingReferral = false;
-                        } else if (retries > 0) {
-                            // Retry if referral code not found and we have retries left
-                            console.log('Referral code not found, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1000);
-                        } else {
-                            // Invalid referral code after all retries
-                            console.log('Invalid referral code after all retries');
-                            isProcessingReferral = false;
-                            showLogin();
-                            alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
-                        }
-                    } catch (error) {
-                        console.error('Error validating referral code:', error);
+                        // Make the field look validated
+                        const inviteCodeField = document.getElementById('inviteCode');
+                        inviteCodeField.style.borderColor = 'var(--success)';
+                        inviteCodeField.style.background = '#f0fdf4';
                         
-                        if (retries > 0) {
-                            console.log('Error occurred, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1000);
-                        } else {
-                            isProcessingReferral = false;
-                            showLogin();
-                            alert('Unable to validate referral code. Please check your internet connection and try again.');
-                        }
-                    }
-                };
-                
-                // Wait a bit for Firebase to be fully ready, then validate
-                console.log(`Waiting ${initialDelay}ms before validating referral code...`);
-                setTimeout(() => validateReferralCode(), initialDelay);
-                
-                // Fallback: Clear processing flag after 10 seconds to prevent getting stuck
-                setTimeout(() => {
-                    if (isProcessingReferral) {
-                        console.warn('Referral processing timeout - clearing flag');
+                        const lockIcon = document.getElementById('inviteCodeLock');
+                        if (lockIcon) lockIcon.style.display = 'block';
+                        
+                        // Show registration page
+                        showRegisterFromReferral();
+                        
+                        // Show welcome message
+                        showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
+                        
+                        // Clean up URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        
+                        // Clear the processing flag
                         isProcessingReferral = false;
+                    } else if (retries > 0) {
+                        // Retry if referral code not found and we have retries left
+                        console.log('Referral code not found, retrying...');
+                        setTimeout(() => validateReferralCode(retries - 1), 1000);
+                    } else {
+                        // Invalid referral code after all retries
+                        console.log('Invalid referral code after all retries');
+                        isProcessingReferral = false;
+                        showLogin();
+                        alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                     }
-                }, 10000);
-                
-            } else {
-                // No referral code - check if mobile and show register page first
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    console.log('No referral code found, but mobile detected - showing register page first...');
-                    showRegisterWithReferral(); // This will show error message about no referral code
-                } else {
-                    console.log('No referral code found, showing login...');
-                    showLogin();
+                } catch (error) {
+                    console.error('Error validating referral code:', error);
+                    
+                    if (retries > 0) {
+                        console.log('Error occurred, retrying...');
+                        setTimeout(() => validateReferralCode(retries - 1), 1000);
+                    } else {
+                        isProcessingReferral = false;
+                        showLogin();
+                        alert('Unable to validate referral code. Please check your internet connection and try again.');
+                    }
                 }
+            };
+            
+            // Wait a bit for Firebase to be fully ready, then validate
+            console.log(`Waiting ${initialDelay}ms before validating referral code...`);
+            setTimeout(() => validateReferralCode(), initialDelay);
+            
+            // Fallback: Clear processing flag after 10 seconds to prevent getting stuck
+            setTimeout(() => {
+                if (isProcessingReferral) {
+                    console.warn('Referral processing timeout - clearing flag');
+                    isProcessingReferral = false;
+                }
+            }, 10000);
+            
+        } else {
+            // No referral code - check if mobile and show register page first
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                console.log('No referral code found, but mobile detected - showing register page first...');
+                showRegisterWithReferral(); // This will show error message about no referral code
+            } else {
+                console.log('No referral code found, showing login...');
+                showLogin();
             }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            document.getElementById('loadingScreen').innerHTML = `
-                <div class="spinner"></div>
-                <h2>Error</h2>
-                <p>Failed to connect to database: ${error.message}</p>
-            `;
         }
+        
+        // Set up auth state listener
+        setupAuthStateListener();
+        
+    } catch (error) {
+        console.error("Initialization error:", error);
+        document.getElementById('loadingScreen').innerHTML = `
+            <div class="spinner"></div>
+            <h2>Error</h2>
+            <p>Failed to connect to database: ${error.message}</p>
+        `;
     }
-
-    
-            document.getElementById('loadingScreen').classList.add('hidden');
-
-            // Check for referral code in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
-
-            if (refCode) {
-                console.log('Referral code detected:', refCode);
-                console.log('User agent:', navigator.userAgent);
-                console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-                
-                // Set flag to prevent auth state listener interference
-                isProcessingReferral = true;
-                
-                // Add a longer delay for mobile browsers to ensure Firebase is fully ready
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                const initialDelay = isMobile ? 1500 : 500; // Longer delay for mobile
-                
-                const validateReferralCode = async (retries = 3) => {
-                    try {
-                        console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
-                        console.log('Firebase initialized:', firebaseInitialized);
-                        console.log('DB available:', !!db);
-                        console.log('Auth available:', !!auth);
-                        
-                        const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
-                        
-                        if (!referrerQuery.empty) {
-                            const referrerData = referrerQuery.docs[0].data();
-                            
-                            // Auto-fill the invite code
-                            document.getElementById('inviteCode').value = refCode;
-                            
-                            // Make the field look validated
-                            const inviteCodeField = document.getElementById('inviteCode');
-                            inviteCodeField.style.borderColor = 'var(--success)';
-                            inviteCodeField.style.background = '#f0fdf4';
-                            
-                            const lockIcon = document.getElementById('inviteCodeLock');
-                            if (lockIcon) lockIcon.style.display = 'block';
-                            
-                            // Show registration page
-                            showRegisterFromReferral();
-                            
-                            // Show welcome message
-                            showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
-                            
-                            // Clean up URL
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                            
-                            // Clear the processing flag
-                            isProcessingReferral = false;
-                        } else if (retries > 0) {
-                            // Retry if referral code not found and we have retries left
-                            console.log('Referral code not found, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1000);
-                        } else {
-                            // Invalid referral code after all retries
-                            console.log('Invalid referral code after all retries');
-                            isProcessingReferral = false;
-                            showLogin();
-                            alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
-                        }
-                    } catch (error) {
-                        console.error('Error validating referral code:', error);
-                        
-                        if (retries > 0) {
-                            console.log('Error occurred, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1000);
-                        } else {
-                            isProcessingReferral = false;
-                            showLogin();
-                            alert('Unable to validate referral code. Please check your internet connection and try again.');
-                        }
-                    }
-                };
-                
-                // Wait a bit for Firebase to be fully ready, then validate
-                console.log(`Waiting ${initialDelay}ms before validating referral code...`);
-                setTimeout(() => validateReferralCode(), initialDelay);
-                
-                // Fallback: Clear processing flag after 10 seconds to prevent getting stuck
-                setTimeout(() => {
-                    if (isProcessingReferral) {
-                        console.warn('Referral processing timeout - clearing flag');
-                        isProcessingReferral = false;
-                    }
-                }, 10000);
-                
-            } else {
-                // No referral code - check if mobile and show register page first
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    console.log('No referral code found, but mobile detected - showing register page first...');
-                    showRegisterWithReferral(); // This will show error message about no referral code
-                } else {
-                    console.log('No referral code found, showing login...');
-                    showLogin();
-                }
-            }
+}
 
     async function adminLogin() {
         try {
