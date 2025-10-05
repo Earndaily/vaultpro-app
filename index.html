@@ -5743,34 +5743,29 @@
         
         const task = taskDoc.data();
         
-        // Open the link if it exists (with user interaction)
+        // Disable button FIRST
+        button.disabled = true;
+        button.textContent = 'Opening link...';
+        
+        // Open the link if it exists
         if (task.link) {
             try {
-                // Use a small timeout to ensure it's triggered by user interaction
-                setTimeout(() => {
-                    const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
-                    if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
-                        // Fallback: copy link to clipboard if popup blocked
-                        navigator.clipboard.writeText(task.link).then(() => {
-                            alert(`🔗 Link copied to clipboard!\n\nPopup was blocked by browser. Please paste this link: ${task.link}`);
-                        }).catch(() => {
-                            alert(`🔗 Please copy this link manually: ${task.link}`);
-                        });
-                    }
-                }, 100);
+                const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
+                if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
+                    navigator.clipboard.writeText(task.link).then(() => {
+                        alert(`🔗 Link copied to clipboard!\n\nPopup was blocked. Please paste: ${task.link}`);
+                    }).catch(() => {
+                        alert(`🔗 Please copy this link: ${task.link}`);
+                    });
+                }
             } catch (error) {
                 console.error('Error opening link:', error);
-                // Fallback: copy link to clipboard
-                navigator.clipboard.writeText(task.link).then(() => {
-                    alert(`🔗 Link copied to clipboard!\n\nPlease paste this link: ${task.link}`);
-                }).catch(() => {
-                    alert(`🔗 Please copy this link manually: ${task.link}`);
-                });
+                navigator.clipboard.writeText(task.link).catch(() => {});
+                alert(`🔗 Link: ${task.link}`);
             }
         }
         
-        // Disable button and show timer
-        button.disabled = true;
+        // Start timer immediately
         button.textContent = 'Timer Running...';
         timerDiv.classList.remove('hidden');
         
@@ -5783,20 +5778,16 @@
             
             if (timeLeft <= 0) {
                 clearInterval(countdown);
-                // Timer finished, automatically award the reward
-                button.disabled = false;
                 button.textContent = 'Task Completed!';
                 button.style.background = '#10b981';
                 timerDiv.classList.add('hidden');
                 
-                // Add fade-out animation to the completed task
                 const taskCard = document.getElementById(`task-${taskId}`);
                 if (taskCard) {
                     taskCard.style.transition = 'opacity 0.5s ease-out';
                     taskCard.style.opacity = '0.3';
                 }
                 
-                // Automatically award the reward
                 awardTaskReward(taskId, reward, task.title);
             }
         }, 1000);
