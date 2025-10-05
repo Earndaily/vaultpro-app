@@ -1,3 +1,4 @@
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>VaultPro - Refer & Earn</title>
@@ -373,11 +374,7 @@
         text-align: center;
         line-height: 1.1;
     }
-   @media (min-width: 769px) {
-       .bottom-nav {
-           display: none !important;
-       }
-   }
+
     /* Table */
     .table-responsive {
         overflow-x: auto;
@@ -1845,7 +1842,24 @@
                     <p id="todayTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--success);">0 UGX</p>
                         </div>
 
-
+                <h3 class="mt-3">My Task Submissions</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Submitted</th>
+                                <th>Reward</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTaskSubmissionsBody">
+                            <tr><td colspan="4" class="text-center">No submissions yet</td></tr>
+                        </tbody>
+                    </table>
+                        </div>
+                        </div>
+                        </div>
 
         <!-- Wallet Section -->
         <div id="walletSection" class="hidden">
@@ -2750,90 +2764,105 @@
             // Check for referral code in URL
             const urlParams = new URLSearchParams(window.location.search);
             const refCode = urlParams.get('ref');
-
+    
             if (refCode) {
                 console.log('Referral code detected:', refCode);
+                console.log('User agent:', navigator.userAgent);
+                console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+                
+                // Set flag to prevent auth state listener interference
                 isProcessingReferral = true;
                 
+                // Add a longer delay for mobile browsers to ensure Firebase is fully ready
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                const initialDelay = isMobile ? 2000 : 1000;
+                const initialDelay = isMobile ? 1500 : 500; // Longer delay for mobile
                 
-                const validateReferralCode = async (retries = 5) => {
+                const validateReferralCode = async (retries = 3) => {
                     try {
-                        console.log(`Validating referral code (attempt ${6 - retries}/5)...`);
+                        console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
+                        console.log('Firebase initialized:', firebaseInitialized);
+                        console.log('DB available:', !!db);
+                        console.log('Auth available:', !!auth);
                         
                         const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                         
                         if (!referrerQuery.empty) {
                             const referrerData = referrerQuery.docs[0].data();
                             
-                            // IMMEDIATELY fill the invite code
+                            // Auto-fill the invite code
+                            document.getElementById('inviteCode').value = refCode;
+                            
+                            // Make the field look validated
                             const inviteCodeField = document.getElementById('inviteCode');
-                            inviteCodeField.value = refCode;
-                            inviteCodeField.style.borderColor = '#10b981';
+                            inviteCodeField.style.borderColor = 'var(--success)';
                             inviteCodeField.style.background = '#f0fdf4';
-                            inviteCodeField.readOnly = true;
                             
                             const lockIcon = document.getElementById('inviteCodeLock');
-                            if (lockIcon) {
-                                lockIcon.style.display = 'block';
-                                lockIcon.style.color = '#10b981';
-                            }
+                            if (lockIcon) lockIcon.style.display = 'block';
                             
                             // Show registration page
-                            document.getElementById('loginPage').classList.add('hidden');
-                            document.getElementById('registerPage').classList.remove('hidden');
-                            document.getElementById('loadingScreen').classList.add('hidden');
+                            showRegisterFromReferral();
                             
                             // Show welcome message
                             showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
                             
-                            // Clean URL
+                            // Clean up URL
                             window.history.replaceState({}, document.title, window.location.pathname);
                             
+                            // Clear the processing flag
                             isProcessingReferral = false;
                         } else if (retries > 0) {
+                            // Retry if referral code not found and we have retries left
                             console.log('Referral code not found, retrying...');
-                            setTimeout(() => validateReferralCode(retries - 1), 1500);
+                            setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
+                            // Invalid referral code after all retries
                             console.log('Invalid referral code after all retries');
                             isProcessingReferral = false;
-                            document.getElementById('loadingScreen').classList.add('hidden');
                             showLogin();
-                            alert('Invalid referral code. Please contact the person who referred you.');
+                            alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                         }
                     } catch (error) {
                         console.error('Error validating referral code:', error);
+                        
                         if (retries > 0) {
-                            setTimeout(() => validateReferralCode(retries - 1), 1500);
+                            console.log('Error occurred, retrying...');
+                            setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             isProcessingReferral = false;
-                            document.getElementById('loadingScreen').classList.add('hidden');
                             showLogin();
+                            alert('Unable to validate referral code. Please check your internet connection and try again.');
                         }
                     }
                 };
                 
+                // Wait a bit for Firebase to be fully ready, then validate
+                console.log(`Waiting ${initialDelay}ms before validating referral code...`);
                 setTimeout(() => validateReferralCode(), initialDelay);
                 
+                // Fallback: Clear processing flag after 10 seconds to prevent getting stuck
                 setTimeout(() => {
                     if (isProcessingReferral) {
-                        console.warn('Referral processing timeout');
+                        console.warn('Referral processing timeout - clearing flag');
                         isProcessingReferral = false;
                     }
-                }, 15000);
+                }, 10000);
                 
             } else {
-                // No referral code - set up auth and show login by default
-                setupAuthStateListener();
+                // No referral code - check if mobile and show register page first
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
-                // If no user is logged in after a short delay, show login
-                setTimeout(() => {
-                    if (!currentUser && !auth.currentUser) {
-                        showLogin();
-                    }
-                }, 500);
+                if (isMobile) {
+                    console.log('No referral code found, but mobile detected - showing register page first...');
+                    showRegisterWithReferral(); // This will show error message about no referral code
+                } else {
+                    console.log('No referral code found, showing login...');
+                    showLogin();
+                }
             }
+            
+            // Set up auth state listener
+            setupAuthStateListener();
             
         } catch (error) {
             console.error("Initialization error:", error);
@@ -3498,17 +3527,10 @@
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         
-        // Check activation status FIRST
-        if (!currentUser.isActivated && !currentUser.isAdmin) {
-            // Show ONLY activation section for unactivated users
-            hideAllSections();
-            showActivationPayment();
-            return; // Stop here - don't load anything else
-        }
-        
-        // For activated users, show home section
+        // Show home section immediately
         showSection('home');
         
+        // Ensure home section is shown after async operations
         setTimeout(() => {
             showSection('home');
         }, 100);
@@ -3516,54 +3538,69 @@
         updateUserStats();
         updateFeatureAccess();
         
+        // Ensure profile section is properly initialized
         if (currentUser) {
             updateProfileSection();
         }
         
+        // Ensure all sections are properly hidden initially
         ensureAllSectionsHidden();
+        
+        // Check for referral links when user dashboard is shown
         handleReferralLink();
     }
 
-    function hideAllSections() {
-        const sections = ['homeSection', 'vaultSection', 'referralsSection', 'streakSection', 
-                         'tasksSection', 'walletSection', 'profileSection', 'stakeSection'];
-        sections.forEach(sectionId => {
-            const section = document.getElementById(sectionId);
-            if (section) section.classList.add('hidden');
-        });
-    }
-
     function updateFeatureAccess() {
-        // Skip for admin users
-        if (currentUser && currentUser.isAdmin) {
+        // Skip activation checks for admin users
+        if (currentUser.isAdmin) {
             return;
         }
         
-        const isActivated = currentUser && currentUser.isActivated;
+        const isActivated = currentUser.isActivated;
         
-        if (!isActivated) {
-            // For unactivated users, hide everything except activation
-            hideAllSections();
-            
-            // Hide navigation
-            const navbar = document.querySelector('.navbar');
-            if (navbar) navbar.style.display = 'none';
-            
-            const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.style.display = 'none';
-            
-            // Show only activation section
-            const activationSection = document.getElementById('activationPaymentSection');
-            if (activationSection) {
-                activationSection.classList.remove('hidden');
+        // Disable/enable all interactive elements
+        const interactiveElements = document.querySelectorAll('button, input, select, textarea');
+        interactiveElements.forEach(element => {
+            if (element.id === 'registerBtn' || element.id === 'loginBtn' || 
+                element.classList.contains('nav-link') || element.classList.contains('bottom-nav-item') ||
+                element.classList.contains('activation-payment-element') ||
+                element.closest('#activationModal')) {
+                // Keep navigation, login/register buttons, activation payment, and modal elements enabled
+                return;
             }
-        } else {
-            // For activated users, show navigation
-            const navbar = document.querySelector('.navbar');
-            if (navbar) navbar.style.display = 'flex';
             
-            const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.style.display = 'block';
+            if (!isActivated) {
+                element.disabled = true;
+                element.style.opacity = '0.5';
+                element.style.cursor = 'not-allowed';
+            } else {
+                element.disabled = false;
+                element.style.opacity = '1';
+                element.style.cursor = 'pointer';
+            }
+        });
+        
+        // Show/hide activation payment section and message if not activated
+        const activationSection = document.getElementById('activationPaymentSection');
+        const activationCard = document.getElementById('activationCard');
+        
+        if (activationSection) {
+            if (!isActivated) {
+                activationSection.classList.remove('hidden');
+                showActivationMessage();
+            } else {
+                activationSection.classList.add('hidden');
+                hideActivationMessage();
+            }
+        }
+        
+        // Show/hide activation card in home section
+        if (activationCard) {
+            if (!isActivated) {
+                activationCard.style.display = 'block';
+            } else {
+                activationCard.style.display = 'none';
+            }
         }
     }
 
@@ -3723,29 +3760,47 @@
 
     function showActivationPayment() {
         // Hide all other sections
-        hideAllSections();
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet'].forEach(s => {
+            const el = document.getElementById(s + 'Section');
+            if (el) el.classList.add('hidden');
+        });
         
-        // Show ONLY activation payment section
-        const activationSection = document.getElementById('activationPaymentSection');
-        if (activationSection) {
-            activationSection.classList.remove('hidden');
-        }
+        // Show activation payment section
+        document.getElementById('activationPaymentSection').classList.remove('hidden');
         
-        // Hide navbar for unactivated users
-        const navbar = document.querySelector('.navbar');
-        if (navbar && !currentUser.isAdmin && !currentUser.isActivated) {
-            navbar.style.display = 'none';
-        }
-        
-        // Hide bottom nav for unactivated users  
-        const bottomNav = document.querySelector('.bottom-nav');
-        if (bottomNav && !currentUser.isAdmin && !currentUser.isActivated) {
-            bottomNav.style.display = 'none';
-        }
-        
-        // Update bottom navigation - remove active state
+        // Update bottom navigation
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
             item.classList.remove('active');
+        });
+        
+        // Set up payment method listener
+        document.getElementById('activationPaymentMethod').addEventListener('change', function() {
+            const method = this.value;
+            const instructions = document.getElementById('activationPaymentInstructions');
+            const screenshot = document.getElementById('activationScreenshot');
+            const submitBtn = document.getElementById('submitActivationBtn');
+            
+            if (method) {
+                instructions.classList.remove('hidden');
+                screenshot.classList.remove('hidden');
+                submitBtn.classList.remove('hidden');
+                
+                // Update phone number and reference based on method
+                const phoneNumber = document.getElementById('activationPhoneNumber');
+                const reference = document.getElementById('activationReference');
+                
+                if (method === 'mtn') {
+                    phoneNumber.textContent = '0779710365'; // MTN number
+                } else if (method === 'airtel') {
+                    phoneNumber.textContent = '0702377999'; // Airtel number
+                }
+                
+                reference.textContent = `ACTIVATION_${currentUser.referralCode}`;
+            } else {
+                instructions.classList.add('hidden');
+                screenshot.classList.add('hidden');
+                submitBtn.classList.add('hidden');
+            }
         });
     }
 
@@ -3761,15 +3816,6 @@
     }
 
     function showSection(section) {
-        // Check activation for restricted sections
-        if (!currentUser.isAdmin && currentUser && !currentUser.isActivated) {
-            const restrictedSections = ['vault', 'tasks', 'wallet', 'profile', 'stake'];
-            if (restrictedSections.includes(section)) {
-                alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access this feature.');
-                return;
-            }
-        }
-        
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
@@ -3781,7 +3827,7 @@
         if (sectionEl) {
             sectionEl.classList.remove('hidden');
         }
-
+    
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
             item.classList.remove('active');
         });
@@ -3789,7 +3835,8 @@
         if (activeNavItem) {
             activeNavItem.classList.add('active');
         }
-
+    
+        // Update feature access when switching sections
         updateFeatureAccess();
 
         if (section === 'referrals') updateReferralsSection();
@@ -3802,6 +3849,7 @@
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') updateTasksSection();
         else if (section === 'profile') {
+            // Refresh user data before updating profile section
             if (currentUser && currentUser.id) {
                 refreshUserData().then(() => {
                     updateProfileSection();
@@ -5605,7 +5653,43 @@
                 }).join('');
             }
 
+            // Update user submissions
+            const submissionsSnapshot = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .orderBy('submittedDate', 'desc')
+                .limit(20)
+                .get();
+            
+            const submissions = submissionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
+            const tbody = document.getElementById('userTaskSubmissionsBody');
+            if (submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No submissions yet</td></tr>';
+            } else {
+                tbody.innerHTML = submissions.map(sub => {
+                    let statusClass = 'status-pending';
+                    let statusText = 'Pending';
+                    if (sub.status === 'approved') {
+                        statusClass = 'status-active';
+                        statusText = 'Approved';
+                    } else if (sub.status === 'rejected') {
+                        statusClass = 'status-error';
+                        statusText = 'Rejected';
+                    }
+
+                    return `
+                        <tr>
+                            <td>${sub.taskTitle}</td>
+                            <td>${new Date(sub.submittedDate).toLocaleDateString()}</td>
+                            <td>${sub.reward.toLocaleString()} UGX</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
 
             // Update today's earnings
             const todayEarnings = await calculateTodayTaskEarnings();
@@ -5659,29 +5743,34 @@
         
         const task = taskDoc.data();
         
-        // Disable button FIRST
-        button.disabled = true;
-        button.textContent = 'Opening link...';
-        
-        // Open the link if it exists
+        // Open the link if it exists (with user interaction)
         if (task.link) {
             try {
-                const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
-                if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
-                    navigator.clipboard.writeText(task.link).then(() => {
-                        alert(`🔗 Link copied to clipboard!\n\nPopup was blocked. Please paste: ${task.link}`);
-                    }).catch(() => {
-                        alert(`🔗 Please copy this link: ${task.link}`);
-                    });
-                }
+                // Use a small timeout to ensure it's triggered by user interaction
+                setTimeout(() => {
+                    const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
+                    if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
+                        // Fallback: copy link to clipboard if popup blocked
+                        navigator.clipboard.writeText(task.link).then(() => {
+                            alert(`🔗 Link copied to clipboard!\n\nPopup was blocked by browser. Please paste this link: ${task.link}`);
+                        }).catch(() => {
+                            alert(`🔗 Please copy this link manually: ${task.link}`);
+                        });
+                    }
+                }, 100);
             } catch (error) {
                 console.error('Error opening link:', error);
-                navigator.clipboard.writeText(task.link).catch(() => {});
-                alert(`🔗 Link: ${task.link}`);
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(task.link).then(() => {
+                    alert(`🔗 Link copied to clipboard!\n\nPlease paste this link: ${task.link}`);
+                }).catch(() => {
+                    alert(`🔗 Please copy this link manually: ${task.link}`);
+                });
             }
         }
         
-        // Start timer immediately
+        // Disable button and show timer
+        button.disabled = true;
         button.textContent = 'Timer Running...';
         timerDiv.classList.remove('hidden');
         
@@ -5694,16 +5783,20 @@
             
             if (timeLeft <= 0) {
                 clearInterval(countdown);
+                // Timer finished, automatically award the reward
+                button.disabled = false;
                 button.textContent = 'Task Completed!';
                 button.style.background = '#10b981';
                 timerDiv.classList.add('hidden');
                 
+                // Add fade-out animation to the completed task
                 const taskCard = document.getElementById(`task-${taskId}`);
                 if (taskCard) {
                     taskCard.style.transition = 'opacity 0.5s ease-out';
                     taskCard.style.opacity = '0.3';
                 }
                 
+                // Automatically award the reward
                 awardTaskReward(taskId, reward, task.title);
             }
         }, 1000);
@@ -6660,22 +6753,13 @@
             if (currentUser && currentUser.id === userId && !currentUser.isActivated) {
                 currentUser.isActivated = true;
                 currentUser.activationDate = new Date().toISOString();
-                
-                // Show navigation after activation
-                const navbar = document.querySelector('.navbar');
-                if (navbar) navbar.style.display = 'flex';
-                
-                const bottomNav = document.querySelector('.bottom-nav');
-                if (bottomNav) bottomNav.style.display = 'block';
-                
+                // Don't add the activation fee to user balance - it's distributed to admin and referrer
                 updateFeatureAccess();
-                
-                // Redirect to home and update stats
-                showSection('home');
                 updateUserStats();
                 
+                // Show success message for account activation
                 setTimeout(() => {
-                    alert('Congratulations! Your account has been activated successfully! All features are now unlocked.');
+                    alert('🎉 Congratulations! Your account has been activated successfully! All features are now unlocked.');
                 }, 500);
             }
 
