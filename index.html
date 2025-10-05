@@ -6190,7 +6190,7 @@
                 depositMethodEl.setAttribute('data-listener-added', 'true');
             }
             
-            updateDepositHistory();
+            
         } catch (error) {
             console.error('Error updating deposit section:', error);
         }
@@ -6295,7 +6295,7 @@
                 document.getElementById('depositDetails').classList.add('hidden');
                 document.getElementById('submitDepositBtn').classList.add('hidden');
                 
-                updateDepositHistory();
+                
             };
             reader.readAsDataURL(screenshotFile);
 
