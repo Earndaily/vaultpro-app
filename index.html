@@ -374,7 +374,11 @@
         text-align: center;
         line-height: 1.1;
     }
-
+   @media (min-width: 769px) {
+       .bottom-nav {
+           display: none !important;
+       }
+   }
     /* Table */
     .table-responsive {
         overflow-x: auto;
@@ -1842,24 +1846,7 @@
                     <p id="todayTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--success);">0 UGX</p>
                         </div>
 
-                <h3 class="mt-3">My Task Submissions</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Submitted</th>
-                                <th>Reward</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="userTaskSubmissionsBody">
-                            <tr><td colspan="4" class="text-center">No submissions yet</td></tr>
-                        </tbody>
-                    </table>
-                        </div>
-                        </div>
-                        </div>
+
 
         <!-- Wallet Section -->
         <div id="walletSection" class="hidden">
@@ -5619,43 +5606,7 @@
                 }).join('');
             }
 
-            // Update user submissions
-            const submissionsSnapshot = await db.collection('taskSubmissions')
-                .where('userId', '==', currentUser.id)
-                .orderBy('submittedDate', 'desc')
-                .limit(20)
-                .get();
-            
-            const submissions = submissionsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
 
-            const tbody = document.getElementById('userTaskSubmissionsBody');
-            if (submissions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No submissions yet</td></tr>';
-            } else {
-                tbody.innerHTML = submissions.map(sub => {
-                    let statusClass = 'status-pending';
-                    let statusText = 'Pending';
-                    if (sub.status === 'approved') {
-                        statusClass = 'status-active';
-                        statusText = 'Approved';
-                    } else if (sub.status === 'rejected') {
-                        statusClass = 'status-error';
-                        statusText = 'Rejected';
-                    }
-
-                    return `
-                        <tr>
-                            <td>${sub.taskTitle}</td>
-                            <td>${new Date(sub.submittedDate).toLocaleDateString()}</td>
-                            <td>${sub.reward.toLocaleString()} UGX</td>
-                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        </tr>
-                    `;
-                }).join('');
-            }
 
             // Update today's earnings
             const todayEarnings = await calculateTodayTaskEarnings();
