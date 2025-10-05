@@ -5748,22 +5748,18 @@
         button.textContent = 'Opening link...';
         
         // Open the link if it exists
-        if (task.link) {
-            try {
-                const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
-                if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
-                    navigator.clipboard.writeText(task.link).then(() => {
-                        alert(`🔗 Link copied to clipboard!\n\nPopup was blocked. Please paste: ${task.link}`);
-                    }).catch(() => {
-                        alert(`🔗 Please copy this link: ${task.link}`);
-                    });
-                }
-            } catch (error) {
-                console.error('Error opening link:', error);
-                navigator.clipboard.writeText(task.link).catch(() => {});
-                alert(`🔗 Link: ${task.link}`);
-            }
-        }
+         // Open the link if it exists (with direct user interaction)
+         if (task.link) {
+             // Open immediately - no setTimeout to avoid popup blocker
+             const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
+             
+             // Check if popup was blocked after a brief moment
+             setTimeout(() => {
+                 if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
+                     alert(`⚠️ Popup was blocked by your browser!\n\nPlease allow popups for this site, or manually open this link:\n${task.link}\n\nThe timer will continue running.`);
+                 }
+             }, 500);
+         }
         
         // Start timer immediately
         button.textContent = 'Timer Running...';
