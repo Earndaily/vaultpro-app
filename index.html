@@ -2838,12 +2838,16 @@
                 }, 15000);
                 
             } else {
-                // No referral code
+                // No referral code - set up auth and show login by default
                 setupAuthStateListener();
+                
+                // If no user is logged in after a short delay, show login
+                setTimeout(() => {
+                    if (!currentUser && !auth.currentUser) {
+                        showLogin();
+                    }
+                }, 500);
             }
-            
-            // Set up auth state listener
-            setupAuthStateListener();
             
         } catch (error) {
             console.error("Initialization error:", error);
