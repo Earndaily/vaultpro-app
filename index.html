@@ -1458,7 +1458,7 @@
             </div>
 
             <!-- Activation Payment Section (only shown for unactivated users) -->
-            <div id="activationPaymentSection" class="card hidden" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; text-align: center; max-width: 600px; margin: 2rem auto;">
+            <div id="activationPaymentSection" class="card hidden" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; text-align: center;">
                 <h3 style="color: #92400e; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                     🔒 Account Activation Required
                 </h3>
@@ -1649,13 +1649,8 @@
                 <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--success);">
                     <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
-                        <li><strong>4000 UGX</strong> for each direct referral</li>
-                        <li><strong>2000 UGX</strong> when your referral refers someone else</li>
-                        <li><strong>20% bonus</strong> from your referral's first vault purchase</li>
-                        <li style="font-size: 0.875rem; color: var(--primary); margin-top: 0.5rem;">
-                            <strong>Examples:</strong> Seed Plan (45,000 UGX) = 9,000 UGX bonus | 
-                            Rising Plan (180,000 UGX) = 36,000 UGX bonus
-                        </li>
+                        <li><strong>4000 SHS</strong> for each direct referral</li>
+                        <li><strong>2000 SHS</strong> when your referral refers someone else</li>
                     </ul>
                 </div>
                 
@@ -2784,19 +2779,15 @@
                 
                 const validateReferralCode = async (retries = 3) => {
                     try {
-                        console.log(`🔗 Attempting to validate referral code (attempt ${4 - retries}/3)...`);
-                        console.log('🔗 Referral code to validate:', refCode);
-                        console.log('🔗 Firebase initialized:', firebaseInitialized);
-                        console.log('🔗 DB available:', !!db);
-                        console.log('🔗 Auth available:', !!auth);
+                        console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
+                        console.log('Firebase initialized:', firebaseInitialized);
+                        console.log('DB available:', !!db);
+                        console.log('Auth available:', !!auth);
                         
                         const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                         
-                        console.log('🔗 Query results:', referrerQuery.size, 'users found');
-                        
                         if (!referrerQuery.empty) {
                             const referrerData = referrerQuery.docs[0].data();
-                            console.log('🔗 Valid referrer found:', referrerData.fullName);
                             
                             // Auto-fill the invite code
                             document.getElementById('inviteCode').value = refCode;
@@ -2820,23 +2811,22 @@
                             
                             // Clear the processing flag
                             isProcessingReferral = false;
-                            console.log('🔗 Referral validation successful!');
                         } else if (retries > 0) {
                             // Retry if referral code not found and we have retries left
-                            console.log('🔗 Referral code not found, retrying...');
+                            console.log('Referral code not found, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             // Invalid referral code after all retries
-                            console.log('🔗 Invalid referral code after all retries:', refCode);
+                            console.log('Invalid referral code after all retries');
                             isProcessingReferral = false;
                             showLogin();
                             alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                         }
                     } catch (error) {
-                        console.error('🔗 Error validating referral code:', error);
+                        console.error('Error validating referral code:', error);
                         
                         if (retries > 0) {
-                            console.log('🔗 Error occurred, retrying...');
+                            console.log('Error occurred, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             isProcessingReferral = false;
@@ -2988,10 +2978,6 @@
         const urlParams = new URLSearchParams(window.location.search);
         const refCode = urlParams.get('ref');
         
-        console.log('🔗 Checking referral link:', refCode);
-        console.log('🔗 Current URL:', window.location.href);
-        console.log('🔗 URL params:', window.location.search);
-        
         if (refCode && currentUser) {
             console.log('🔗 Referral link detected for logged-in user:', refCode);
             
@@ -3001,11 +2987,6 @@
             // Clear the URL parameter to avoid confusion
             const cleanUrl = window.location.href.split('?')[0];
             window.history.pushState({}, '', cleanUrl);
-        } else if (refCode && !currentUser) {
-            console.log('🔗 Referral link detected for non-logged-in user:', refCode);
-            // This should trigger the referral validation process
-        } else {
-            console.log('🔗 No referral code found in URL');
         }
     }
 
@@ -3015,42 +2996,9 @@
         handleReferralLink();
     }
 
-    // Debug function to test referral link functionality
-    function debugReferralLink() {
-        console.log('🔗 === REFERRAL LINK DEBUG ===');
-        console.log('🔗 Current URL:', window.location.href);
-        console.log('🔗 URL search params:', window.location.search);
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const refCode = urlParams.get('ref');
-        console.log('🔗 Referral code from URL:', refCode);
-        
-        console.log('🔗 Firebase initialized:', firebaseInitialized);
-        console.log('🔗 DB available:', !!db);
-        console.log('🔗 Auth available:', !!auth);
-        console.log('🔗 Current user:', currentUser);
-        console.log('🔗 Processing referral:', isProcessingReferral);
-        
-        if (refCode && db) {
-            console.log('🔗 Testing database query for code:', refCode);
-            db.collection('users').where('referralCode', '==', refCode).get().then(querySnapshot => {
-                console.log('🔗 Query result:', querySnapshot.size, 'users found');
-                if (!querySnapshot.empty) {
-                    querySnapshot.forEach(doc => {
-                        console.log('🔗 Found user:', doc.id, doc.data().fullName);
-                    });
-                }
-            }).catch(error => {
-                console.error('🔗 Query error:', error);
-            });
-        }
-        console.log('🔗 === END DEBUG ===');
-    }
-
     // Make functions available globally
     window.handleReferralLink = handleReferralLink;
     window.checkReferralLink = checkReferralLink;
-    window.debugReferralLink = debugReferralLink;
 
     // Referral reward processing function
     async function processReferralRewards(referrerId, newUserId, newUserName) {
@@ -3610,132 +3558,92 @@
         
         const isActivated = currentUser.isActivated;
         
-        if (!isActivated) {
-            // For unactivated users, hide ALL content except activation section
-            hideAllContentForUnactivated();
-        } else {
-            // For activated users, show all content normally
-            showAllContentForActivated();
-        }
-        
-        // Show/hide activation payment section
-        const activationSection = document.getElementById('activationPaymentSection');
-        if (activationSection) {
-            if (!isActivated) {
-                activationSection.classList.remove('hidden');
-            } else {
-                activationSection.classList.add('hidden');
-            }
-        }
-    }
-
-    function hideAllContentForUnactivated() {
-        // Hide ALL dashboard content except activation section
-        const dashboardCards = document.querySelectorAll('#homeSection .card');
-        dashboardCards.forEach(card => {
-            if (card.id !== 'activationPaymentSection') {
-                card.style.display = 'none';
-            }
-        });
-        
-        // Hide navigation links except logout
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            if (link.textContent !== 'Logout') {
-                link.style.display = 'none';
-            }
-        });
-        
-        // Hide bottom navigation items except profile for unactivated users
-        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
-        bottomNavItems.forEach(item => {
-            if (item.querySelector('.bottom-nav-label').textContent !== 'Profile') {
-                item.style.display = 'none';
-            }
-        });
-        
-        // Hide user info except name
-        const userInfo = document.getElementById('userInfo');
-        if (userInfo) {
-            const activationStatus = userInfo.querySelector('#activationStatus');
-            if (activationStatus) activationStatus.style.display = 'none';
-        }
-        
-        // Hide referral alert
-        const referralAlert = document.getElementById('referralAlert');
-        if (referralAlert) referralAlert.style.display = 'none';
-        
-        // Hide profile picture upload button for unactivated users
-        const profilePictureBtn = document.querySelector('#profileSection button[onclick*="profilePictureInput"]');
-        if (profilePictureBtn) profilePictureBtn.style.display = 'none';
-        
-        // Hide copy referral code button for unactivated users
-        const copyReferralBtn = document.querySelector('#profileSection button[onclick*="copyReferralCode"]');
-        if (copyReferralBtn) copyReferralBtn.style.display = 'none';
-    }
-
-    function showAllContentForActivated() {
-        // Show all dashboard content
-        const dashboardCards = document.querySelectorAll('#homeSection .card');
-        dashboardCards.forEach(card => {
-            card.style.display = 'block';
-        });
-        
-        // Show all navigation links
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.style.display = 'flex';
-        });
-        
-        // Show all bottom navigation items
-        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
-        bottomNavItems.forEach(item => {
-            item.style.display = 'flex';
-        });
-        
-        // Show user info
-        const userInfo = document.getElementById('userInfo');
-        if (userInfo) {
-            const activationStatus = userInfo.querySelector('#activationStatus');
-            if (activationStatus) activationStatus.style.display = 'inline';
-        }
-        
-        // Show referral alert
-        const referralAlert = document.getElementById('referralAlert');
-        if (referralAlert) referralAlert.style.display = 'block';
-        
-        // Show profile picture upload button
-        const profilePictureBtn = document.querySelector('#profileSection button[onclick*="profilePictureInput"]');
-        if (profilePictureBtn) profilePictureBtn.style.display = 'flex';
-        
-        // Show copy referral code button
-        const copyReferralBtn = document.querySelector('#profileSection button[onclick*="copyReferralCode"]');
-        if (copyReferralBtn) copyReferralBtn.style.display = 'block';
-        
-        // Enable all interactive elements
+        // Disable/enable all interactive elements
         const interactiveElements = document.querySelectorAll('button, input, select, textarea');
         interactiveElements.forEach(element => {
             if (element.id === 'registerBtn' || element.id === 'loginBtn' || 
                 element.classList.contains('nav-link') || element.classList.contains('bottom-nav-item') ||
                 element.classList.contains('activation-payment-element') ||
                 element.closest('#activationModal')) {
+                // Keep navigation, login/register buttons, activation payment, and modal elements enabled
                 return;
             }
             
-            element.disabled = false;
-            element.style.opacity = '1';
-            element.style.cursor = 'pointer';
+            if (!isActivated) {
+                element.disabled = true;
+                element.style.opacity = '0.5';
+                element.style.cursor = 'not-allowed';
+            } else {
+                element.disabled = false;
+                element.style.opacity = '1';
+                element.style.cursor = 'pointer';
+            }
         });
+        
+        // Show/hide activation payment section and message if not activated
+        const activationSection = document.getElementById('activationPaymentSection');
+        const activationCard = document.getElementById('activationCard');
+        
+        if (activationSection) {
+            if (!isActivated) {
+                activationSection.classList.remove('hidden');
+                showActivationMessage();
+            } else {
+                activationSection.classList.add('hidden');
+                hideActivationMessage();
+            }
+        }
+        
+        // Show/hide activation card in home section
+        if (activationCard) {
+            if (!isActivated) {
+                activationCard.style.display = 'block';
+            } else {
+                activationCard.style.display = 'none';
+            }
+        }
     }
 
     function showActivationMessage() {
-        // Activation banner removed - no longer showing
-        return;
+        // Remove existing activation message if any
+        const existingMessage = document.getElementById('activationMessage');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        // Create activation message
+        const activationMessage = document.createElement('div');
+        activationMessage.id = 'activationMessage';
+        activationMessage.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 10000;
+            text-align: center;
+            font-weight: 600;
+            animation: slideDown 0.3s ease-out;
+        `;
+        activationMessage.innerHTML = `
+            <div>🔒 Account Not Activated</div>
+            <div style="font-size: 0.875rem; margin-top: 0.5rem; opacity: 0.9;">
+                Pay 20,000 UGX activation fee to unlock all features
+            </div>
+        `;
+        
+        document.body.appendChild(activationMessage);
     }
 
     function hideActivationMessage() {
-        // Activation banner removed - no longer showing
-        return;
+        const existingMessage = document.getElementById('activationMessage');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
     }
 
     function showActivationModal() {
@@ -3908,16 +3816,6 @@
     }
 
     function showSection(section) {
-        // For unactivated users, only allow home and profile sections
-        if (currentUser && !currentUser.isActivated && !currentUser.isAdmin) {
-            if (section !== 'home' && section !== 'profile') {
-                // Redirect unactivated users back to home
-                section = 'home';
-                // Show activation message
-                alert('🔒 Please activate your account to access this feature. Complete your activation to unlock all features.');
-            }
-        }
-        
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
@@ -4488,8 +4386,8 @@
                 purchaseBtn.textContent = 'Processing referral rewards...';
                 
                 if (isFirstPurchase) {
-                    // First vault purchase: 20% referrer bonus
-                    const referralBonus = planData.amount * 0.20;
+                    // First vault purchase: 2% referrer bonus
+                    const referralBonus = planData.amount * 0.02;
                     
                     const referrerDoc = await db.collection('users').doc(currentUser.referredBy).get();
                     const referrerBalance = referrerDoc.data().balance || 0;
@@ -4508,12 +4406,9 @@
                         userName: referrerDoc.data().fullName,
                         type: 'referral',
                         amount: referralBonus,
-                        description: 'Referral bonus from first vault purchase (20%)',
+                        description: 'Referral bonus from first vault purchase (2%)',
                         date: new Date().toISOString()
                     });
-
-                    // Show notification to the purchaser about referrer bonus
-                    showPurchaseSuccess(`🎉 Vault "${planData.name}" purchased successfully! Expected profit: ${profit.toLocaleString()} UGX\n\n💰 Your referrer earned ${referralBonus.toLocaleString()} UGX (20% bonus)!`);
                 } else {
                     // Vault upgrade: 7% referrer + 15% admin
                     const referralBonus = planData.amount * 0.07;
@@ -4558,10 +4453,8 @@
             purchaseBtn.textContent = '✅ Success!';
             purchaseBtn.style.background = '#10b981';
             
-            // Show success alert (only if no referral bonus message was shown)
-            if (!currentUser.referredBy || !isFirstPurchase) {
-                showPurchaseSuccess(`🎉 Vault "${planData.name}" purchased successfully! Expected profit: ${profit.toLocaleString()} UGX`);
-            }
+            // Show success alert
+            showPurchaseSuccess(`🎉 Vault "${planData.name}" purchased successfully! Expected profit: ${profit.toLocaleString()} UGX`);
 
             // Reset selection and update UI after a short delay
             setTimeout(() => {
@@ -5850,13 +5743,12 @@
         
         const task = taskDoc.data();
         
-        // Open the link if it exists (immediately, triggered by user interaction)
+        // Open the link if it exists (with user interaction)
         if (task.link) {
             try {
-                const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
-                
-                // Check if popup was blocked after a short delay
+                // Use a small timeout to ensure it's triggered by user interaction
                 setTimeout(() => {
+                    const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
                     if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
                         // Fallback: copy link to clipboard if popup blocked
                         navigator.clipboard.writeText(task.link).then(() => {
@@ -5865,7 +5757,7 @@
                             alert(`🔗 Please copy this link manually: ${task.link}`);
                         });
                     }
-                }, 500);
+                }, 100);
             } catch (error) {
                 console.error('Error opening link:', error);
                 // Fallback: copy link to clipboard
@@ -6862,7 +6754,6 @@
                 currentUser.isActivated = true;
                 currentUser.activationDate = new Date().toISOString();
                 // Don't add the activation fee to user balance - it's distributed to admin and referrer
-                // Activation banner removed
                 updateFeatureAccess();
                 updateUserStats();
                 
