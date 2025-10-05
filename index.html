@@ -1,4 +1,3 @@
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>VaultPro - Refer & Earn</title>
@@ -3558,14 +3557,17 @@
             if (activationSection) {
                 activationSection.classList.remove('hidden');
             }
-      } else {
-          // For activated users, show navigation
-          const navbar = document.querySelector('.navbar');
-          if (navbar) navbar.style.display = '';  // ✅ Remove inline style, let CSS handle it
-          
-          const bottomNav = document.querySelector('.bottom-nav');
-          if (bottomNav) bottomNav.style.display = '';  // ✅ Remove inline style, let CSS handle it
-      }
+        } else {
+            // For activated users, show navigation
+// For activated users, show navigation
+            const navbar = document.querySelector('.navbar');
+            if (navbar) navbar.style.display = ''; // Remove inline style, let CSS control it
+            
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = ''; // Remove inline style, let CSS control it
+        }
+    }
+
     function showActivationMessage() {
         // Remove existing activation message if any
         const existingMessage = document.getElementById('activationMessage');
