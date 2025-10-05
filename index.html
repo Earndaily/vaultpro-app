@@ -3599,11 +3599,13 @@
             }
         });
         
-        // Hide ALL bottom navigation for unactivated users
-        const bottomNav = document.querySelector('.bottom-nav');
-        if (bottomNav) {
-            bottomNav.style.display = 'none';
-        }
+        // Hide bottom navigation items except profile for unactivated users
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            if (item.querySelector('.bottom-nav-label').textContent !== 'Profile') {
+                item.style.display = 'none';
+            }
+        });
         
         // Hide user info except name
         const userInfo = document.getElementById('userInfo');
@@ -3638,11 +3640,11 @@
             link.style.display = 'flex';
         });
         
-        // Show bottom navigation
-        const bottomNav = document.querySelector('.bottom-nav');
-        if (bottomNav) {
-            bottomNav.style.display = 'flex';
-        }
+        // Show all bottom navigation items
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            item.style.display = 'flex';
+        });
         
         // Show user info
         const userInfo = document.getElementById('userInfo');
@@ -3680,50 +3682,13 @@
     }
 
     function showActivationMessage() {
-        // Only show activation message for unactivated users
-        if (!currentUser || currentUser.isActivated || currentUser.isAdmin) {
-            return;
-        }
-        
-        // Remove existing activation message if any
-        const existingMessage = document.getElementById('activationMessage');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-        
-        // Create activation message
-        const activationMessage = document.createElement('div');
-        activationMessage.id = 'activationMessage';
-        activationMessage.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            z-index: 10000;
-            text-align: center;
-            font-weight: 600;
-            animation: slideDown 0.3s ease-out;
-        `;
-        activationMessage.innerHTML = `
-            <div>🔒 Account Not Activated</div>
-            <div style="font-size: 0.875rem; margin-top: 0.5rem; opacity: 0.9;">
-                Pay 20,000 UGX activation fee to unlock all features
-            </div>
-        `;
-        
-        document.body.appendChild(activationMessage);
+        // Activation banner removed - no longer showing
+        return;
     }
 
     function hideActivationMessage() {
-        const existingMessage = document.getElementById('activationMessage');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
+        // Activation banner removed - no longer showing
+        return;
     }
 
     function showActivationModal() {
@@ -3896,9 +3861,9 @@
     }
 
     function showSection(section) {
-        // For unactivated users, only allow home section
+        // For unactivated users, only allow home and profile sections
         if (currentUser && !currentUser.isActivated && !currentUser.isAdmin) {
-            if (section !== 'home') {
+            if (section !== 'home' && section !== 'profile') {
                 // Redirect unactivated users back to home
                 section = 'home';
                 // Show activation message
@@ -6850,7 +6815,7 @@
                 currentUser.isActivated = true;
                 currentUser.activationDate = new Date().toISOString();
                 // Don't add the activation fee to user balance - it's distributed to admin and referrer
-                hideActivationMessage(); // Hide the activation banner
+                // Activation banner removed
                 updateFeatureAccess();
                 updateUserStats();
                 
