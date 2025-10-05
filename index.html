@@ -3558,15 +3558,14 @@
             if (activationSection) {
                 activationSection.classList.remove('hidden');
             }
-         } else {
-             // For activated users, show navigation
-             const navbar = document.querySelector('.navbar');
-             if (navbar) navbar.style.display = '';  // ✅ Remove inline style, let CSS handle it
-             
-             const bottomNav = document.querySelector('.bottom-nav');
-             if (bottomNav) bottomNav.style.display = '';  // ✅ Remove inline style, let CSS handle it
-         }
-   }
+      } else {
+          // For activated users, show navigation
+          const navbar = document.querySelector('.navbar');
+          if (navbar) navbar.style.display = '';  // ✅ Remove inline style, let CSS handle it
+          
+          const bottomNav = document.querySelector('.bottom-nav');
+          if (bottomNav) bottomNav.style.display = '';  // ✅ Remove inline style, let CSS handle it
+      }
     function showActivationMessage() {
         // Remove existing activation message if any
         const existingMessage = document.getElementById('activationMessage');
