@@ -2784,15 +2784,19 @@
                 
                 const validateReferralCode = async (retries = 3) => {
                     try {
-                        console.log(`Attempting to validate referral code (attempt ${4 - retries}/3)...`);
-                        console.log('Firebase initialized:', firebaseInitialized);
-                        console.log('DB available:', !!db);
-                        console.log('Auth available:', !!auth);
+                        console.log(`🔗 Attempting to validate referral code (attempt ${4 - retries}/3)...`);
+                        console.log('🔗 Referral code to validate:', refCode);
+                        console.log('🔗 Firebase initialized:', firebaseInitialized);
+                        console.log('🔗 DB available:', !!db);
+                        console.log('🔗 Auth available:', !!auth);
                         
                         const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
                         
+                        console.log('🔗 Query results:', referrerQuery.size, 'users found');
+                        
                         if (!referrerQuery.empty) {
                             const referrerData = referrerQuery.docs[0].data();
+                            console.log('🔗 Valid referrer found:', referrerData.fullName);
                             
                             // Auto-fill the invite code
                             document.getElementById('inviteCode').value = refCode;
@@ -2816,22 +2820,23 @@
                             
                             // Clear the processing flag
                             isProcessingReferral = false;
+                            console.log('🔗 Referral validation successful!');
                         } else if (retries > 0) {
                             // Retry if referral code not found and we have retries left
-                            console.log('Referral code not found, retrying...');
+                            console.log('🔗 Referral code not found, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             // Invalid referral code after all retries
-                            console.log('Invalid referral code after all retries');
+                            console.log('🔗 Invalid referral code after all retries:', refCode);
                             isProcessingReferral = false;
                             showLogin();
                             alert('Invalid referral code. Please contact the person who referred you or use a valid invitation link.');
                         }
                     } catch (error) {
-                        console.error('Error validating referral code:', error);
+                        console.error('🔗 Error validating referral code:', error);
                         
                         if (retries > 0) {
-                            console.log('Error occurred, retrying...');
+                            console.log('🔗 Error occurred, retrying...');
                             setTimeout(() => validateReferralCode(retries - 1), 1000);
                         } else {
                             isProcessingReferral = false;
@@ -2983,6 +2988,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         const refCode = urlParams.get('ref');
         
+        console.log('🔗 Checking referral link:', refCode);
+        console.log('🔗 Current URL:', window.location.href);
+        console.log('🔗 URL params:', window.location.search);
+        
         if (refCode && currentUser) {
             console.log('🔗 Referral link detected for logged-in user:', refCode);
             
@@ -2992,6 +3001,11 @@
             // Clear the URL parameter to avoid confusion
             const cleanUrl = window.location.href.split('?')[0];
             window.history.pushState({}, '', cleanUrl);
+        } else if (refCode && !currentUser) {
+            console.log('🔗 Referral link detected for non-logged-in user:', refCode);
+            // This should trigger the referral validation process
+        } else {
+            console.log('🔗 No referral code found in URL');
         }
     }
 
@@ -3001,9 +3015,42 @@
         handleReferralLink();
     }
 
+    // Debug function to test referral link functionality
+    function debugReferralLink() {
+        console.log('🔗 === REFERRAL LINK DEBUG ===');
+        console.log('🔗 Current URL:', window.location.href);
+        console.log('🔗 URL search params:', window.location.search);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        console.log('🔗 Referral code from URL:', refCode);
+        
+        console.log('🔗 Firebase initialized:', firebaseInitialized);
+        console.log('🔗 DB available:', !!db);
+        console.log('🔗 Auth available:', !!auth);
+        console.log('🔗 Current user:', currentUser);
+        console.log('🔗 Processing referral:', isProcessingReferral);
+        
+        if (refCode && db) {
+            console.log('🔗 Testing database query for code:', refCode);
+            db.collection('users').where('referralCode', '==', refCode).get().then(querySnapshot => {
+                console.log('🔗 Query result:', querySnapshot.size, 'users found');
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach(doc => {
+                        console.log('🔗 Found user:', doc.id, doc.data().fullName);
+                    });
+                }
+            }).catch(error => {
+                console.error('🔗 Query error:', error);
+            });
+        }
+        console.log('🔗 === END DEBUG ===');
+    }
+
     // Make functions available globally
     window.handleReferralLink = handleReferralLink;
     window.checkReferralLink = checkReferralLink;
+    window.debugReferralLink = debugReferralLink;
 
     // Referral reward processing function
     async function processReferralRewards(referrerId, newUserId, newUserName) {
