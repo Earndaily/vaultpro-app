@@ -1766,6 +1766,10 @@
                                     <div class="payment-detail">
                                         <strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span>
                                     </div>
+                                    <div class="payment-detail" style="margin-top: 0.5rem;">
+                                        <strong>Sent from:</strong>
+                                        <input type="tel" id="senderPhoneNumber" placeholder="Your mobile money number" style="width: 100%; max-width: 280px; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; margin-left: 0.5rem;" />
+                                    </div>
                                     <div class="payment-detail">
                                         <strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX
                                     </div>
@@ -6128,10 +6132,17 @@
             }
             
             const paymentInstructionsEl = document.getElementById('paymentInstructions');
+            const senderPhoneEl = document.getElementById('senderPhoneNumber');
             const depositScreenshotEl = document.getElementById('depositScreenshot');
             const submitDepositBtnEl = document.getElementById('submitDepositBtn');
             
             if (paymentInstructionsEl) paymentInstructionsEl.classList.remove('hidden');
+            if (senderPhoneEl && !senderPhoneEl.value) {
+                // Attempt to auto-fill from profile if available
+                if (currentUser && currentUser.phoneNumber) {
+                    senderPhoneEl.value = currentUser.phoneNumber;
+                }
+            }
             if (depositScreenshotEl) depositScreenshotEl.classList.remove('hidden');
             if (submitDepositBtnEl) submitDepositBtnEl.classList.remove('hidden');
         } else {
@@ -6149,10 +6160,13 @@
         try {
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const method = document.getElementById('depositMethod').value;
+            const destinationNumber = (method === 'mtn') ? '0779710365' : (method === 'airtel') ? '0702377999' : '';
+            const senderNumberEl = document.getElementById('senderPhoneNumber');
+            const senderNumber = senderNumberEl ? senderNumberEl.value.trim() : '';
             const screenshotFile = document.getElementById('depositScreenshot').files[0];
 
-            if (!amount || amount < 10000 || !method || !screenshotFile) {
-                alert('Please complete all fields and upload screenshot');
+            if (!amount || amount < 10000 || !method || !screenshotFile || !senderNumber) {
+                alert('Please complete all fields: amount, method, sent from number, and upload screenshot');
                 return;
             }
 
@@ -6166,6 +6180,8 @@
                     userEmail: currentUser.email,
                     amount: amount,
                     method: method,
+                    sentTo: destinationNumber,
+                    sentFrom: senderNumber,
                     screenshot: screenshotBase64,
                     status: 'pending',
                     requestDate: new Date().toISOString()
@@ -6175,6 +6191,7 @@
                 
                 document.getElementById('depositAmount').value = '';
                 document.getElementById('depositMethod').value = '';
+                if (senderNumberEl) senderNumberEl.value = '';
                 document.getElementById('depositScreenshot').value = '';
                 document.getElementById('paymentInstructions').classList.add('hidden');
                 document.getElementById('depositScreenshot').classList.add('hidden');
