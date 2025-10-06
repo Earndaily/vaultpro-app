@@ -2493,33 +2493,63 @@
 
     // Store referral code in sessionStorage when link is clicked
     function captureReferralCode() {
+        console.log('captureReferralCode() called');
+        console.log('Current URL:', window.location.href);
+        console.log('User agent:', navigator.userAgent);
+        
         const urlParams = new URLSearchParams(window.location.search);
         const refCode = urlParams.get('ref');
+        console.log('Referral code found:', refCode);
+        
         if (refCode) {
+            console.log('Storing referral code in sessionStorage:', refCode);
             sessionStorage.setItem('pendingReferralCode', refCode);
             // Clean URL immediately
             window.history.replaceState({}, document.title, window.location.pathname);
+            console.log('URL cleaned, new URL:', window.location.href);
+        } else {
+            console.log('No referral code found in URL');
         }
     }
 
     async function validateAndShowRegistration(refCode) {
         try {
+            console.log('Validating referral code:', refCode);
+            console.log('Firebase initialized:', firebaseInitialized);
+            console.log('DB available:', !!db);
+            
+            // Wait a bit for Firebase to be ready if needed
+            if (!firebaseInitialized || !db) {
+                console.log('Firebase not ready, waiting...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
             const referrerQuery = await db.collection('users').where('referralCode', '==', refCode).get();
             if (!referrerQuery.empty) {
                 const referrerData = referrerQuery.docs[0].data();
+                console.log('Referral code validated for:', referrerData.fullName);
+                
                 document.getElementById('inviteCode').value = refCode;
                 // Style as validated
                 const field = document.getElementById('inviteCode');
                 field.style.borderColor = 'var(--success)';
                 field.style.background = '#f0fdf4';
+                
+                const lockIcon = document.getElementById('inviteCodeLock');
+                if (lockIcon) lockIcon.style.display = 'block';
+                
                 showRegisterFromReferral();
                 // Clear the stored code after successful use
                 sessionStorage.removeItem('pendingReferralCode');
                 // Show welcome message
                 showAlert('registerAlert', `Welcome! You've been referred by ${referrerData.fullName}. Complete the form to get started.`, 'success');
+            } else {
+                console.log('Invalid referral code:', refCode);
+                showAlert('registerAlert', 'Invalid referral code. Please contact the person who referred you.', 'error');
             }
         } catch (error) {
             console.error('Error validating referral:', error);
+            showAlert('registerAlert', 'Unable to validate referral code. Please check your internet connection and try again.', 'error');
         }
     }
 
@@ -2597,7 +2627,10 @@
 
             // Check for stored referral code
             const storedRefCode = sessionStorage.getItem('pendingReferralCode');
+            console.log('Init: Checking for stored referral code:', storedRefCode);
+            
             if (storedRefCode) {
+                console.log('Init: Found stored referral code, validating...');
                 // Validate and use the stored code
                 validateAndShowRegistration(storedRefCode);
             } else {
@@ -3220,40 +3253,30 @@
     }
 
     function showRegisterWithReferral() {
-        // This function allows manual access to registration and tries to grab referral code from URL
+        // This function allows manual access to registration and checks for stored referral code
         console.log('showRegisterWithReferral() called');
         allowManualRegistration = true; // Allow manual access to registration
-        const urlParams = new URLSearchParams(window.location.search);
-        const refCode = urlParams.get('ref');
-        console.log('Current URL:', window.location.href);
-        console.log('Referral code found:', refCode);
         
-        if (refCode) {
-            // If there's a referral code in the URL, auto-fill it
-            console.log('Found referral code in URL:', refCode);
-            document.getElementById('inviteCode').value = refCode;
-            
-            // Make the field look validated
-            const inviteCodeField = document.getElementById('inviteCode');
-            inviteCodeField.style.borderColor = 'var(--success)';
-            inviteCodeField.style.background = '#f0fdf4';
-            
-            const lockIcon = document.getElementById('inviteCodeLock');
-            if (lockIcon) lockIcon.style.display = 'block';
-            
-            // Show welcome message
-            showAlert('registerAlert', `Referral code "${refCode}" detected and pre-filled. Complete the form to register.`, 'success');
+        // Check for stored referral code first
+        const storedRefCode = sessionStorage.getItem('pendingReferralCode');
+        console.log('Stored referral code:', storedRefCode);
+        
+        if (storedRefCode) {
+            // If there's a stored referral code, validate and use it
+            console.log('Found stored referral code:', storedRefCode);
+            validateAndShowRegistration(storedRefCode);
+            return;
+        }
+        
+        // No stored referral code - show helpful message
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            showAlert('registerAlert', 'Registration is by invitation only. Please ask an existing member for their referral link, or go back to login if you already have an account.', 'info');
         } else {
-            // No referral code in URL - show helpful message
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-                showAlert('registerAlert', 'Registration is by invitation only. Please ask an existing member for their referral link, or go back to login if you already have an account.', 'info');
-            } else {
-                showAlert('registerAlert', 'No referral code found in URL. Please use a referral link from an existing member.', 'error');
-                setTimeout(() => showLogin(), 3000);
-                return;
-            }
+            showAlert('registerAlert', 'No referral code found. Please use a referral link from an existing member.', 'error');
+            setTimeout(() => showLogin(), 3000);
+            return;
         }
         
         // Show registration page
