@@ -4,6 +4,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>VaultPro - Refer & Earn</title>
 <style>
     * {
@@ -1134,6 +1135,7 @@
         font-weight: 600;
     }
 </style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 <body>
 <div class="container">
@@ -1247,7 +1249,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="homeDashboardCard">
                 <h2>📊 Dashboard</h2>
                 <div class="dashboard-grid">
                     <div class="stat-card compact">
@@ -1327,37 +1329,7 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="collapsible-icon">▶</span>
-                            🏦 My Active Vaults
-                        </h3>
-                    </div>
-                    <div id="myActiveVaults" class="collapsible-content hidden">
-                        <div style="padding: 1rem 0;">
-                            <div class="table-responsive">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Plan</th>
-                                            <th>Amount</th>
-                                            <th>Duration</th>
-                                            <th>Expected Profit</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="vaultTableBody">
-                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
 
         <!-- Vault Plans Section -->
@@ -1474,6 +1446,39 @@
                     <button class="btn btn-block mt-2" id="purchaseBtn" onclick="purchaseVault()">
                         Confirm Purchase
                     </button>
+                </div>
+            </div>
+
+            <!-- My Active Vaults (moved from Home) -->
+            <div class="card" id="myActiveVaultsCard">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🏦 My Active Vaults
+                        </h3>
+                    </div>
+                    <div id="myActiveVaults" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Plan</th>
+                                            <th>Amount</th>
+                                            <th>Duration</th>
+                                            <th>Expected Profit</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vaultTableBody">
+                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3201,6 +3206,15 @@
         document.getElementById('userDashboard').classList.add('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         showLogin();
+
+        // Disable entire bottom navigation when logged out
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            item.classList.remove('active');
+            item.classList.add('disabled');
+            item.style.pointerEvents = 'none';
+            item.style.opacity = '0.5';
+            item.style.cursor = 'not-allowed';
+        });
     }
 
     // Streak system
@@ -3451,21 +3465,49 @@
         if (activationSection) {
             if (!isActivated) {
                 activationSection.classList.remove('hidden');
-                showActivationMessage();
             } else {
                 activationSection.classList.add('hidden');
                 hideActivationMessage();
             }
         }
         
-        // Show/hide activation card in home section
+        // Hide activation card in home section (do not show for unactivated users)
         if (activationCard) {
+            activationCard.style.display = 'none';
+        }
+
+        // Hide Home dashboard and My Active Vaults for unactivated users
+        const homeDashboardCard = document.getElementById('homeDashboardCard');
+        const myActiveVaultsCard = document.getElementById('myActiveVaultsCard');
+        if (homeDashboardCard) {
             if (!isActivated) {
-                activationCard.style.display = 'block';
+                homeDashboardCard.classList.add('hidden');
             } else {
-                activationCard.style.display = 'none';
+                homeDashboardCard.classList.remove('hidden');
             }
         }
+        if (myActiveVaultsCard) {
+            if (!isActivated) {
+                myActiveVaultsCard.classList.add('hidden');
+            } else {
+                myActiveVaultsCard.classList.remove('hidden');
+            }
+        }
+
+        // Disable bottom navigation for unactivated users (visual)
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            if (!isActivated) {
+                item.classList.add('disabled');
+                item.style.pointerEvents = 'none';
+                item.style.opacity = '0.5';
+                item.style.cursor = 'not-allowed';
+            } else {
+                item.classList.remove('disabled');
+                item.style.pointerEvents = '';
+                item.style.opacity = '';
+                item.style.cursor = '';
+            }
+        });
     }
 
     function showActivationMessage() {
@@ -3680,6 +3722,14 @@
     }
 
     function showSection(section) {
+        // Guard: block section switching for unactivated non-admin users; allow only 'home'
+        if (currentUser && !currentUser.isAdmin && currentUser.isActivated === false) {
+            const allowed = ['home'];
+            if (!allowed.includes(section)) {
+                // Keep user on home section
+                section = 'home';
+            }
+        }
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
@@ -3711,7 +3761,14 @@
         }
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
-        else if (section === 'tasks') updateTasksSection();
+        else if (section === 'tasks') {
+            updateTasksSection();
+            // Ensure dashboard task earnings reflects latest total
+            const taskEarningsEl = document.getElementById('taskEarnings');
+            if (taskEarningsEl && currentUser) {
+                taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+            }
+        }
         else if (section === 'profile') {
             // Refresh user data before updating profile section
             if (currentUser && currentUser.id) {
@@ -3796,58 +3853,65 @@
     }
 
     // User stats
-    async function updateUserStats() {
-        try {
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            currentUser = userDoc.data();
-
-            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
-            const vaults = vaultsSnapshot.docs.map(doc => doc.data());
-
-            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
-            const referrals = referralsSnapshot.docs.map(doc => doc.data());
-
-            const depositsSnapshot = await db.collection('depositRequests')
-                .where('userId', '==', currentUser.id)
-                .where('status', '==', 'approved')
-                .get();
-            const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
-            const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
-
-            const totalBalance = currentUser.balance || 0;
-            const activeVaults = vaults.length;
-            const totalReferrals = referrals.length;
-            const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
-
-            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
-            document.getElementById('activeVaults').textContent = activeVaults;
-            document.getElementById('totalReferrals').textContent = totalReferrals;
-            document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
-            document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
-            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
-            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
-            document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
-            
-            // Update user name and activation status in navbar
-            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
-            if (currentUser.isActivated) {
-                document.getElementById('activationStatus').style.display = 'inline';
-            } else {
-                document.getElementById('activationStatus').style.display = 'none';
-            }
-
-            const baseUrl = window.location.href.split('?')[0];
-            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
-
-            updateVaultTable(vaults);
-            
-            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
-                updateVaultSection();
-            }
-        } catch (error) {
-            console.error("Error updating user stats:", error);
-        }
-    }
+   async function updateUserStats() {
+       try {
+           // Refresh user data from database first
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           currentUser = { id: currentUser.id, ...userDoc.data() };
+   
+           const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
+           const vaults = vaultsSnapshot.docs.map(doc => doc.data());
+   
+           const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+           const referrals = referralsSnapshot.docs.map(doc => doc.data());
+   
+           const depositsSnapshot = await db.collection('depositRequests')
+               .where('userId', '==', currentUser.id)
+               .where('status', '==', 'approved')
+               .get();
+           const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
+           const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
+   
+           const totalBalance = currentUser.balance || 0;
+           const activeVaults = vaults.length;
+           const totalReferrals = referrals.length;
+           const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
+   
+           document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
+           document.getElementById('activeVaults').textContent = activeVaults;
+           document.getElementById('totalReferrals').textContent = totalReferrals;
+           document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+           document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
+           document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
+           document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
+           
+           // Fix for task earnings display
+           const totalTaskEarningsVal = Number(currentUser.totalTaskEarnings || 0);
+           const taskEarningsEl = document.getElementById('taskEarnings');
+           if (taskEarningsEl) {
+               taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
+           }
+           
+           // Update user name and activation status in navbar
+           document.getElementById('userNameDisplay').textContent = currentUser.fullName;
+           if (currentUser.isActivated) {
+               document.getElementById('activationStatus').style.display = 'inline';
+           } else {
+               document.getElementById('activationStatus').style.display = 'none';
+           }
+   
+           const baseUrl = window.location.href.split('?')[0];
+           document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
+   
+           updateVaultTable(vaults);
+           
+           if (!document.getElementById('vaultSection').classList.contains('hidden')) {
+               updateVaultSection();
+           }
+       } catch (error) {
+           console.error("Error updating user stats:", error);
+       }
+   }
 
     function updateVaultTable(vaults) {
         const tbody = document.getElementById('vaultTableBody');
@@ -5519,7 +5583,78 @@
            alert('Failed to complete task: ' + error.message);
        }
    }
-
+   async function awardTaskReward(taskId, reward, taskTitle) {
+       try {
+           // Check if user is activated
+           if (!currentUser.isAdmin && !currentUser.isActivated) {
+               alert('Account not activated. Please complete your registration first.');
+               return;
+           }
+   
+           // Check if already completed today
+           const todayString = new Date().toDateString();
+           const submissionQuery = await db.collection('taskSubmissions')
+               .where('userId', '==', currentUser.id)
+               .where('taskId', '==', taskId)
+               .where('date', '==', todayString)
+               .get();
+   
+           if (!submissionQuery.empty) {
+               alert('You have already completed this task today!');
+               return;
+           }
+   
+           // Update user balance and earnings
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           const currentBalance = userData.balance || 0;
+           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
+   
+           await db.collection('users').doc(currentUser.id).update({
+               balance: currentBalance + reward,
+               totalTaskEarnings: newTotalTaskEarnings
+           });
+   
+           // Record task submission
+           await db.collection('taskSubmissions').add({
+               userId: currentUser.id,
+               userName: currentUser.fullName,
+               userEmail: currentUser.email,
+               taskId: taskId,
+               taskTitle: taskTitle,
+               reward: reward,
+               status: 'approved',
+               date: todayString,
+               submittedDate: new Date().toISOString(),
+               approvedDate: new Date().toISOString()
+           });
+   
+           // Record transaction
+           await db.collection('transactions').add({
+               userId: currentUser.id,
+               userName: currentUser.fullName,
+               type: 'task_reward',
+               amount: reward,
+               taskTitle: taskTitle,
+               date: new Date().toISOString()
+           });
+   
+           // Update local cache
+           currentUser.balance = currentBalance + reward;
+           currentUser.totalTaskEarnings = newTotalTaskEarnings;
+   
+           // Show success alert
+           alert(`🎉 Task completed! You earned ${reward.toLocaleString()} UGX!`);
+   
+           // Update UI
+           updateUserStats();
+           updateTasksSection();
+   
+       } catch (error) {
+           console.error('Error awarding task reward:', error);
+           alert('Failed to award reward: ' + error.message);
+       }
+   }
     // User Task Functions
     async function updateTasksSection() {
         try {
@@ -5722,9 +5857,10 @@
                 const userData = userDoc.data();
                 const currentBalance = userData.balance || 0;
 
+                const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
                 await db.collection('users').doc(currentUser.id).update({
                     balance: currentBalance + reward,
-                    totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
+                    totalTaskEarnings: newTotalTaskEarnings
                 });
 
                 await db.collection('transactions').add({
@@ -5739,6 +5875,11 @@
                 alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
             }
             
+            // Update local cache and UI immediately
+            currentUser.totalTaskEarnings = (currentUser.totalTaskEarnings || 0) + reward;
+            const taskEarningsEl = document.getElementById('taskEarnings');
+            if (taskEarningsEl) taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+
             updateTasksSection();
             updateUserStats();
             
