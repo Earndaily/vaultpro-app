@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <title>VaultPro - Refer & Earn</title>
 <style>
     * {
@@ -36,25 +32,7 @@
         color: var(--dark);
         padding-bottom: env(safe-area-inset-bottom);
     }
-   /* Video Container Styles */
-      .video-container {
-          margin: 1rem 0;
-          border-radius: 12px;
-          overflow: hidden;
-          background: #000;
-      }
-      
-      .video-container iframe {
-          width: 100%;
-          min-height: 315px;
-          border: none;
-      }
-      
-      @media (max-width: 768px) {
-          .video-container iframe {
-              min-height: 200px;
-          }
-      }
+
     /* Container System */
     .container {
         max-width: 1400px;
@@ -226,7 +204,7 @@
     /* Plan Cards */
     .plan-card {
         background: white;
-        border: 2px solid #e5e7eb;
+        border: 3px solid #e5e7eb;
         border-radius: var(--radius);
         padding: 1rem;
         text-align: center;
@@ -234,6 +212,7 @@
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+        min-height: 180px;
     }
 
     .plan-card::before {
@@ -254,8 +233,8 @@
 
     .plan-card:hover {
         border-color: var(--primary);
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     }
 
     .plan-card.selected {
@@ -275,14 +254,14 @@
     }
 
     .plan-name {
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--dark);
         margin-bottom: 0.5rem;
     }
 
     .plan-amount {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
         font-weight: 800;
         color: var(--primary);
         margin: 0.5rem 0;
@@ -584,8 +563,8 @@
         background: white;
         border: 2px solid #e5e7eb;
         border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
         transition: all 0.3s ease;
         cursor: pointer;
     }
@@ -605,25 +584,25 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
     }
 
     .candidate-info h3 {
         margin: 0 0 0.25rem 0;
         color: var(--text);
-        font-size: 1.25rem;
+        font-size: 1.125rem;
     }
 
     .candidate-title {
         color: var(--primary);
         font-weight: 600;
-        font-size: 0.875rem;
-        margin: 0 0 0.5rem 0;
+        font-size: 0.8125rem;
+        margin: 0 0 0.25rem 0;
     }
 
     .candidate-location {
         color: var(--gray);
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         margin: 0;
     }
 
@@ -721,6 +700,7 @@
         align-items: center;
         justify-content: space-between;
         border: 2px solid #e5e7eb;
+        margin-bottom: 1.5rem;
     }
 
     .referral-link-text {
@@ -729,6 +709,134 @@
         word-break: break-all;
         font-family: monospace;
         font-size: 0.875rem;
+        color: var(--dark);
+        background: white;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    /* Share Buttons */
+    .share-buttons-container {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        margin-bottom: 1.5rem;
+    }
+
+    .share-buttons-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .share-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        font-size: 0.875rem;
+        font-weight: 600;
+        gap: 0.5rem;
+    }
+
+    .share-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .share-icon {
+        font-size: 1.5rem;
+    }
+
+    .share-text {
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .share-btn.whatsapp:hover {
+        border-color: #25D366;
+        background: rgba(37, 211, 102, 0.1);
+    }
+
+    .share-btn.twitter:hover {
+        border-color: #1DA1F2;
+        background: rgba(29, 161, 242, 0.1);
+    }
+
+    .share-btn.instagram:hover {
+        border-color: #E4405F;
+        background: rgba(228, 64, 95, 0.1);
+    }
+
+    .share-btn.facebook:hover {
+        border-color: #1877F2;
+        background: rgba(24, 119, 242, 0.1);
+    }
+
+    /* Share Dropdown */
+    .share-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .share-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        z-index: 1000;
+        min-width: 200px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+
+    .share-dropdown-menu.show {
+        display: block;
+    }
+
+    .share-dropdown-menu.hidden {
+        display: none;
+    }
+
+    .share-dropdown-item {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: none;
+        background: white;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--dark);
+    }
+
+    .share-dropdown-item:hover {
+        background: #f3f4f6;
+    }
+
+    .share-dropdown-item:first-child {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .share-dropdown-item:last-child {
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
     }
 
     /* Loading */
@@ -836,6 +944,34 @@
         th, td {
             padding: 0.75rem 0.5rem;
         }
+
+        .share-dropdown-menu {
+            min-width: 180px;
+            right: -10px;
+        }
+
+        .share-dropdown-item {
+            padding: 0.625rem 0.875rem;
+            font-size: 0.8125rem;
+        }
+
+        /* Vault cards responsive */
+        .vault-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .plan-card {
+            padding: 0.75rem;
+            min-height: 160px;
+        }
+
+        .plan-name {
+            font-size: 1.125rem;
+        }
+
+        .plan-amount {
+            font-size: 1.25rem;
+        }
     }
 
     @media (max-width: 480px) {
@@ -853,6 +989,23 @@
 
         .btn {
             padding: 0.875rem 1.5rem;
+        }
+
+        .share-buttons-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .share-btn {
+            padding: 0.75rem;
+        }
+
+        .share-icon {
+            font-size: 1.25rem;
+        }
+
+        .share-text {
+            font-size: 0.75rem;
         }
     }
 
@@ -884,6 +1037,18 @@
         
         .card {
             border: 1px solid #000;
+        }
+    }
+
+    /* Animation for success notification */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
         }
     }
 
@@ -1135,7 +1300,6 @@
         font-weight: 600;
     }
 </style>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 <body>
 <div class="container">
@@ -1249,7 +1413,7 @@
                 </div>
             </div>
 
-            <div class="card" id="homeDashboardCard">
+            <div class="card">
                 <h2>📊 Dashboard</h2>
                 <div class="dashboard-grid">
                     <div class="stat-card compact">
@@ -1329,7 +1493,37 @@
                 </div>
             </div>
 
-            
+            <div class="card">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🏦 My Active Vaults
+                        </h3>
+                    </div>
+                    <div id="myActiveVaults" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Plan</th>
+                                            <th>Amount</th>
+                                            <th>Duration</th>
+                                            <th>Expected Profit</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vaultTableBody">
+                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Vault Plans Section -->
@@ -1337,12 +1531,11 @@
             <div class="card">
                 <h2>Choose Your Vault Plan</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Select a plan and watch your investment grow!</p>
-
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 2px solid #e5e7eb;">
                     <strong>Your Current Balance: <span id="vaultBalance" style="color: var(--primary); font-size: 1.5rem;">0</span> UGX</strong>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                <div class="vault-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                     <div class="plan-card" onclick="selectPlan('seed')">
                         <div class="plan-name">🌱 Seed</div>
                         <div class="plan-amount">45,000 UGX</div>
@@ -1446,39 +1639,6 @@
                     </button>
                 </div>
             </div>
-
-            <!-- My Active Vaults (moved from Home) -->
-            <div class="card" id="myActiveVaultsCard">
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="collapsible-icon">▶</span>
-                            🏦 My Active Vaults
-                        </h3>
-                    </div>
-                    <div id="myActiveVaults" class="collapsible-content hidden">
-                        <div style="padding: 1rem 0;">
-                            <div class="table-responsive">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Plan</th>
-                                            <th>Amount</th>
-                                            <th>Duration</th>
-                                            <th>Expected Profit</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="vaultTableBody">
-                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Referrals Section -->
@@ -1496,7 +1656,49 @@
                 
                 <div class="referral-link">
                     <span class="referral-link-text" id="userReferralLink">Loading...</span>
-                    <button class="btn btn-secondary" onclick="copyReferralLink()">Copy Link</button>
+                    <div class="share-dropdown">
+                        <button class="btn btn-secondary" onclick="toggleShareDropdown()">Share Link</button>
+                        <div id="shareDropdownMenu" class="share-dropdown-menu hidden">
+                            <button class="share-dropdown-item" onclick="copyReferralLink()">
+                                <span>📋</span> Copy Link
+                            </button>
+                            <button class="share-dropdown-item" onclick="shareToWhatsApp()">
+                                <span>📱</span> WhatsApp
+                            </button>
+                            <button class="share-dropdown-item" onclick="shareToTwitter()">
+                                <span>🐦</span> X/Twitter
+                            </button>
+                            <button class="share-dropdown-item" onclick="shareToInstagram()">
+                                <span>📷</span> Instagram
+                            </button>
+                            <button class="share-dropdown-item" onclick="shareToFacebook()">
+                                <span>👥</span> Facebook
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Media Share Buttons -->
+                <div class="share-buttons-container">
+                    <h4 style="color: var(--dark); margin-bottom: 1rem; text-align: center;">Share Your Referral Link</h4>
+                    <div class="share-buttons-grid">
+                        <button class="share-btn whatsapp" onclick="shareToWhatsApp()">
+                            <span class="share-icon">📱</span>
+                            <span class="share-text">WhatsApp</span>
+                        </button>
+                        <button class="share-btn twitter" onclick="shareToTwitter()">
+                            <span class="share-icon">🐦</span>
+                            <span class="share-text">X/Twitter</span>
+                        </button>
+                        <button class="share-btn instagram" onclick="shareToInstagram()">
+                            <span class="share-icon">📷</span>
+                            <span class="share-text">Instagram</span>
+                        </button>
+                        <button class="share-btn facebook" onclick="shareToFacebook()">
+                            <span class="share-icon">👥</span>
+                            <span class="share-text">Facebook</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-2 mt-3">
@@ -1755,28 +1957,38 @@
                                 
                                 <input type="number" id="depositAmount" placeholder="Enter Amount (Min: 10,000 UGX)" min="10000" />
                                 
-                                <select id="depositMethod">
+                                <select id="depositMethod" onchange="updateAdminPhoneNumber()">
                                     <option value="">Select Payment Method</option>
                                     <option value="mtn">MTN Mobile Money</option>
                                     <option value="airtel">Airtel Money</option>
                                 </select>
 
-                                <div id="paymentInstructions" class="payment-box hidden">
-                                    <h4>Payment Instructions:</h4>
-                                    <div class="payment-detail">
-                                        <strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span>
+                                <div id="depositDetails" class="hidden">
+                                    <h4 style="color: var(--dark); margin: 1.5rem 0 1rem 0;">Deposit Details</h4>
+                                    
+                                    <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.25rem;">Sent From (Your Number)</label>
+                                            <input type="tel" id="senderPhoneNumber" placeholder="Enter your phone number (e.g., 0701234567)" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" />
+                                        </div>
+                                        
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.25rem;">Sent To (Admin Number)</label>
+                                            <input type="tel" id="adminPhoneNumber" readonly style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f3f4f6; color: var(--dark); font-weight: 600;" />
+                                        </div>
+                                        
+                                        <div>
+                                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.25rem;">Amount</label>
+                                            <input type="text" id="displayDepositAmount" readonly style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f3f4f6; color: var(--success); font-weight: 600;" />
+                                        </div>
                                     </div>
-                                    <div class="payment-detail" style="margin-top: 0.5rem;">
-                                        <strong>Sent from:</strong>
-                                        <input type="tel" id="senderPhoneNumber" placeholder="Your mobile money number" style="width: 100%; max-width: 280px; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; margin-left: 0.5rem;" />
+                                    
+                                    <div style="margin-bottom: 1rem;">
+                                        <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">📸 Upload Screenshot Proof</label>
+                                        <input type="file" id="depositScreenshot" accept="image/*" style="width: 100%; padding: 0.75rem; border: 2px dashed #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;" onchange="validateFileSize(this)" />
+                                        <small style="color: var(--gray); margin-top: 0.25rem; display: block;">Maximum file size: 6MB. Supported formats: JPG, PNG, GIF</small>
                                     </div>
-                                    <div class="payment-detail">
-                                        <strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX
-                                    </div>
-                                    <p style="margin-top: 1rem;">After sending, upload a screenshot of the transaction below:</p>
                                 </div>
-
-                                <input type="file" id="depositScreenshot" accept="image/*" class="hidden" />
                                 
                                 <button class="btn btn-success btn-block hidden" id="submitDepositBtn" onclick="submitDepositRequest()">
                                     Submit Deposit Request
@@ -2073,12 +2285,14 @@
                                 <th>User</th>
                                 <th>Amount</th>
                                 <th>Method</th>
+                                <th>Sent From</th>
+                                <th>Sent To</th>
                                 <th>Screenshot</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminDepositsBody">
-                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="8" class="text-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2385,12 +2599,6 @@
                     <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading candidates...</p>
                 </div>
                 
-                <!-- Debug: Add Sample Candidates Button (for testing) -->
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button class="btn btn-secondary" onclick="addSampleCandidates()" style="font-size: 0.8rem;">
-                        🧪 Add Sample Candidates (Testing)
-                    </button>
-                </div>
 
                 <!-- My Stakes -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
@@ -2443,8 +2651,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<!-- YouTube IFrame API -->
-<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
     // Firebase Configuration
     const firebaseConfig = {
@@ -2543,26 +2750,21 @@
 
     // Initialize app
     async function init() {
-        document.getElementById('loadingScreen').classList.remove('hidden');
-        
-        if (!firebaseInitialized) {
-            document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('firebaseSetup').classList.remove('hidden');
-            return;
-        }
-    
-        // Setup authentication state listener FIRST
-        setupAuthStateListener();
-    
         try {
-
-    
+            document.getElementById('loadingScreen').classList.remove('hidden');
+            
+            if (!firebaseInitialized) {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                document.getElementById('firebaseSetup').classList.remove('hidden');
+                return;
+            }
+        
             document.getElementById('loadingScreen').classList.add('hidden');
-
+    
             // Check for referral code in URL
             const urlParams = new URLSearchParams(window.location.search);
             const refCode = urlParams.get('ref');
-
+    
             if (refCode) {
                 console.log('Referral code detected:', refCode);
                 console.log('User agent:', navigator.userAgent);
@@ -2658,8 +2860,11 @@
                     showLogin();
                 }
             }
-        }
-        catch (error) {
+            
+            // Set up auth state listener
+            setupAuthStateListener();
+            
+        } catch (error) {
             console.error("Initialization error:", error);
             document.getElementById('loadingScreen').innerHTML = `
                 <div class="spinner"></div>
@@ -3132,15 +3337,6 @@
         document.getElementById('userDashboard').classList.add('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         showLogin();
-
-        // Disable entire bottom navigation when logged out
-        document.querySelectorAll('.bottom-nav-item').forEach(item => {
-            item.classList.remove('active');
-            item.classList.add('disabled');
-            item.style.pointerEvents = 'none';
-            item.style.opacity = '0.5';
-            item.style.cursor = 'not-allowed';
-        });
     }
 
     // Streak system
@@ -3391,49 +3587,21 @@
         if (activationSection) {
             if (!isActivated) {
                 activationSection.classList.remove('hidden');
+                showActivationMessage();
             } else {
                 activationSection.classList.add('hidden');
                 hideActivationMessage();
             }
         }
         
-        // Hide activation card in home section (do not show for unactivated users)
+        // Show/hide activation card in home section
         if (activationCard) {
-            activationCard.style.display = 'none';
-        }
-
-        // Hide Home dashboard and My Active Vaults for unactivated users
-        const homeDashboardCard = document.getElementById('homeDashboardCard');
-        const myActiveVaultsCard = document.getElementById('myActiveVaultsCard');
-        if (homeDashboardCard) {
             if (!isActivated) {
-                homeDashboardCard.classList.add('hidden');
+                activationCard.style.display = 'block';
             } else {
-                homeDashboardCard.classList.remove('hidden');
+                activationCard.style.display = 'none';
             }
         }
-        if (myActiveVaultsCard) {
-            if (!isActivated) {
-                myActiveVaultsCard.classList.add('hidden');
-            } else {
-                myActiveVaultsCard.classList.remove('hidden');
-            }
-        }
-
-        // Disable bottom navigation for unactivated users (visual)
-        document.querySelectorAll('.bottom-nav-item').forEach(item => {
-            if (!isActivated) {
-                item.classList.add('disabled');
-                item.style.pointerEvents = 'none';
-                item.style.opacity = '0.5';
-                item.style.cursor = 'not-allowed';
-            } else {
-                item.classList.remove('disabled');
-                item.style.pointerEvents = '';
-                item.style.opacity = '';
-                item.style.cursor = '';
-            }
-        });
     }
 
     function showActivationMessage() {
@@ -3648,14 +3816,6 @@
     }
 
     function showSection(section) {
-        // Guard: block section switching for unactivated non-admin users; allow only 'home'
-        if (currentUser && !currentUser.isAdmin && currentUser.isActivated === false) {
-            const allowed = ['home'];
-            if (!allowed.includes(section)) {
-                // Keep user on home section
-                section = 'home';
-            }
-        }
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
@@ -3687,14 +3847,7 @@
         }
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
-        else if (section === 'tasks') {
-            updateTasksSection();
-            // Ensure dashboard task earnings reflects latest total
-            const taskEarningsEl = document.getElementById('taskEarnings');
-            if (taskEarningsEl && currentUser) {
-                taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
-            }
-        }
+        else if (section === 'tasks') updateTasksSection();
         else if (section === 'profile') {
             // Refresh user data before updating profile section
             if (currentUser && currentUser.id) {
@@ -3755,6 +3908,12 @@
             document.getElementById('walletBalance').textContent = balance.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
             
+            // Update deposit section with new functionality
+            await updateDepositSection();
+            
+            // Update wallet transaction history
+            await updateWalletTransactionHistory();
+            
             // Wallet section updated successfully
             console.log('Wallet section updated');
         } catch (error) {
@@ -3779,65 +3938,58 @@
     }
 
     // User stats
-   async function updateUserStats() {
-       try {
-           // Refresh user data from database first
-           const userDoc = await db.collection('users').doc(currentUser.id).get();
-           currentUser = { id: currentUser.id, ...userDoc.data() };
-   
-           const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
-           const vaults = vaultsSnapshot.docs.map(doc => doc.data());
-   
-           const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
-           const referrals = referralsSnapshot.docs.map(doc => doc.data());
-   
-           const depositsSnapshot = await db.collection('depositRequests')
-               .where('userId', '==', currentUser.id)
-               .where('status', '==', 'approved')
-               .get();
-           const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
-           const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
-   
-           const totalBalance = currentUser.balance || 0;
-           const activeVaults = vaults.length;
-           const totalReferrals = referrals.length;
-           const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
-   
-           document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
-           document.getElementById('activeVaults').textContent = activeVaults;
-           document.getElementById('totalReferrals').textContent = totalReferrals;
-           document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
-           document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
-           document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
-           document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
-           
-           // Fix for task earnings display
-           const totalTaskEarningsVal = Number(currentUser.totalTaskEarnings || 0);
-           const taskEarningsEl = document.getElementById('taskEarnings');
-           if (taskEarningsEl) {
-               taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
-           }
-           
-           // Update user name and activation status in navbar
-           document.getElementById('userNameDisplay').textContent = currentUser.fullName;
-           if (currentUser.isActivated) {
-               document.getElementById('activationStatus').style.display = 'inline';
-           } else {
-               document.getElementById('activationStatus').style.display = 'none';
-           }
-   
-           const baseUrl = window.location.href.split('?')[0];
-           document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
-   
-           updateVaultTable(vaults);
-           
-           if (!document.getElementById('vaultSection').classList.contains('hidden')) {
-               updateVaultSection();
-           }
-       } catch (error) {
-           console.error("Error updating user stats:", error);
-       }
-   }
+    async function updateUserStats() {
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            currentUser = userDoc.data();
+
+            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
+            const vaults = vaultsSnapshot.docs.map(doc => doc.data());
+
+            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+            const referrals = referralsSnapshot.docs.map(doc => doc.data());
+
+            const depositsSnapshot = await db.collection('depositRequests')
+                .where('userId', '==', currentUser.id)
+                .where('status', '==', 'approved')
+                .get();
+            const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
+            const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+            const totalBalance = currentUser.balance || 0;
+            const activeVaults = vaults.length;
+            const totalReferrals = referrals.length;
+            const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
+
+            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
+            document.getElementById('activeVaults').textContent = activeVaults;
+            document.getElementById('totalReferrals').textContent = totalReferrals;
+            document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+            document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
+            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
+            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
+            document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
+            
+            // Update user name and activation status in navbar
+            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
+            if (currentUser.isActivated) {
+                document.getElementById('activationStatus').style.display = 'inline';
+            } else {
+                document.getElementById('activationStatus').style.display = 'none';
+            }
+
+            const baseUrl = window.location.href.split('?')[0];
+            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
+
+            updateVaultTable(vaults);
+            
+            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
+                updateVaultSection();
+            }
+        } catch (error) {
+            console.error("Error updating user stats:", error);
+        }
+    }
 
     function updateVaultTable(vaults) {
         const tbody = document.getElementById('vaultTableBody');
@@ -5300,11 +5452,109 @@
         }
     }
 
+    function toggleShareDropdown() {
+        const dropdown = document.getElementById('shareDropdownMenu');
+        if (dropdown) {
+            dropdown.classList.toggle('hidden');
+            dropdown.classList.toggle('show');
+        }
+    }
+
+    function closeShareDropdown() {
+        const dropdown = document.getElementById('shareDropdownMenu');
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+            dropdown.classList.remove('show');
+        }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('shareDropdownMenu');
+        const dropdownButton = event.target.closest('.share-dropdown');
+        
+        if (dropdown && !dropdownButton) {
+            closeShareDropdown();
+        }
+    });
+
     function copyReferralLink() {
         const link = document.getElementById('userReferralLink').textContent;
         navigator.clipboard.writeText(link).then(() => {
             alert('Referral link copied to clipboard!');
+            closeShareDropdown();
         });
+    }
+
+    // Social Media Share Functions
+    function shareToWhatsApp() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const message = `🚀 Join me on VaultPro and start earning! Use my referral link: ${link}`;
+        const encodedMessage = encodeURIComponent(message);
+        
+        closeShareDropdown();
+        
+        // Try WhatsApp Web first, fallback to copying to clipboard
+        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        const whatsappWindow = window.open(whatsappUrl, '_blank');
+        
+        // If WhatsApp Web doesn't open (user doesn't have it), copy to clipboard
+        setTimeout(() => {
+            if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed == 'undefined') {
+                navigator.clipboard.writeText(message).then(() => {
+                    alert('📱 WhatsApp Share:\n\nWhatsApp Web not available. Message copied to clipboard!\n\nPaste this in your WhatsApp:\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = message;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('📱 WhatsApp Share:\n\nWhatsApp Web not available. Message copied to clipboard!\n\nPaste this in your WhatsApp:\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"');
+                });
+            }
+        }, 1000);
+    }
+
+    function shareToTwitter() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const message = `🚀 Join me on VaultPro and start earning! Use my referral link: ${link}`;
+        const encodedMessage = encodeURIComponent(message);
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedMessage}`;
+        
+        closeShareDropdown();
+        window.open(twitterUrl, '_blank');
+    }
+
+    function shareToInstagram() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const message = `🚀 Join me on VaultPro and start earning! Use my referral link: ${link}`;
+        
+        closeShareDropdown();
+        
+        // Instagram doesn't support direct link sharing, so we copy to clipboard and show instructions
+        navigator.clipboard.writeText(message).then(() => {
+            alert('📷 Instagram Share Instructions:\n\n1. Open Instagram app\n2. Create a new story or post\n3. Add this text and link (already copied):\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"\n\nContent copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = message;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('📷 Instagram Share Instructions:\n\n1. Open Instagram app\n2. Create a new story or post\n3. Add this text and link (already copied):\n"🚀 Join me on VaultPro and start earning! Use my referral link: [link]"\n\nContent copied to clipboard!');
+        });
+    }
+
+    function shareToFacebook() {
+        const link = document.getElementById('userReferralLink').textContent;
+        const encodedUrl = encodeURIComponent(link);
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        
+        closeShareDropdown();
+        window.open(facebookUrl, '_blank');
     }
 
     // Streak section
@@ -5338,249 +5588,8 @@
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         return days[new Date().getDay()];
     }
-   // YouTube Player Management
-   const youtubePlayers = {};
-   let isYouTubeAPIReady = false;
-   
-   // YouTube API ready callback
-   window.onYouTubeIframeAPIReady = function() {
-       console.log('YouTube IFrame API ready');
-       isYouTubeAPIReady = true;
-   };
-   
-   async function startYouTubeTask(taskId, reward, requiredTime, videoId) {
-       // Skip activation checks for admin users
-       if (!currentUser.isAdmin && !currentUser.isActivated) {
-           alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
-           return;
-       }
-   
-       const button = document.getElementById(`btn-${taskId}`);
-       const videoContainer = document.getElementById(`video-container-${taskId}`);
-       const timerDiv = document.getElementById(`timer-${taskId}`);
-       const countdownDiv = document.getElementById(`countdown-${taskId}`);
-       
-       if (!videoId) {
-           // Fallback for non-YouTube tasks
-           alert('This task requires manual completion. Please follow the instructions.');
-           return;
-       }
-       
-       // Check if already completed today
-       const todayString = new Date().toDateString();
-       const submissionQuery = await db.collection('taskSubmissions')
-           .where('userId', '==', currentUser.id)
-           .where('taskId', '==', taskId)
-           .where('date', '==', todayString)
-           .get();
-   
-       if (!submissionQuery.empty) {
-           alert('You have already completed this task today!');
-           return;
-       }
-       
-       // Wait for YouTube API if not ready
-       if (!isYouTubeAPIReady) {
-           button.textContent = 'Loading YouTube Player...';
-           let attempts = 0;
-           const checkAPI = setInterval(() => {
-               attempts++;
-               if (isYouTubeAPIReady || attempts > 50) {
-                   clearInterval(checkAPI);
-                   if (!isYouTubeAPIReady) {
-                       alert('Failed to load YouTube player. Please refresh the page.');
-                       button.textContent = 'Watch Video & Earn';
-                       return;
-                   }
-                   initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
-               }
-           }, 100);
-       } else {
-           initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
-       }
-   }
-   
-   function initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv) {
-       // Disable button and show video
-       button.disabled = true;
-       button.textContent = 'Loading video...';
-       videoContainer.classList.remove('hidden');
-       timerDiv.classList.remove('hidden');
-       
-       let watchedTime = 0;
-       let timerInterval = null;
-       let isPlaying = false;
-       
-       // Create YouTube player
-       youtubePlayers[taskId] = new YT.Player(`player-${taskId}`, {
-           height: '315',
-           width: '100%',
-           videoId: videoId,
-           playerVars: {
-               'autoplay': 1,
-               'controls': 1,
-               'rel': 0,
-               'modestbranding': 1
-           },
-           events: {
-               'onReady': function(event) {
-                   console.log('YouTube player ready for task:', taskId);
-                   button.textContent = 'Video Playing...';
-                   event.target.playVideo();
-               },
-               'onStateChange': function(event) {
-                   if (event.data === YT.PlayerState.PLAYING) {
-                       isPlaying = true;
-                       console.log('Video started playing');
-                       
-                       // Start timer
-                       if (!timerInterval) {
-                           timerInterval = setInterval(() => {
-                               if (isPlaying) {
-                                   watchedTime++;
-                                   countdownDiv.textContent = watchedTime;
-                                   
-                                   // Check if required time reached
-                                   if (watchedTime >= requiredTime) {
-                                       clearInterval(timerInterval);
-                                       completeYouTubeTask(taskId, reward, button, videoContainer);
-                                   }
-                               }
-                           }, 1000);
-                       }
-                   } else if (event.data === YT.PlayerState.PAUSED) {
-                       isPlaying = false;
-                       console.log('Video paused');
-                   } else if (event.data === YT.PlayerState.ENDED) {
-                       isPlaying = false;
-                       console.log('Video ended');
-                       
-                       // Award if minimum time watched
-                       if (watchedTime >= requiredTime) {
-                           clearInterval(timerInterval);
-                           completeYouTubeTask(taskId, reward, button, videoContainer);
-                       }
-                   }
-               },
-               'onError': function(event) {
-                   console.error('YouTube player error:', event.data);
-                   clearInterval(timerInterval);
-                   button.disabled = false;
-                   button.textContent = 'Error loading video. Try again';
-                   alert('Failed to load video. Please try again or check your internet connection.');
-               }
-           }
-       });
-   }
-   
-   async function completeYouTubeTask(taskId, reward, button, videoContainer) {
-       try {
-           // Get task details
-           const taskDoc = await db.collection('tasks').doc(taskId).get();
-           if (!taskDoc.exists) {
-               alert('Task not found');
-               return;
-           }
-           
-           const task = taskDoc.data();
-           
-           button.disabled = false;
-           button.textContent = 'Task Completed!';
-           button.style.background = '#10b981';
-           
-           // Add fade-out animation
-           const taskCard = document.getElementById(`task-${taskId}`);
-           if (taskCard) {
-               taskCard.style.transition = 'opacity 0.5s ease-out';
-               taskCard.style.opacity = '0.3';
-           }
-           
-           // Destroy YouTube player
-           if (youtubePlayers[taskId]) {
-               youtubePlayers[taskId].destroy();
-               delete youtubePlayers[taskId];
-           }
-           
-           // Award reward
-           await awardTaskReward(taskId, reward, task.title);
-           
-       } catch (error) {
-           console.error('Error completing YouTube task:', error);
-           alert('Failed to complete task: ' + error.message);
-       }
-   }
-   async function awardTaskReward(taskId, reward, taskTitle) {
-       try {
-           // Check if user is activated
-           if (!currentUser.isAdmin && !currentUser.isActivated) {
-               alert('Account not activated. Please complete your registration first.');
-               return;
-           }
-   
-           // Check if already completed today
-           const todayString = new Date().toDateString();
-           const submissionQuery = await db.collection('taskSubmissions')
-               .where('userId', '==', currentUser.id)
-               .where('taskId', '==', taskId)
-               .where('date', '==', todayString)
-               .get();
-   
-           if (!submissionQuery.empty) {
-               alert('You have already completed this task today!');
-               return;
-           }
-   
-           // Update user balance and earnings
-           const userDoc = await db.collection('users').doc(currentUser.id).get();
-           const userData = userDoc.data();
-           const currentBalance = userData.balance || 0;
-           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
-   
-           await db.collection('users').doc(currentUser.id).update({
-               balance: currentBalance + reward,
-               totalTaskEarnings: newTotalTaskEarnings
-           });
-   
-           // Record task submission
-           await db.collection('taskSubmissions').add({
-               userId: currentUser.id,
-               userName: currentUser.fullName,
-               userEmail: currentUser.email,
-               taskId: taskId,
-               taskTitle: taskTitle,
-               reward: reward,
-               status: 'approved',
-               date: todayString,
-               submittedDate: new Date().toISOString(),
-               approvedDate: new Date().toISOString()
-           });
-   
-           // Record transaction
-           await db.collection('transactions').add({
-               userId: currentUser.id,
-               userName: currentUser.fullName,
-               type: 'task_reward',
-               amount: reward,
-               taskTitle: taskTitle,
-               date: new Date().toISOString()
-           });
-   
-           // Update local cache
-           currentUser.balance = currentBalance + reward;
-           currentUser.totalTaskEarnings = newTotalTaskEarnings;
-   
-           // Show success alert
-           alert(`🎉 Task completed! You earned ${reward.toLocaleString()} UGX!`);
-   
-           // Update UI
-           updateUserStats();
-           updateTasksSection();
-   
-       } catch (error) {
-           console.error('Error awarding task reward:', error);
-           alert('Failed to award reward: ' + error.message);
-       }
-   }
+
+
     // User Task Functions
     async function updateTasksSection() {
         try {
@@ -5620,46 +5629,30 @@
                     tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No tasks available today. Check back tomorrow!</p>';
                 }
             } else {
-               tasksContainer.innerHTML = availableTasks.map(task => {
-                   // Extract YouTube video ID from link
-                   let videoId = null;
-                   if (task.link) {
-                       const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-                       const match = task.link.match(youtubeRegex);
-                       if (match) {
-                           videoId = match[1];
-                       }
-                   }
-                   
-                   return `
-                       <div class="task-card" id="task-${task.id}">
-                           <div class="task-info">
-                               <h4>${task.title}</h4>
-                               <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
-                               <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
-                               <p style="color: var(--gray); font-size: 0.875rem;">Required watch time: ${task.timer || 60} seconds</p>
-                           </div>
-                           
-                           ${videoId ? `
-                               <!-- Embedded YouTube Video -->
-                               <div id="video-container-${task.id}" class="video-container hidden">
-                                   <div id="player-${task.id}"></div>
-                               </div>
-                           ` : ''}
-                           
-                           <div class="task-action">
-                               <button class="btn btn-success" id="btn-${task.id}" onclick="startYouTubeTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}')">
-                                   ${videoId ? 'Watch Video & Earn' : 'Start Task'}
-                               </button>
-                               <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
-                                   <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
-                                   <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
-                               </div>
-                           </div>
-                       </div>
-                   `;
-               }).join('');
+                tasksContainer.innerHTML = availableTasks.map(task => {
+                    return `
+                        <div class="task-card" id="task-${task.id}">
+                            <div class="task-info">
+                                <h4>${task.title}</h4>
+                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
+                                <p style="color: var(--gray); font-size: 0.875rem;">Timer: ${task.timer || 60} seconds</p>
+                                ${task.link ? `<p style="color: var(--primary); font-size: 0.875rem; margin: 0.5rem 0;">🔗 Link will open automatically when you start the task</p>` : ''}
+                            </div>
+                            <div class="task-action">
+                                <button class="btn btn-success" id="btn-${task.id}" onclick="startTaskTimer('${task.id}', ${task.reward}, ${task.requiresProof}, ${task.timer || 60})">
+                                    ${task.link ? 'Start Task & Open Link' : 'Start Task'}
+                                </button>
+                                <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
+                                    <div style="font-size: 0.875rem; color: var(--gray);">seconds remaining</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
+
             // Update user submissions
             const submissionsSnapshot = await db.collection('taskSubmissions')
                 .where('userId', '==', currentUser.id)
@@ -5709,22 +5702,18 @@
 
     async function calculateTodayTaskEarnings() {
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const todayDate = new Date().toDateString();
             
-            // Get today's approved task submissions
+            // Get today's task submissions (both approved and automatically completed)
             const submissionsSnapshot = await db.collection('taskSubmissions')
                 .where('userId', '==', currentUser.id)
-                .where('status', '==', 'approved')
+                .where('date', '==', todayDate)
                 .get();
             
             let totalEarnings = 0;
             submissionsSnapshot.docs.forEach(doc => {
                 const submission = doc.data();
-                const submissionDate = submission.approvedDate ? submission.approvedDate.split('T')[0] : submission.submittedDate.split('T')[0];
-                
-                if (submissionDate === today) {
-                    totalEarnings += submission.reward || 0;
-                }
+                totalEarnings += submission.reward || 0;
             });
             
             return totalEarnings;
@@ -5734,10 +5723,168 @@
         }
     }
 
-   async function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
-       // This is now only for non-YouTube tasks
-       alert('This task type is not yet supported. Please contact admin.');
-   }
+    async function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
+        // Skip activation checks for admin users
+        if (!currentUser.isAdmin && !currentUser.isActivated) {
+            alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+            return;
+        }
+
+        const button = document.getElementById(`btn-${taskId}`);
+        const timerDiv = document.getElementById(`timer-${taskId}`);
+        const countdownDiv = document.getElementById(`countdown-${taskId}`);
+        
+        // Get task details to access the link
+        const taskDoc = await db.collection('tasks').doc(taskId).get();
+        if (!taskDoc.exists) {
+            alert('Task not found');
+            return;
+        }
+        
+        const task = taskDoc.data();
+        
+        // Open the link if it exists (with user interaction)
+        if (task.link) {
+            try {
+                // Use a small timeout to ensure it's triggered by user interaction
+                setTimeout(() => {
+                    const linkWindow = window.open(task.link, '_blank', 'noopener,noreferrer');
+                    if (!linkWindow || linkWindow.closed || typeof linkWindow.closed == 'undefined') {
+                        // Fallback: copy link to clipboard if popup blocked
+                        navigator.clipboard.writeText(task.link).then(() => {
+                            alert(`🔗 Link copied to clipboard!\n\nPopup was blocked by browser. Please paste this link: ${task.link}`);
+                        }).catch(() => {
+                            alert(`🔗 Please copy this link manually: ${task.link}`);
+                        });
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('Error opening link:', error);
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(task.link).then(() => {
+                    alert(`🔗 Link copied to clipboard!\n\nPlease paste this link: ${task.link}`);
+                }).catch(() => {
+                    alert(`🔗 Please copy this link manually: ${task.link}`);
+                });
+            }
+        }
+        
+        // Disable button and show timer
+        button.disabled = true;
+        button.textContent = 'Timer Running...';
+        timerDiv.classList.remove('hidden');
+        
+        let timeLeft = timerDuration;
+        countdownDiv.textContent = timeLeft;
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            countdownDiv.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                // Timer finished, automatically award the reward
+                button.disabled = false;
+                button.textContent = 'Task Completed!';
+                button.style.background = '#10b981';
+                timerDiv.classList.add('hidden');
+                
+                // Add fade-out animation to the completed task
+                const taskCard = document.getElementById(`task-${taskId}`);
+                if (taskCard) {
+                    taskCard.style.transition = 'opacity 0.5s ease-out';
+                    taskCard.style.opacity = '0.3';
+                }
+                
+                // Automatically award the reward
+                awardTaskReward(taskId, reward, task.title);
+            }
+        }, 1000);
+    }
+
+    async function awardTaskReward(taskId, reward, taskTitle) {
+        try {
+            // Check if user already completed this task today
+            const todayForAward = new Date().toDateString();
+            const submissionQuery = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('taskId', '==', taskId)
+                .where('date', '==', todayForAward)
+                .get();
+
+            if (!submissionQuery.empty) {
+                alert('You have already completed this task today!');
+                return;
+            }
+
+            // Award the reward
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const currentBalance = userDoc.data().balance || 0;
+            
+            await db.collection('users').doc(currentUser.id).update({
+                balance: currentBalance + reward
+            });
+
+            // Record the task submission
+            await db.collection('taskSubmissions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                taskId: taskId,
+                taskTitle: taskTitle,
+                reward: reward,
+                date: todayForAward,
+                timestamp: new Date().toISOString(),
+                completedAutomatically: true
+            });
+
+            // Record the transaction
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'task_reward',
+                amount: reward,
+                description: `Task completed: ${taskTitle}`,
+                date: new Date().toISOString()
+            });
+
+            // Show success notification
+            showTaskSuccessNotification(`🎉 Task completed! You earned ${reward.toLocaleString()} UGX!`);
+            
+            // Update UI
+            updateTasksSection();
+            updateUserStats();
+            
+        } catch (error) {
+            console.error("Error awarding task reward:", error);
+            alert('Failed to award task reward: ' + error.message);
+        }
+    }
+
+    function showTaskSuccessNotification(message) {
+        // Create success notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
 
     async function submitTask(taskId, reward, requiresProof) {
         try {
@@ -5783,10 +5930,9 @@
                 const userData = userDoc.data();
                 const currentBalance = userData.balance || 0;
 
-                const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
                 await db.collection('users').doc(currentUser.id).update({
                     balance: currentBalance + reward,
-                    totalTaskEarnings: newTotalTaskEarnings
+                    totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
                 });
 
                 await db.collection('transactions').add({
@@ -5801,11 +5947,6 @@
                 alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
             }
             
-            // Update local cache and UI immediately
-            currentUser.totalTaskEarnings = (currentUser.totalTaskEarnings || 0) + reward;
-            const taskEarningsEl = document.getElementById('taskEarnings');
-            if (taskEarningsEl) taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
-
             updateTasksSection();
             updateUserStats();
             
@@ -6082,6 +6223,49 @@
     }
 
     // Deposit section
+    function updateAdminPhoneNumber() {
+        const depositMethodEl = document.getElementById('depositMethod');
+        const adminPhoneEl = document.getElementById('adminPhoneNumber');
+        
+        if (!depositMethodEl || !adminPhoneEl) {
+            return;
+        }
+        
+        const method = depositMethodEl.value;
+        
+        if (method === 'mtn') {
+            adminPhoneEl.value = '0779710365';
+        } else if (method === 'airtel') {
+            adminPhoneEl.value = '0702377999';
+        } else {
+            adminPhoneEl.value = '';
+        }
+        
+        // Also trigger the main payment instructions function
+        showPaymentInstructions();
+    }
+
+    function validateFileSize(input) {
+        const maxSize = 6 * 1024 * 1024; // 6MB in bytes
+        const file = input.files[0];
+        
+        if (file && file.size > maxSize) {
+            alert('File size too large! Maximum size is 6MB.');
+            input.value = ''; // Clear the input
+            return false;
+        }
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (file && !allowedTypes.includes(file.type)) {
+            alert('Invalid file type! Please upload JPG, PNG, or GIF images only.');
+            input.value = ''; // Clear the input
+            return false;
+        }
+        
+        return true;
+    }
+
     async function updateDepositSection() {
         try {
             // Set up event listeners if elements exist
@@ -6118,40 +6302,19 @@
         if (amount >= 10000 && method) {
             const displayAmountEl = document.getElementById('displayDepositAmount');
             if (displayAmountEl) {
-                displayAmountEl.textContent = amount.toLocaleString();
+                displayAmountEl.value = amount.toLocaleString() + ' UGX';
             }
             
-            // Update phone number based on method
-            const phoneNumber = document.getElementById('adminPhoneNumber');
-            if (phoneNumber) {
-                if (method === 'mtn') {
-                    phoneNumber.textContent = '0779710365'; // MTN number
-                } else if (method === 'airtel') {
-                    phoneNumber.textContent = '0702377999'; // Airtel number
-                }
-            }
-            
-            const paymentInstructionsEl = document.getElementById('paymentInstructions');
-            const senderPhoneEl = document.getElementById('senderPhoneNumber');
-            const depositScreenshotEl = document.getElementById('depositScreenshot');
+            const depositDetailsEl = document.getElementById('depositDetails');
             const submitDepositBtnEl = document.getElementById('submitDepositBtn');
             
-            if (paymentInstructionsEl) paymentInstructionsEl.classList.remove('hidden');
-            if (senderPhoneEl && !senderPhoneEl.value) {
-                // Attempt to auto-fill from profile if available
-                if (currentUser && currentUser.phoneNumber) {
-                    senderPhoneEl.value = currentUser.phoneNumber;
-                }
-            }
-            if (depositScreenshotEl) depositScreenshotEl.classList.remove('hidden');
+            if (depositDetailsEl) depositDetailsEl.classList.remove('hidden');
             if (submitDepositBtnEl) submitDepositBtnEl.classList.remove('hidden');
         } else {
-            const paymentInstructionsEl = document.getElementById('paymentInstructions');
-            const depositScreenshotEl = document.getElementById('depositScreenshot');
+            const depositDetailsEl = document.getElementById('depositDetails');
             const submitDepositBtnEl = document.getElementById('submitDepositBtn');
             
-            if (paymentInstructionsEl) paymentInstructionsEl.classList.add('hidden');
-            if (depositScreenshotEl) depositScreenshotEl.classList.add('hidden');
+            if (depositDetailsEl) depositDetailsEl.classList.add('hidden');
             if (submitDepositBtnEl) submitDepositBtnEl.classList.add('hidden');
         }
     }
@@ -6160,13 +6323,38 @@
         try {
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const method = document.getElementById('depositMethod').value;
-            const destinationNumber = (method === 'mtn') ? '0779710365' : (method === 'airtel') ? '0702377999' : '';
-            const senderNumberEl = document.getElementById('senderPhoneNumber');
-            const senderNumber = senderNumberEl ? senderNumberEl.value.trim() : '';
+            const senderPhone = document.getElementById('senderPhoneNumber').value;
+            const adminPhone = document.getElementById('adminPhoneNumber').value;
             const screenshotFile = document.getElementById('depositScreenshot').files[0];
 
-            if (!amount || amount < 10000 || !method || !screenshotFile || !senderNumber) {
-                alert('Please complete all fields: amount, method, sent from number, and upload screenshot');
+            // Validation
+            if (!amount || amount < 10000) {
+                alert('Please enter a valid amount (minimum 10,000 UGX)');
+                return;
+            }
+            
+            if (!method) {
+                alert('Please select a payment method');
+                return;
+            }
+            
+            if (!senderPhone || senderPhone.length < 10) {
+                alert('Please enter a valid sender phone number');
+                return;
+            }
+            
+            if (!adminPhone) {
+                alert('Admin phone number is missing. Please select a payment method first.');
+                return;
+            }
+            
+            if (!screenshotFile) {
+                alert('Please upload a screenshot as proof of payment');
+                return;
+            }
+
+            // Validate file size and type
+            if (!validateFileSize(document.getElementById('depositScreenshot'))) {
                 return;
             }
 
@@ -6180,21 +6368,23 @@
                     userEmail: currentUser.email,
                     amount: amount,
                     method: method,
-                    sentTo: destinationNumber,
-                    sentFrom: senderNumber,
+                    senderPhone: senderPhone,
+                    adminPhone: adminPhone,
                     screenshot: screenshotBase64,
                     status: 'pending',
                     requestDate: new Date().toISOString()
                 });
 
-                alert('Deposit request submitted! Waiting for admin approval.');
+                alert('✅ Deposit request submitted successfully! Admin will review and approve your deposit.');
                 
+                // Clear form
                 document.getElementById('depositAmount').value = '';
                 document.getElementById('depositMethod').value = '';
-                if (senderNumberEl) senderNumberEl.value = '';
+                document.getElementById('senderPhoneNumber').value = '';
+                document.getElementById('adminPhoneNumber').value = '';
+                document.getElementById('displayDepositAmount').value = '';
                 document.getElementById('depositScreenshot').value = '';
-                document.getElementById('paymentInstructions').classList.add('hidden');
-                document.getElementById('depositScreenshot').classList.add('hidden');
+                document.getElementById('depositDetails').classList.add('hidden');
                 document.getElementById('submitDepositBtn').classList.add('hidden');
                 
                 updateDepositHistory();
@@ -6204,6 +6394,53 @@
         } catch (error) {
             console.error("Deposit request error:", error);
             alert('Failed to submit deposit request: ' + error.message);
+        }
+    }
+
+    async function updateWalletTransactionHistory() {
+        try {
+            const transactionsSnapshot = await db.collection('transactions')
+                .where('userId', '==', currentUser.id)
+                .orderBy('date', 'desc')
+                .limit(20)
+                .get();
+            
+            const transactions = transactionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            const tbody = document.getElementById('walletTransactionHistory');
+            
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No transactions yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = transactions.map(t => {
+                let statusClass = 'status-pending';
+                let statusText = 'Pending';
+                
+                if (t.type === 'deposit' || t.type === 'task_reward' || t.type === 'referral' || t.type === 'activation_bonus') {
+                    statusClass = 'status-active';
+                    statusText = 'Completed';
+                } else if (t.type === 'withdrawal') {
+                    statusClass = 'status-matured';
+                    statusText = 'Processed';
+                }
+                
+                return `
+                    <tr>
+                        <td>${new Date(t.date).toLocaleDateString()}</td>
+                        <td>${t.type.replace('_', ' ').toUpperCase()}</td>
+                        <td>${t.amount.toLocaleString()} UGX</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+            
+        } catch (error) {
+            console.error("Error updating wallet transaction history:", error);
         }
     }
 
@@ -6392,7 +6629,7 @@
             const tbody = document.getElementById('adminDepositsBody');
 
             if (deposits.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No pending deposits</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">No pending deposits</td></tr>';
                 return;
             }
 
@@ -6402,6 +6639,8 @@
                     <td>${d.userName}<br><small style="color: var(--gray);">${d.userEmail}</small></td>
                     <td>${d.amount.toLocaleString()} UGX</td>
                     <td>${d.method.toUpperCase()}</td>
+                    <td>${d.senderPhone || 'N/A'}</td>
+                    <td>${d.adminPhone || 'N/A'}</td>
                     <td>
                         ${(d.screenshot || d.paymentProof) ? 
                             `<button class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="viewScreenshot('${d.screenshot || d.paymentProof}')">View Screenshot</button>` : 
