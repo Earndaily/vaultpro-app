@@ -3451,7 +3451,6 @@
         if (activationSection) {
             if (!isActivated) {
                 activationSection.classList.remove('hidden');
-                showActivationMessage();
             } else {
                 activationSection.classList.add('hidden');
                 hideActivationMessage();
@@ -3713,7 +3712,6 @@
         if (currentUser && !currentUser.isAdmin && currentUser.isActivated === false) {
             const allowed = ['home'];
             if (!allowed.includes(section)) {
-                showActivationMessage();
                 // Keep user on home section
                 section = 'home';
             }
@@ -3749,7 +3747,14 @@
         }
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
-        else if (section === 'tasks') updateTasksSection();
+        else if (section === 'tasks') {
+            updateTasksSection();
+            // Ensure dashboard task earnings reflects latest total
+            const taskEarningsEl = document.getElementById('taskEarnings');
+            if (taskEarningsEl && currentUser) {
+                taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+            }
+        }
         else if (section === 'profile') {
             // Refresh user data before updating profile section
             if (currentUser && currentUser.id) {
