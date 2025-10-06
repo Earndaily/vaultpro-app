@@ -2550,7 +2550,7 @@
         // Setup authentication state listener FIRST
         setupAuthStateListener();
     
-  
+        try {
 
     
             document.getElementById('loadingScreen').classList.add('hidden');
@@ -2654,7 +2654,8 @@
                     showLogin();
                 }
             }
-        } catch (error) {
+        }
+        catch (error) {
             console.error("Initialization error:", error);
             document.getElementById('loadingScreen').innerHTML = `
                 <div class="spinner"></div>
