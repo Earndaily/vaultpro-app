@@ -3201,6 +3201,15 @@
         document.getElementById('userDashboard').classList.add('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         showLogin();
+
+        // Disable entire bottom navigation when logged out
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            item.classList.remove('active');
+            item.classList.add('disabled');
+            item.style.pointerEvents = 'none';
+            item.style.opacity = '0.5';
+            item.style.cursor = 'not-allowed';
+        });
     }
 
     // Streak system
