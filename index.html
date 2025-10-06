@@ -1324,37 +1324,7 @@
                 </div>
             </div>
 
-            <div class="card" id="myActiveVaultsCard">
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="collapsible-icon">▶</span>
-                            🏦 My Active Vaults
-                        </h3>
-                    </div>
-                    <div id="myActiveVaults" class="collapsible-content hidden">
-                        <div style="padding: 1rem 0;">
-                            <div class="table-responsive">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Plan</th>
-                                            <th>Amount</th>
-                                            <th>Duration</th>
-                                            <th>Expected Profit</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="vaultTableBody">
-                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
 
         <!-- Vault Plans Section -->
@@ -1471,6 +1441,39 @@
                     <button class="btn btn-block mt-2" id="purchaseBtn" onclick="purchaseVault()">
                         Confirm Purchase
                     </button>
+                </div>
+            </div>
+
+            <!-- My Active Vaults (moved from Home) -->
+            <div class="card" id="myActiveVaultsCard">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('myActiveVaults')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🏦 My Active Vaults
+                        </h3>
+                    </div>
+                    <div id="myActiveVaults" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Plan</th>
+                                            <th>Amount</th>
+                                            <th>Duration</th>
+                                            <th>Expected Profit</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vaultTableBody">
+                                        <tr><td colspan="6" class="text-center">No active vaults</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3455,13 +3458,9 @@
             }
         }
         
-        // Show/hide activation card in home section
+        // Hide activation card in home section (do not show for unactivated users)
         if (activationCard) {
-            if (!isActivated) {
-                activationCard.style.display = 'block';
-            } else {
-                activationCard.style.display = 'none';
-            }
+            activationCard.style.display = 'none';
         }
 
         // Hide Home dashboard and My Active Vaults for unactivated users
@@ -3865,7 +3864,9 @@
             document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
             document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
-            document.getElementById('taskEarnings').textContent = currentUser.totalTaskEarnings || 0;
+            const totalTaskEarningsVal = Number(currentUser.totalTaskEarnings || 0);
+            const taskEarningsEl = document.getElementById('taskEarnings');
+            if (taskEarningsEl) taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
             
             // Update user name and activation status in navbar
             document.getElementById('userNameDisplay').textContent = currentUser.fullName;
@@ -5761,9 +5762,10 @@
                 const userData = userDoc.data();
                 const currentBalance = userData.balance || 0;
 
+                const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
                 await db.collection('users').doc(currentUser.id).update({
                     balance: currentBalance + reward,
-                    totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
+                    totalTaskEarnings: newTotalTaskEarnings
                 });
 
                 await db.collection('transactions').add({
@@ -5778,6 +5780,11 @@
                 alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
             }
             
+            // Update local cache and UI immediately
+            currentUser.totalTaskEarnings = (currentUser.totalTaskEarnings || 0) + reward;
+            const taskEarningsEl = document.getElementById('taskEarnings');
+            if (taskEarningsEl) taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+
             updateTasksSection();
             updateUserStats();
             
