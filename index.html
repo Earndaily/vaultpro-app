@@ -1761,31 +1761,26 @@
                                     <option value="airtel">Airtel Money</option>
                                 </select>
 
-                                <div id="paymentInstructions" class="payment-box hidden">
-                                    <h4>Payment Instructions:</h4>
-                                    <div class="payment-detail">
-                                        <strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span>
-                                    </div>
-                                    <div class="payment-detail" style="margin-top: 0.5rem;">
-                                        <strong>Sent from:</strong>
-                                        <input type="tel" id="senderPhoneNumber" placeholder="Your mobile money number" style="width: 100%; max-width: 280px; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; margin-left: 0.5rem;" />
-                                    </div>
-                                    <div class="payment-detail">
-                                        <strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX
-                                    </div>
-                                    <p style="margin-top: 1rem;">After sending, upload a screenshot of the transaction below:</p>
-                                </div>
-
-                                <input type="file" id="depositScreenshot" accept="image/*" class="hidden" />
-                                
-                                <button class="btn btn-success btn-block hidden" id="submitDepositBtn" onclick="submitDepositRequest()">
-                                    Submit Deposit Request
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+<div id="paymentInstructions" class="payment-box hidden">
+    <h4>Payment Instructions:</h4>
+    <div class="payment-detail">
+        <strong>Send money to:</strong> <span id="adminPhoneNumber">0700000000</span>
+    </div>
+    <div class="payment-detail" style="margin-top: 0.5rem; display: grid; gap: 0.5rem;">
+        <div>
+            <strong>Sent to (Admin Number):</strong>
+            <input type="tel" id="sentToNumber" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; background: #f3f4f6; cursor: not-allowed;" />
+        </div>
+        <div>
+            <strong>Sent from (Your Number):</strong>
+            <input type="tel" id="senderPhoneNumber" placeholder="Your mobile money number" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px;" />
+        </div>
+    </div>
+    <div class="payment-detail">
+        <strong>Amount:</strong> <span id="displayDepositAmount">0</span> UGX
+    </div>
+    <p style="margin-top: 1rem;">After sending, upload a screenshot of the transaction below:</p>
+</div>
                 <!-- Transaction History -->
                 <div style="margin-top: 2rem;">
                     <h3>📊 Transaction History</h3>
@@ -3258,8 +3253,25 @@
         showLogin();
         alert('Registration is by invitation only. Please use a referral link from an existing member.');
     }
-
+   function disableBottomNavigation() {
+       document.querySelectorAll('.bottom-nav-item').forEach(item => {
+           item.classList.add('disabled');
+           item.style.pointerEvents = 'none';
+           item.style.opacity = '0.5';
+           item.style.cursor = 'not-allowed';
+       });
+   }
+   
+   function enableBottomNavigation() {
+       document.querySelectorAll('.bottom-nav-item').forEach(item => {
+           item.classList.remove('disabled');
+           item.style.pointerEvents = '';
+           item.style.opacity = '';
+           item.style.cursor = '';
+       });
+   }
     function showRegisterFromReferral() {
+       disableBottomNavigation();
         // This function is only called when a valid referral link is processed
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('registerPage').classList.remove('hidden');
@@ -3313,24 +3325,28 @@
         }, 30000);
     }
 
-    function showLogin() {
-        document.getElementById('registerPage').classList.add('hidden');
-        document.getElementById('loginPage').classList.remove('hidden');
-        
-        // Clear any alerts
-        document.getElementById('loginAlert').innerHTML = '';
-        document.getElementById('registerAlert').innerHTML = '';
-        
-        // Reset manual registration flag
-        allowManualRegistration = false;
-    }
+      function showLogin() {
+          document.getElementById('registerPage').classList.add('hidden');
+          document.getElementById('loginPage').classList.remove('hidden');
+          
+          // Clear any alerts
+          document.getElementById('loginAlert').innerHTML = '';
+          document.getElementById('registerAlert').innerHTML = '';
+          
+          // Reset manual registration flag
+          allowManualRegistration = false;
+          
+          // Disable bottom navigation when on login page
+          disableBottomNavigation();
+      }
 
     function showUserDashboard() {
         document.getElementById('registerPage').classList.add('hidden');
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
-        
+       
+        enableBottomNavigation();
         // Show home section immediately
         showSection('home');
         
@@ -6104,108 +6120,129 @@
         }
     }
 
-    function showPaymentInstructions() {
-        const depositAmountEl = document.getElementById('depositAmount');
-        const depositMethodEl = document.getElementById('depositMethod');
-        
-        if (!depositAmountEl || !depositMethodEl) {
-            return; // Elements not available
-        }
-        
-        const amount = parseFloat(depositAmountEl.value);
-        const method = depositMethodEl.value;
+   function showPaymentInstructions() {
+       const depositAmountEl = document.getElementById('depositAmount');
+       const depositMethodEl = document.getElementById('depositMethod');
+       
+       if (!depositAmountEl || !depositMethodEl) {
+           return;
+       }
+       
+       const amount = parseFloat(depositAmountEl.value);
+       const method = depositMethodEl.value;
+   
+       if (amount >= 10000 && method) {
+           const displayAmountEl = document.getElementById('displayDepositAmount');
+           if (displayAmountEl) {
+               displayAmountEl.textContent = amount.toLocaleString();
+           }
+           
+           // Update phone number based on method and auto-fill "Sent to" field
+           const phoneNumber = document.getElementById('adminPhoneNumber');
+           const sentToField = document.getElementById('sentToNumber');
+           
+           if (phoneNumber && sentToField) {
+               if (method === 'mtn') {
+                   phoneNumber.textContent = '0779710365';
+                   sentToField.value = '0779710365';
+                   sentToField.readOnly = true;
+               } else if (method === 'airtel') {
+                   phoneNumber.textContent = '0702377999';
+                   sentToField.value = '0702377999';
+                   sentToField.readOnly = true;
+               }
+           }
+           
+           const paymentInstructionsEl = document.getElementById('paymentInstructions');
+           const senderPhoneEl = document.getElementById('senderPhoneNumber');
+           const depositScreenshotEl = document.getElementById('depositScreenshot');
+           const submitDepositBtnEl = document.getElementById('submitDepositBtn');
+           
+           if (paymentInstructionsEl) paymentInstructionsEl.classList.remove('hidden');
+           if (senderPhoneEl && !senderPhoneEl.value) {
+               if (currentUser && currentUser.phoneNumber) {
+                   senderPhoneEl.value = currentUser.phoneNumber;
+               }
+           }
+           if (depositScreenshotEl) depositScreenshotEl.classList.remove('hidden');
+           if (submitDepositBtnEl) submitDepositBtnEl.classList.remove('hidden');
+       } else {
+           const paymentInstructionsEl = document.getElementById('paymentInstructions');
+           const depositScreenshotEl = document.getElementById('depositScreenshot');
+           const submitDepositBtnEl = document.getElementById('submitDepositBtn');
+           
+           if (paymentInstructionsEl) paymentInstructionsEl.classList.add('hidden');
+           if (depositScreenshotEl) depositScreenshotEl.classList.add('hidden');
+           if (submitDepositBtnEl) submitDepositBtnEl.classList.add('hidden');
+       }
+   }
 
-        if (amount >= 10000 && method) {
-            const displayAmountEl = document.getElementById('displayDepositAmount');
-            if (displayAmountEl) {
-                displayAmountEl.textContent = amount.toLocaleString();
-            }
-            
-            // Update phone number based on method
-            const phoneNumber = document.getElementById('adminPhoneNumber');
-            if (phoneNumber) {
-                if (method === 'mtn') {
-                    phoneNumber.textContent = '0779710365'; // MTN number
-                } else if (method === 'airtel') {
-                    phoneNumber.textContent = '0702377999'; // Airtel number
-                }
-            }
-            
-            const paymentInstructionsEl = document.getElementById('paymentInstructions');
-            const senderPhoneEl = document.getElementById('senderPhoneNumber');
-            const depositScreenshotEl = document.getElementById('depositScreenshot');
-            const submitDepositBtnEl = document.getElementById('submitDepositBtn');
-            
-            if (paymentInstructionsEl) paymentInstructionsEl.classList.remove('hidden');
-            if (senderPhoneEl && !senderPhoneEl.value) {
-                // Attempt to auto-fill from profile if available
-                if (currentUser && currentUser.phoneNumber) {
-                    senderPhoneEl.value = currentUser.phoneNumber;
-                }
-            }
-            if (depositScreenshotEl) depositScreenshotEl.classList.remove('hidden');
-            if (submitDepositBtnEl) submitDepositBtnEl.classList.remove('hidden');
-        } else {
-            const paymentInstructionsEl = document.getElementById('paymentInstructions');
-            const depositScreenshotEl = document.getElementById('depositScreenshot');
-            const submitDepositBtnEl = document.getElementById('submitDepositBtn');
-            
-            if (paymentInstructionsEl) paymentInstructionsEl.classList.add('hidden');
-            if (depositScreenshotEl) depositScreenshotEl.classList.add('hidden');
-            if (submitDepositBtnEl) submitDepositBtnEl.classList.add('hidden');
-        }
-    }
-
-    async function submitDepositRequest() {
-        try {
-            const amount = parseFloat(document.getElementById('depositAmount').value);
-            const method = document.getElementById('depositMethod').value;
-            const destinationNumber = (method === 'mtn') ? '0779710365' : (method === 'airtel') ? '0702377999' : '';
-            const senderNumberEl = document.getElementById('senderPhoneNumber');
-            const senderNumber = senderNumberEl ? senderNumberEl.value.trim() : '';
-            const screenshotFile = document.getElementById('depositScreenshot').files[0];
-
-            if (!amount || amount < 10000 || !method || !screenshotFile || !senderNumber) {
-                alert('Please complete all fields: amount, method, sent from number, and upload screenshot');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const screenshotBase64 = e.target.result;
-
-                await db.collection('depositRequests').add({
-                    userId: currentUser.id,
-                    userName: currentUser.fullName,
-                    userEmail: currentUser.email,
-                    amount: amount,
-                    method: method,
-                    sentTo: destinationNumber,
-                    sentFrom: senderNumber,
-                    screenshot: screenshotBase64,
-                    status: 'pending',
-                    requestDate: new Date().toISOString()
-                });
-
-                alert('Deposit request submitted! Waiting for admin approval.');
-                
-                document.getElementById('depositAmount').value = '';
-                document.getElementById('depositMethod').value = '';
-                if (senderNumberEl) senderNumberEl.value = '';
-                document.getElementById('depositScreenshot').value = '';
-                document.getElementById('paymentInstructions').classList.add('hidden');
-                document.getElementById('depositScreenshot').classList.add('hidden');
-                document.getElementById('submitDepositBtn').classList.add('hidden');
-                
-                updateDepositHistory();
-            };
-            reader.readAsDataURL(screenshotFile);
-
-        } catch (error) {
-            console.error("Deposit request error:", error);
-            alert('Failed to submit deposit request: ' + error.message);
-        }
-    }
+   async function submitDepositRequest() {
+       try {
+           const amount = parseFloat(document.getElementById('depositAmount').value);
+           const method = document.getElementById('depositMethod').value;
+           const sentToNumber = document.getElementById('sentToNumber').value.trim();
+           const senderNumberEl = document.getElementById('senderPhoneNumber');
+           const senderNumber = senderNumberEl ? senderNumberEl.value.trim() : '';
+           const screenshotFile = document.getElementById('depositScreenshot').files[0];
+   
+           if (!amount || amount < 10000) {
+               alert('Please enter a valid amount (minimum 10,000 UGX)');
+               return;
+           }
+           
+           if (!method) {
+               alert('Please select a payment method');
+               return;
+           }
+           
+           if (!senderNumber) {
+               alert('Please enter the phone number you sent money from');
+               return;
+           }
+           
+           if (!screenshotFile) {
+               alert('Please upload a screenshot of your payment confirmation');
+               return;
+           }
+   
+           const reader = new FileReader();
+           reader.onload = async function(e) {
+               const screenshotBase64 = e.target.result;
+   
+               await db.collection('depositRequests').add({
+                   userId: currentUser.id,
+                   userName: currentUser.fullName,
+                   userEmail: currentUser.email,
+                   amount: amount,
+                   method: method,
+                   sentTo: sentToNumber,
+                   sentFrom: senderNumber,
+                   screenshot: screenshotBase64,
+                   status: 'pending',
+                   requestDate: new Date().toISOString()
+               });
+   
+               alert('Deposit request submitted successfully! Please wait for admin approval.');
+               
+               document.getElementById('depositAmount').value = '';
+               document.getElementById('depositMethod').value = '';
+               document.getElementById('sentToNumber').value = '';
+               if (senderNumberEl) senderNumberEl.value = '';
+               document.getElementById('depositScreenshot').value = '';
+               document.getElementById('paymentInstructions').classList.add('hidden');
+               document.getElementById('depositScreenshot').classList.add('hidden');
+               document.getElementById('submitDepositBtn').classList.add('hidden');
+               
+               updateDepositHistory();
+           };
+           reader.readAsDataURL(screenshotFile);
+   
+       } catch (error) {
+           console.error("Deposit request error:", error);
+           alert('Failed to submit deposit request: ' + error.message);
+       }
+   }
 
     async function updateDepositHistory() {
         try {
