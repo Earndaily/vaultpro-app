@@ -226,9 +226,9 @@
     /* Plan Cards */
     .plan-card {
         background: white;
-        border: 3px solid #e5e7eb;
+        border: 2px solid #e5e7eb;
         border-radius: var(--radius);
-        padding: 2rem;
+        padding: 1rem;
         text-align: center;
         cursor: pointer;
         transition: var(--transition);
@@ -254,8 +254,8 @@
 
     .plan-card:hover {
         border-color: var(--primary);
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
     }
 
     .plan-card.selected {
@@ -275,24 +275,24 @@
     }
 
     .plan-name {
-        font-size: 1.5rem;
+        font-size: 1.125rem;
         font-weight: 700;
         color: var(--dark);
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .plan-amount {
-        font-size: 2rem;
+        font-size: 1.25rem;
         font-weight: 800;
         color: var(--primary);
-        margin: 1rem 0;
+        margin: 0.5rem 0;
     }
 
     .plan-profit {
-        font-size: 1.125rem;
+        font-size: 1rem;
         color: var(--success);
         font-weight: 600;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
 
     /* Navigation */
@@ -1342,7 +1342,7 @@
                     <strong>Your Current Balance: <span id="vaultBalance" style="color: var(--primary); font-size: 1.5rem;">0</span> UGX</strong>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
                     <div class="plan-card" onclick="selectPlan('seed')">
                         <div class="plan-name">🌱 Seed</div>
                         <div class="plan-amount">45,000 UGX</div>
