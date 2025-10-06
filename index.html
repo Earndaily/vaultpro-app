@@ -1836,7 +1836,7 @@
                         <li>Points increase as your streak gets longer</li>
                         <li>Missing a day resets your streak to 0</li>
                         <li>Convert points to money in the Withdraw section</li>
-                        <li>1 Point = 10 UGX</li>
+                        <li>1 Point = 37 UGX</li>
                     </ul>
                 </div>
 
@@ -1949,7 +1949,7 @@
                         <div id="convertPointsSection" class="collapsible-content hidden">
                             <div style="padding: 1rem;">
                                 <p style="color: var(--gray); margin-bottom: 1rem;">Points Balance: <strong><span id="withdrawPointsBalance">0</span> Points</strong></p>
-                                <p style="color: var(--gray); margin-bottom: 1rem;">Conversion Rate: 1 Point = 10 UGX</p>
+                                <p style="color: var(--gray); margin-bottom: 1rem;">Conversion Rate: 1 Point = 37 UGX</p>
                                 
                                 <input type="number" id="pointsToConvert" placeholder="Enter Points to Convert" min="1" />
                                 <p style="margin: 0.5rem 0; color: var(--gray);">
@@ -2824,7 +2824,7 @@
                            const inviteCodeField = document.getElementById('inviteCode');
                            inviteCodeField.style.borderColor = 'var(--success)';
                            inviteCodeField.style.background = '#f0fdf4';
-                           inviteCodeField.readOnly = true;
+                           inviteCodeField.readOnly = false;
                            
                            const lockIcon = document.getElementById('inviteCodeLock');
                            if (lockIcon) lockIcon.style.display = 'block';
