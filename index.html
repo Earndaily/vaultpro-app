@@ -32,7 +32,25 @@
         color: var(--dark);
         padding-bottom: env(safe-area-inset-bottom);
     }
-
+   /* Video Container Styles */
+      .video-container {
+          margin: 1rem 0;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #000;
+      }
+      
+      .video-container iframe {
+          width: 100%;
+          min-height: 315px;
+          border: none;
+      }
+      
+      @media (max-width: 768px) {
+          .video-container iframe {
+              min-height: 200px;
+          }
+      }
     /* Container System */
     .container {
         max-width: 1400px;
@@ -2415,7 +2433,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
     // Firebase Configuration
     const firebaseConfig = {
@@ -5326,7 +5345,177 @@
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         return days[new Date().getDay()];
     }
-
+   // YouTube Player Management
+   const youtubePlayers = {};
+   let isYouTubeAPIReady = false;
+   
+   // YouTube API ready callback
+   window.onYouTubeIframeAPIReady = function() {
+       console.log('YouTube IFrame API ready');
+       isYouTubeAPIReady = true;
+   };
+   
+   async function startYouTubeTask(taskId, reward, requiredTime, videoId) {
+       // Skip activation checks for admin users
+       if (!currentUser.isAdmin && !currentUser.isActivated) {
+           alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
+           return;
+       }
+   
+       const button = document.getElementById(`btn-${taskId}`);
+       const videoContainer = document.getElementById(`video-container-${taskId}`);
+       const timerDiv = document.getElementById(`timer-${taskId}`);
+       const countdownDiv = document.getElementById(`countdown-${taskId}`);
+       
+       if (!videoId) {
+           // Fallback for non-YouTube tasks
+           alert('This task requires manual completion. Please follow the instructions.');
+           return;
+       }
+       
+       // Check if already completed today
+       const todayString = new Date().toDateString();
+       const submissionQuery = await db.collection('taskSubmissions')
+           .where('userId', '==', currentUser.id)
+           .where('taskId', '==', taskId)
+           .where('date', '==', todayString)
+           .get();
+   
+       if (!submissionQuery.empty) {
+           alert('You have already completed this task today!');
+           return;
+       }
+       
+       // Wait for YouTube API if not ready
+       if (!isYouTubeAPIReady) {
+           button.textContent = 'Loading YouTube Player...';
+           let attempts = 0;
+           const checkAPI = setInterval(() => {
+               attempts++;
+               if (isYouTubeAPIReady || attempts > 50) {
+                   clearInterval(checkAPI);
+                   if (!isYouTubeAPIReady) {
+                       alert('Failed to load YouTube player. Please refresh the page.');
+                       button.textContent = 'Watch Video & Earn';
+                       return;
+                   }
+                   initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
+               }
+           }, 100);
+       } else {
+           initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
+       }
+   }
+   
+   function initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv) {
+       // Disable button and show video
+       button.disabled = true;
+       button.textContent = 'Loading video...';
+       videoContainer.classList.remove('hidden');
+       timerDiv.classList.remove('hidden');
+       
+       let watchedTime = 0;
+       let timerInterval = null;
+       let isPlaying = false;
+       
+       // Create YouTube player
+       youtubePlayers[taskId] = new YT.Player(`player-${taskId}`, {
+           height: '315',
+           width: '100%',
+           videoId: videoId,
+           playerVars: {
+               'autoplay': 1,
+               'controls': 1,
+               'rel': 0,
+               'modestbranding': 1
+           },
+           events: {
+               'onReady': function(event) {
+                   console.log('YouTube player ready for task:', taskId);
+                   button.textContent = 'Video Playing...';
+                   event.target.playVideo();
+               },
+               'onStateChange': function(event) {
+                   if (event.data === YT.PlayerState.PLAYING) {
+                       isPlaying = true;
+                       console.log('Video started playing');
+                       
+                       // Start timer
+                       if (!timerInterval) {
+                           timerInterval = setInterval(() => {
+                               if (isPlaying) {
+                                   watchedTime++;
+                                   countdownDiv.textContent = watchedTime;
+                                   
+                                   // Check if required time reached
+                                   if (watchedTime >= requiredTime) {
+                                       clearInterval(timerInterval);
+                                       completeYouTubeTask(taskId, reward, button, videoContainer);
+                                   }
+                               }
+                           }, 1000);
+                       }
+                   } else if (event.data === YT.PlayerState.PAUSED) {
+                       isPlaying = false;
+                       console.log('Video paused');
+                   } else if (event.data === YT.PlayerState.ENDED) {
+                       isPlaying = false;
+                       console.log('Video ended');
+                       
+                       // Award if minimum time watched
+                       if (watchedTime >= requiredTime) {
+                           clearInterval(timerInterval);
+                           completeYouTubeTask(taskId, reward, button, videoContainer);
+                       }
+                   }
+               },
+               'onError': function(event) {
+                   console.error('YouTube player error:', event.data);
+                   clearInterval(timerInterval);
+                   button.disabled = false;
+                   button.textContent = 'Error loading video. Try again';
+                   alert('Failed to load video. Please try again or check your internet connection.');
+               }
+           }
+       });
+   }
+   
+   async function completeYouTubeTask(taskId, reward, button, videoContainer) {
+       try {
+           // Get task details
+           const taskDoc = await db.collection('tasks').doc(taskId).get();
+           if (!taskDoc.exists) {
+               alert('Task not found');
+               return;
+           }
+           
+           const task = taskDoc.data();
+           
+           button.disabled = false;
+           button.textContent = 'Task Completed!';
+           button.style.background = '#10b981';
+           
+           // Add fade-out animation
+           const taskCard = document.getElementById(`task-${taskId}`);
+           if (taskCard) {
+               taskCard.style.transition = 'opacity 0.5s ease-out';
+               taskCard.style.opacity = '0.3';
+           }
+           
+           // Destroy YouTube player
+           if (youtubePlayers[taskId]) {
+               youtubePlayers[taskId].destroy();
+               delete youtubePlayers[taskId];
+           }
+           
+           // Award reward
+           await awardTaskReward(taskId, reward, task.title);
+           
+       } catch (error) {
+           console.error('Error completing YouTube task:', error);
+           alert('Failed to complete task: ' + error.message);
+       }
+   }
 
     // User Task Functions
     async function updateTasksSection() {
@@ -5343,36 +5532,69 @@
                 ...doc.data()
             }));
 
-            const tasks = allTasks.filter(task => task.day === today || task.day === 'all');
+            // Check which tasks are already completed today
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            
+            // Filter out completed tasks to hide them
+            const availableTasks = allTasks.filter(task => 
+                (task.day === today || task.day === 'all') && 
+                !completedTaskIds.includes(task.id)
+            );
 
             const tasksContainer = document.getElementById('tasksContainer');
             
-            if (tasks.length === 0) {
-                tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No tasks available today. Check back tomorrow!</p>';
+            if (availableTasks.length === 0) {
+                if (completedTaskIds.length > 0) {
+                    tasksContainer.innerHTML = '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all available tasks for today. Check back tomorrow for new tasks!</p>';
+                } else {
+                    tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No tasks available today. Check back tomorrow!</p>';
+                }
             } else {
-                tasksContainer.innerHTML = tasks.map(task => {
-                    return `
-                        <div class="task-card" id="task-${task.id}">
-                            <div class="task-info">
-                                <h4>${task.title}</h4>
-                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
-                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
-                                <p style="color: var(--gray); font-size: 0.875rem;">Timer: ${task.timer || 60} seconds</p>
-                                ${task.link ? `<a href="${task.link}" target="_blank" style="color: var(--primary); font-size: 0.875rem;">📱 Open Link</a>` : ''}
-                            </div>
-                            <div class="task-action">
-                                <button class="btn btn-success" id="btn-${task.id}" onclick="startTaskTimer('${task.id}', ${task.reward}, ${task.requiresProof}, ${task.timer || 60})">
-                                    Complete Task
-                                </button>
-                                <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
-                                    <div style="font-size: 0.875rem; color: var(--gray);">seconds remaining</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
+               tasksContainer.innerHTML = availableTasks.map(task => {
+                   // Extract YouTube video ID from link
+                   let videoId = null;
+                   if (task.link) {
+                       const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                       const match = task.link.match(youtubeRegex);
+                       if (match) {
+                           videoId = match[1];
+                       }
+                   }
+                   
+                   return `
+                       <div class="task-card" id="task-${task.id}">
+                           <div class="task-info">
+                               <h4>${task.title}</h4>
+                               <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                               <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
+                               <p style="color: var(--gray); font-size: 0.875rem;">Required watch time: ${task.timer || 60} seconds</p>
+                           </div>
+                           
+                           ${videoId ? `
+                               <!-- Embedded YouTube Video -->
+                               <div id="video-container-${task.id}" class="video-container hidden">
+                                   <div id="player-${task.id}"></div>
+                               </div>
+                           ` : ''}
+                           
+                           <div class="task-action">
+                               <button class="btn btn-success" id="btn-${task.id}" onclick="startYouTubeTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}')">
+                                   ${videoId ? 'Watch Video & Earn' : 'Start Task'}
+                               </button>
+                               <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
+                                   <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
+                                   <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
+                               </div>
+                           </div>
+                       </div>
+                   `;
+               }).join('');
 
             // Update user submissions
             const submissionsSnapshot = await db.collection('taskSubmissions')
@@ -5448,39 +5670,10 @@
         }
     }
 
-    function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
-        // Skip activation checks for admin users
-        if (!currentUser.isAdmin && !currentUser.isActivated) {
-            alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
-            return;
-        }
-
-        const button = document.getElementById(`btn-${taskId}`);
-        const timerDiv = document.getElementById(`timer-${taskId}`);
-        const countdownDiv = document.getElementById(`countdown-${taskId}`);
-        
-        // Disable button and show timer
-        button.disabled = true;
-        button.textContent = 'Timer Running...';
-        timerDiv.classList.remove('hidden');
-        
-        let timeLeft = timerDuration;
-        countdownDiv.textContent = timeLeft;
-        
-        const countdown = setInterval(() => {
-            timeLeft--;
-            countdownDiv.textContent = timeLeft;
-            
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                // Timer finished, now allow task completion
-                button.disabled = false;
-                button.textContent = 'Complete Task';
-                button.onclick = () => submitTask(taskId, reward, requiresProof);
-                timerDiv.classList.add('hidden');
-            }
-        }, 1000);
-    }
+   async function startTaskTimer(taskId, reward, requiresProof, timerDuration) {
+       // This is now only for non-YouTube tasks
+       alert('This task type is not yet supported. Please contact admin.');
+   }
 
     async function submitTask(taskId, reward, requiresProof) {
         try {
