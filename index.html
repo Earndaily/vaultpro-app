@@ -5595,7 +5595,7 @@
                        </div>
                    `;
                }).join('');
-
+            }
             // Update user submissions
             const submissionsSnapshot = await db.collection('taskSubmissions')
                 .where('userId', '==', currentUser.id)
