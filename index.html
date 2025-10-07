@@ -4258,13 +4258,9 @@
             }
         }
         
-        // Show/hide activation card based on activation status
+        // Hide activation card - user doesn't want it displayed
         if (activationCard) {
-            if (!isActivated) {
-                activationCard.style.display = 'block';
-            } else {
-                activationCard.style.display = 'none';
-            }
+            activationCard.style.display = 'none';
         }
 
         // Show/hide Home dashboard and My Active Vaults based on activation status
