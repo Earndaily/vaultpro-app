@@ -2366,7 +2366,14 @@
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Add New Candidate</h3>
                     <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
-                    <input type="url" id="candidatePicture" placeholder="Candidate Picture URL (optional)" />
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">📸 Candidate Picture (optional)</label>
+                        <input type="file" id="candidatePictureFile" accept="image/*" style="width: 100%; padding: 0.75rem; border: 2px dashed #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;" onchange="validateCandidateFileSize(this)" />
+                        <small style="color: var(--gray); margin-top: 0.25rem; display: block;">Maximum file size: 6MB. Supported formats: JPG, PNG, GIF</small>
+                        <div id="candidatePicturePreview" style="margin-top: 0.5rem; display: none;">
+                            <img id="candidatePreviewImg" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb;" />
+                        </div>
+                    </div>
                     <input type="text" id="candidateTitle" placeholder="Position (e.g., President, MP, Mayor, LC5 Chairman)" />
                     <select id="candidateCategory">
                         <option value="">Select Category</option>
@@ -6186,7 +6193,7 @@
     async function addCandidate() {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const picture = document.getElementById('candidatePicture').value.trim();
+            const pictureFile = document.getElementById('candidatePictureFile').files[0];
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -6206,9 +6213,18 @@
                 return;
             }
 
+            let pictureUrl = null;
+            if (pictureFile) {
+                // Upload the image file to Firebase Storage
+                const storageRef = firebase.storage().ref();
+                const imageRef = storageRef.child(`candidate-pictures/${Date.now()}-${pictureFile.name}`);
+                const uploadTask = await imageRef.put(pictureFile);
+                pictureUrl = await uploadTask.ref.getDownloadURL();
+            }
+
             await db.collection('electionCandidates').add({
                 name: name,
-                picture: picture || null,
+                picture: pictureUrl,
                 title: title,
                 category: category,
                 district: district,
@@ -6227,7 +6243,8 @@
             
             // Reset form
             document.getElementById('candidateName').value = '';
-            document.getElementById('candidatePicture').value = '';
+            document.getElementById('candidatePictureFile').value = '';
+            document.getElementById('candidatePicturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -6339,7 +6356,6 @@
             
             // Populate form with existing data
             document.getElementById('candidateName').value = candidate.name;
-            document.getElementById('candidatePicture').value = candidate.picture || '';
             document.getElementById('candidateTitle').value = candidate.title;
             document.getElementById('candidateCategory').value = candidate.category;
             document.getElementById('candidateDistrict').value = candidate.district;
@@ -6348,6 +6364,14 @@
             document.getElementById('candidateParty').value = candidate.party || '';
             document.getElementById('candidateElectionDate').value = candidate.electionDate || '';
             document.getElementById('candidateDescription').value = candidate.description || '';
+            
+            // Show existing picture if available
+            if (candidate.picture) {
+                document.getElementById('candidatePreviewImg').src = candidate.picture;
+                document.getElementById('candidatePicturePreview').style.display = 'block';
+            } else {
+                document.getElementById('candidatePicturePreview').style.display = 'none';
+            }
             
             // Change button text and onclick
             const addBtn = document.querySelector('button[onclick="addCandidate()"]');
@@ -6366,7 +6390,7 @@
     async function updateCandidate(candidateId) {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const picture = document.getElementById('candidatePicture').value.trim();
+            const pictureFile = document.getElementById('candidatePictureFile').files[0];
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -6386,9 +6410,22 @@
                 return;
             }
 
+            let pictureUrl = null;
+            if (pictureFile) {
+                // Upload the new image file to Firebase Storage
+                const storageRef = firebase.storage().ref();
+                const imageRef = storageRef.child(`candidate-pictures/${Date.now()}-${pictureFile.name}`);
+                const uploadTask = await imageRef.put(pictureFile);
+                pictureUrl = await uploadTask.ref.getDownloadURL();
+            } else {
+                // Keep existing picture if no new file is uploaded
+                const existingCandidate = await db.collection('electionCandidates').doc(candidateId).get();
+                pictureUrl = existingCandidate.data().picture;
+            }
+
             await db.collection('electionCandidates').doc(candidateId).update({
                 name: name,
-                picture: picture || null,
+                picture: pictureUrl,
                 title: title,
                 category: category,
                 district: district,
@@ -6403,7 +6440,8 @@
             
             // Reset form and button
             document.getElementById('candidateName').value = '';
-            document.getElementById('candidatePicture').value = '';
+            document.getElementById('candidatePictureFile').value = '';
+            document.getElementById('candidatePicturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -7412,6 +7450,39 @@
             alert('Invalid file type! Please upload JPG, PNG, or GIF images only.');
             input.value = ''; // Clear the input
             return false;
+        }
+        
+        return true;
+    }
+
+    function validateCandidateFileSize(input) {
+        const maxSize = 6 * 1024 * 1024; // 6MB in bytes
+        const file = input.files[0];
+        
+        if (file && file.size > maxSize) {
+            alert('File size too large! Maximum size is 6MB.');
+            input.value = ''; // Clear the input
+            document.getElementById('candidatePicturePreview').style.display = 'none';
+            return false;
+        }
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (file && !allowedTypes.includes(file.type)) {
+            alert('Invalid file type! Please upload JPG, PNG, or GIF images only.');
+            input.value = ''; // Clear the input
+            document.getElementById('candidatePicturePreview').style.display = 'none';
+            return false;
+        }
+        
+        // Show preview if file is valid
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('candidatePreviewImg').src = e.target.result;
+                document.getElementById('candidatePicturePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
         
         return true;
