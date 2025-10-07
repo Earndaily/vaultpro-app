@@ -1400,6 +1400,130 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Referral Levels & Benefits -->
+            <div class="card" id="referralLevelsCard">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('referralLevelsSection')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🎖️ Referral Levels & Benefits
+                        </h3>
+                    </div>
+                    <div id="referralLevelsSection" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <!-- Current Level Progress -->
+                            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 2px solid #0ea5e9; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <div style="text-align: center; margin-bottom: 1rem;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: var(--primary);">Your Current Level</h4>
+                                    <div id="currentLevelBadge" style="display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 1.1rem;">
+                                        Loading...
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <span style="font-weight: 600; color: var(--dark);">Progress to Next Level</span>
+                                        <span id="progressPercentage" style="font-weight: 600; color: var(--primary);">0%</span>
+                                    </div>
+                                    <div style="background: #e5e7eb; border-radius: 10px; height: 12px; overflow: hidden;">
+                                        <div id="levelProgressBar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: 0%; transition: width 0.5s ease; border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray);">
+                                        <span id="currentReferralCount">0 referrals</span>
+                                        <span id="nextLevelRequirement">Next level: 100 referrals</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Levels Table -->
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                    <thead style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white;">
+                                        <tr>
+                                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Level</th>
+                                            <th style="padding: 1rem; text-align: left; font-weight: 600;">Title / Role</th>
+                                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Referrals</th>
+                                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Monthly Salary</th>
+                                            <th style="padding: 1rem; text-align: left; font-weight: 600;">Perks / Benefits</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">1️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Admin</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">100</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">50,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Recognition badge in profile</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">2️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Partner</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">500</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">200,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Access to special partner dashboard</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">3️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Manager</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">1,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">500,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Can host and monitor team meetings</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">4️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Chief</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">2,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">1,000,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Priority support, exclusive events</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">5️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Partner King</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">5,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">2,000,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Official brand merchandise (T-shirt, cap, badge)</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">6️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Shareholder</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">10,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">20% of company funds</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Lifetime membership, company decision-making rights</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Level Descriptions -->
+                            <div style="margin-top: 1.5rem; background: #f8fafc; border-radius: 12px; padding: 1.5rem;">
+                                <h4 style="margin: 0 0 1rem 0; color: var(--dark);">Level Descriptions</h4>
+                                <div style="display: grid; gap: 1rem;">
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary);">
+                                        <strong>1️⃣ Admin:</strong> Entry-level leadership role. Manages user activity and assists support.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                                        <strong>2️⃣ Partner:</strong> Trusted user with a growing community under them.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                                        <strong>3️⃣ Manager:</strong> Mid-level leader managing multiple partners.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning);">
+                                        <strong>4️⃣ Chief:</strong> High-ranking official overseeing major sections of the network.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--error);">
+                                        <strong>5️⃣ Partner King:</strong> Top-tier promoter managing large networks.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                                        <strong>6️⃣ Shareholder:</strong> Ultimate recognition—becomes part-owner of the project.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
         </div>
 
@@ -2598,6 +2722,11 @@
                 <h3 id="profileUserName" style="margin: 0; color: var(--text);">User</h3>
                 <p id="profileUserEmail" style="margin: 0.5rem 0; color: var(--gray);">user@example.com</p>
                 <p id="profileJoinedDate" style="margin: 0; color: var(--gray); font-size: 0.875rem;">Member since N/A</p>
+                
+                <!-- Level Badge -->
+                <div id="profileLevelBadge" style="margin-top: 1rem; display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 1rem;">
+                    🌱 Newcomer
+                </div>
             </div>
 
             <div class="grid grid-2" style="margin-bottom: 2rem;">
@@ -3948,6 +4077,11 @@
                 });
                 
                 console.log('Direct referral reward: 4000 UGX given to', directReferrerData.fullName);
+                
+                // Update referrer's level progress
+                if (currentUser && currentUser.id === referrerId) {
+                    updateReferralLevelProgress();
+                }
             }
             
             // 2. Check for second-level referrer (the person who referred the direct referrer)
@@ -4507,6 +4641,7 @@
         
         if (currentUser) {
             updateProfileSection();
+            updateReferralLevelProgress();
         }
         
         ensureAllSectionsHidden();
@@ -5711,6 +5846,14 @@
             
             // Update referral code
             document.getElementById('profileReferralCode').textContent = currentUser.referralCode || 'N/A';
+            
+            // Update level badge
+            const levelBadge = document.getElementById('profileLevelBadge');
+            if (levelBadge) {
+                const currentLevel = getUserReferralLevel(currentUser.totalReferrals || 0);
+                levelBadge.innerHTML = `${currentLevel.icon} ${currentLevel.title}`;
+                levelBadge.style.background = `linear-gradient(135deg, ${currentLevel.color}, ${currentLevel.color}dd)`;
+            }
             
             // Update account information
             const infoValues = document.querySelectorAll('#profileSection .info-value');
@@ -7653,6 +7796,107 @@
             }).join('');
         } catch (error) {
             console.error("Error loading deposit history:", error);
+        }
+    }
+
+    // Referral Level System
+    const referralLevels = [
+        { level: 1, title: 'Admin', referrals: 100, salary: 50000, icon: '1️⃣', color: '#6366f1', description: 'Entry-level leadership role. Manages user activity and assists support.' },
+        { level: 2, title: 'Partner', referrals: 500, salary: 200000, icon: '2️⃣', color: '#ec4899', description: 'Trusted user with a growing community under them.' },
+        { level: 3, title: 'Manager', referrals: 1000, salary: 500000, icon: '3️⃣', color: '#10b981', description: 'Mid-level leader managing multiple partners.' },
+        { level: 4, title: 'Chief', referrals: 2000, salary: 1000000, icon: '4️⃣', color: '#f59e0b', description: 'High-ranking official overseeing major sections of the network.' },
+        { level: 5, title: 'Partner King', referrals: 5000, salary: 2000000, icon: '5️⃣', color: '#ef4444', description: 'Top-tier promoter managing large networks.' },
+        { level: 6, title: 'Shareholder', referrals: 10000, salary: '20% of company funds', icon: '6️⃣', color: '#8b5cf6', description: 'Ultimate recognition—becomes part-owner of the project.' }
+    ];
+
+    function getUserReferralLevel(referralCount) {
+        for (let i = referralLevels.length - 1; i >= 0; i--) {
+            if (referralCount >= referralLevels[i].referrals) {
+                return referralLevels[i];
+            }
+        }
+        return { level: 0, title: 'Newcomer', referrals: 0, salary: 0, icon: '🌱', color: '#6b7280', description: 'Just getting started!' };
+    }
+
+    function getNextLevel(currentLevel) {
+        const currentIndex = referralLevels.findIndex(level => level.level === currentLevel.level);
+        return currentIndex < referralLevels.length - 1 ? referralLevels[currentIndex + 1] : null;
+    }
+
+    async function updateReferralLevelProgress() {
+        if (!currentUser) return;
+
+        try {
+            // Get user's total referrals
+            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+            const totalReferrals = referralsSnapshot.size;
+
+            // Get current level
+            const currentLevel = getUserReferralLevel(totalReferrals);
+            const nextLevel = getNextLevel(currentLevel);
+
+            // Update current level badge
+            const levelBadge = document.getElementById('currentLevelBadge');
+            if (levelBadge) {
+                levelBadge.innerHTML = `${currentLevel.icon} ${currentLevel.title}`;
+                levelBadge.style.background = `linear-gradient(135deg, ${currentLevel.color}, ${currentLevel.color}dd)`;
+            }
+
+            // Update progress bar
+            const progressBar = document.getElementById('levelProgressBar');
+            const progressPercentage = document.getElementById('progressPercentage');
+            const currentReferralCount = document.getElementById('currentReferralCount');
+            const nextLevelRequirement = document.getElementById('nextLevelRequirement');
+
+            if (nextLevel) {
+                const progress = ((totalReferrals - currentLevel.referrals) / (nextLevel.referrals - currentLevel.referrals)) * 100;
+                const progressPercent = Math.min(Math.max(progress, 0), 100);
+
+                if (progressBar) {
+                    progressBar.style.width = `${progressPercent}%`;
+                    progressBar.style.background = `linear-gradient(90deg, ${currentLevel.color}, ${nextLevel.color})`;
+                }
+
+                if (progressPercentage) {
+                    progressPercentage.textContent = `${Math.round(progressPercent)}%`;
+                }
+
+                if (currentReferralCount) {
+                    currentReferralCount.textContent = `${totalReferrals} referrals`;
+                }
+
+                if (nextLevelRequirement) {
+                    nextLevelRequirement.textContent = `Next level: ${nextLevel.referrals} referrals`;
+                }
+            } else {
+                // User is at max level
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    progressBar.style.background = `linear-gradient(90deg, ${currentLevel.color}, ${currentLevel.color})`;
+                }
+
+                if (progressPercentage) {
+                    progressPercentage.textContent = '100%';
+                }
+
+                if (currentReferralCount) {
+                    currentReferralCount.textContent = `${totalReferrals} referrals`;
+                }
+
+                if (nextLevelRequirement) {
+                    nextLevelRequirement.textContent = 'Max level reached! 🎉';
+                }
+            }
+
+            // Update user's level in their profile
+            await db.collection('users').doc(currentUser.id).update({
+                referralLevel: currentLevel.level,
+                referralTitle: currentLevel.title,
+                totalReferrals: totalReferrals
+            });
+
+        } catch (error) {
+            console.error('Error updating referral level progress:', error);
         }
     }
 
