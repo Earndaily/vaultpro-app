@@ -2190,6 +2190,11 @@
                         <div class="stat-value" id="referralAdminEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-label">From Activations (16,000 UGX each)</div>
+                        <div class="stat-value" id="activationAdminEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2494,6 +2499,40 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- WhatsApp Group Join Modal -->
+<div id="whatsappGroupModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🎉 Welcome to VaultPro!</h2>
+            <button class="modal-close" onclick="closeWhatsAppGroupModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📱</div>
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Join Our Community!</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">
+                    Connect with other VaultPro users, get updates, and participate in exclusive discussions.
+                </p>
+                <a href="https://chat.whatsapp.com/KBvYOdutPlcHPLNzjBcJZQ" 
+                   target="_blank" 
+                   class="btn btn-success" 
+                   style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; padding: 1rem 2rem; margin-bottom: 1rem;">
+                    <span>📱</span>
+                    Join WhatsApp Group
+                </a>
+                <p style="color: var(--gray); font-size: 0.9rem;">
+                    Click the button above to join our WhatsApp group and stay connected!
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeWhatsAppGroupModal()">
+                Maybe Later
+            </button>
         </div>
     </div>
 </div>
@@ -3042,10 +3081,9 @@
             const endTime = new Date(roundData.endTime);
             
             if (now >= endTime && roundData.status === 'active') {
-                // Round ended - process results
+                // Round ended - process results (this will handle starting the next round after 10 minutes)
                 await processLUBRoundResults(roundData.id);
-                // Start new round
-                return await startNewLUBRound();
+                return null; // No active round during the 10-minute break
             }
             
             return roundData;
@@ -3169,6 +3207,18 @@
                     status: 'completed',
                     completedAt: new Date().toISOString()
                 });
+                
+                // Schedule next round to start after 10 minutes
+                setTimeout(async () => {
+                    try {
+                        console.log('Starting new LUB round after 10-minute delay...');
+                        await startNewLUBRound();
+                        console.log('New LUB round started successfully');
+                    } catch (error) {
+                        console.error('Error starting new LUB round after delay:', error);
+                    }
+                }, 10 * 60 * 1000); // 10 minutes delay
+                
                 return;
             }
             
@@ -3225,6 +3275,18 @@
                 });
                 
                 console.log('No unique bets. Admin earned:', totalLosses);
+                
+                // Schedule next round to start after 10 minutes
+                setTimeout(async () => {
+                    try {
+                        console.log('Starting new LUB round after 10-minute delay...');
+                        await startNewLUBRound();
+                        console.log('New LUB round started successfully');
+                    } catch (error) {
+                        console.error('Error starting new LUB round after delay:', error);
+                    }
+                }, 10 * 60 * 1000); // 10 minutes delay
+                
                 return;
             }
             
@@ -3302,6 +3364,17 @@
             console.log('LUB round results processed.');
             console.log('Winner:', winningBet.bet.userName, '- Prize:', prize);
             console.log('Admin earned from losing bets:', adminEarnings);
+            
+            // Schedule next round to start after 10 minutes
+            setTimeout(async () => {
+                try {
+                    console.log('Starting new LUB round after 10-minute delay...');
+                    await startNewLUBRound();
+                    console.log('New LUB round started successfully');
+                } catch (error) {
+                    console.error('Error starting new LUB round after delay:', error);
+                }
+            }, 10 * 60 * 1000); // 10 minutes delay
             
         } catch (error) {
             console.error('Error processing LUB round results:', error);
@@ -4070,6 +4143,11 @@
 
             showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
             
+            // Show WhatsApp group join button
+            setTimeout(() => {
+                showWhatsAppGroupModal();
+            }, 2000);
+            
             // Clear referral code after successful registration
             clearStoredReferralCode();
             
@@ -4571,20 +4649,39 @@
         document.getElementById('activationModal').classList.remove('show');
     }
 
+    // WhatsApp Group Modal Functions
+    function showWhatsAppGroupModal() {
+        document.getElementById('whatsappGroupModal').classList.remove('hidden');
+        document.getElementById('whatsappGroupModal').classList.add('show');
+    }
+
+    function closeWhatsAppGroupModal() {
+        document.getElementById('whatsappGroupModal').classList.add('hidden');
+        document.getElementById('whatsappGroupModal').classList.remove('show');
+    }
+
     // Close modal when clicking outside
     document.addEventListener('click', function(event) {
-        const modal = document.getElementById('activationModal');
-        if (event.target === modal) {
+        const activationModal = document.getElementById('activationModal');
+        const whatsappModal = document.getElementById('whatsappGroupModal');
+        if (event.target === activationModal) {
             closeActivationModal();
+        }
+        if (event.target === whatsappModal) {
+            closeWhatsAppGroupModal();
         }
     });
 
     // Close modal with ESC key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            const modal = document.getElementById('activationModal');
-            if (modal && modal.classList.contains('show')) {
+            const activationModal = document.getElementById('activationModal');
+            const whatsappModal = document.getElementById('whatsappGroupModal');
+            if (activationModal && activationModal.classList.contains('show')) {
                 closeActivationModal();
+            }
+            if (whatsappModal && whatsappModal.classList.contains('show')) {
+                closeWhatsAppGroupModal();
             }
         }
     });
@@ -4883,7 +4980,12 @@
             const el = document.getElementById('admin' + s + 'Section');
             if (el) el.classList.add('hidden');
         });
-        const sectionEl = document.getElementById('admin' + section.charAt(0).toUpperCase() + section.slice(1) + 'Section');
+        // Handle special case for LUB Game section
+        let sectionId = 'admin' + section.charAt(0).toUpperCase() + section.slice(1) + 'Section';
+        if (section === 'lubGame') {
+            sectionId = 'adminLUBGameSection';
+        }
+        const sectionEl = document.getElementById(sectionId);
         if (sectionEl) sectionEl.classList.remove('hidden');
 
         if (section === 'users') updateAdminUsers();
@@ -7513,7 +7615,11 @@
             const withdrawEarnings = withdrawals.reduce((sum, t) => sum + t.adminFee, 0);
             const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
 
-            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings;
+            // Include activation fee admin earnings (16,000 UGX per activation)
+            const activationFees = transactions.filter(t => t.type === 'activation_fee');
+            const activationAdminEarnings = activationFees.length * 16000;
+            
+            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings + activationAdminEarnings;
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
@@ -7531,6 +7637,12 @@
             document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
             document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
             document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
+            
+            // Update activation fee earnings display
+            const activationEarningsEl = document.getElementById('activationAdminEarnings');
+            if (activationEarningsEl) {
+                activationEarningsEl.textContent = activationAdminEarnings.toLocaleString();
+            }
         } catch (error) {
             console.error("Error updating admin stats:", error);
         }
@@ -8262,8 +8374,13 @@
             
             // Change button text and onclick
             const createBtn = document.querySelector('button[onclick="createTask()"]');
-            createBtn.textContent = 'Update Task';
-            createBtn.onclick = () => updateTask(taskId);
+            if (createBtn) {
+                createBtn.textContent = 'Update Task';
+                createBtn.onclick = () => updateTask(taskId);
+            } else {
+                console.error('Create task button not found');
+                alert('Error: Could not find the create task button');
+            }
             
             // Scroll to form
             document.getElementById('adminTaskTitle').scrollIntoView({ behavior: 'smooth' });
@@ -8311,9 +8428,11 @@
             document.getElementById('adminTaskDay').value = '';
             document.getElementById('adminTaskRequiresProof').checked = true;
             
-            const createBtn = document.querySelector('button[onclick="updateTask(\'' + taskId + '\')"]');
-            createBtn.textContent = '📝 Create Task';
-            createBtn.onclick = () => createTask();
+            const createBtn = document.querySelector('button[onclick*="updateTask"]');
+            if (createBtn) {
+                createBtn.textContent = '📝 Create Task';
+                createBtn.onclick = () => createTask();
+            }
             
             updateAdminTasks();
         } catch (error) {
