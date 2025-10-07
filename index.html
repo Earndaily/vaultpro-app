@@ -4186,8 +4186,22 @@
             item.style.cursor = '';
         });
         
-        // Show home section immediately
-        showSection('home');
+        // Ensure home section is visible immediately
+        const homeSection = document.getElementById('homeSection');
+        if (homeSection) {
+            homeSection.classList.remove('hidden');
+            homeSection.style.display = 'block';
+        }
+        
+        // Show home section immediately with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            showSection('home');
+        }, 50);
+        
+        // Force update feature access to ensure proper display
+        setTimeout(() => {
+            updateFeatureAccess();
+        }, 100);
         
         // Rest of your existing code...
         updateUserStats();
@@ -4244,12 +4258,16 @@
             }
         }
         
-        // Hide activation card in home section (do not show for unactivated users)
+        // Show/hide activation card based on activation status
         if (activationCard) {
-            activationCard.style.display = 'none';
+            if (!isActivated) {
+                activationCard.style.display = 'block';
+            } else {
+                activationCard.style.display = 'none';
+            }
         }
 
-        // Hide Home dashboard and My Active Vaults for unactivated users
+        // Show/hide Home dashboard and My Active Vaults based on activation status
         const homeDashboardCard = document.getElementById('homeDashboardCard');
         const myActiveVaultsCard = document.getElementById('myActiveVaultsCard');
         if (homeDashboardCard) {
@@ -4520,6 +4538,10 @@
         const sectionEl = document.getElementById(section + 'Section');
         if (sectionEl) {
             sectionEl.classList.remove('hidden');
+            // Force display to ensure visibility
+            sectionEl.style.display = 'block';
+        } else {
+            console.warn(`Section element not found: ${section}Section`);
         }
 
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
