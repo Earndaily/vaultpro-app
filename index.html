@@ -1134,6 +1134,11 @@
         margin: 0.5rem 0;
         font-weight: 600;
     }
+    
+    /* Initially hide bottom nav until login */
+    .bottom-nav {
+        display: none;
+    }
 </style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
@@ -1144,6 +1149,30 @@
         <div class="spinner"></div>
         <h2>Loading VaultPro...</h2>
         <p>Connecting to database...</p>
+    </div>
+
+    <!-- Referral Landing Page -->
+    <div id="referralLandingPage" class="card hidden">
+        <h1>Welcome to VaultPro!</h1>
+        <p style="color: var(--gray); margin-bottom: 2rem;">You've been invited to join our platform</p>
+        <div id="referralLandingAlert"></div>
+        
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 0.5rem 0;">Your Invitation Code</h3>
+            <div id="displayReferralCode" style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 1rem 0;">
+                Loading...
+            </div>
+            <p style="color: var(--gray); margin: 0;">Referred by: <strong id="referrerName">Loading...</strong></p>
+        </div>
+        
+        <button class="btn btn-block" onclick="proceedToRegistration()">
+            Continue to Registration
+        </button>
+        
+        <p class="text-center mt-2" style="color: var(--gray);">
+            Already have an account? 
+            <a href="#" onclick="showLogin()" style="color: var(--primary); font-weight: 600;">Login</a>
+        </p>
     </div>
 
     <!-- Firebase Setup (keeping original implementation) -->
@@ -1225,6 +1254,7 @@
                 <div class="nav-link" onclick="showSection('referrals')">Referrals</div>
                 <div class="nav-link" onclick="showSection('streak')">Daily Streak</div>
                 <div class="nav-link" onclick="showSection('tasks')">Daily Tasks</div>
+                <div class="nav-link" onclick="showSection('lubGame')">LUB Game</div>
                 <div class="nav-link" onclick="showSection('wallet')">Wallet</div>
                 <div class="nav-link" onclick="showSection('stake')">Stake</div>
                 <div class="nav-link" onclick="logout()">Logout</div>
@@ -1659,6 +1689,103 @@
                         </div>
                         </div>
 
+        <!-- Lowest Unique Bet Game Section -->
+        <div id="lubGameSection" class="hidden">
+            <div class="card">
+                <h2>🎲 Lowest Unique Bet Game</h2>
+                <p style="color: var(--gray); margin-bottom: 1rem;">Bet the LOWEST UNIQUE amount and win 10x your stake!</p>
+                
+                <!-- Game Info Banner -->
+                <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: #92400e;">🎯 How to Win</h3>
+                    <ul style="color: #92400e; margin: 0; padding-left: 1.5rem;">
+                        <li><strong>Minimum bet:</strong> 500 UGX</li>
+                        <li><strong>Your bet must be unique</strong> (no other player bets the same amount)</li>
+                        <li><strong>The LOWEST unique bet wins</strong></li>
+                        <li><strong>Winner gets:</strong> Their bet × 10</li>
+                        <li><strong>Stake locked for:</strong> 5 hours</li>
+                    </ul>
+                </div>
+                
+                <!-- Current Round Status -->
+                <div id="gameStatusCard" class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); margin-bottom: 2rem;">
+                    <h3>Current Round Status</h3>
+                    <div id="gameStatus">
+                        <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading game status...</p>
+                    </div>
+                </div>
+                
+                <!-- Place Bet Section -->
+                <div id="placeBetSection" class="hidden">
+                    <h3>Place Your Bet</h3>
+                    <div id="lubGameAlert"></div>
+                    
+                    <div style="background: #f9fafb; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">Your Wallet Balance</label>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                                <span id="lubWalletBalance">0</span> UGX
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">Enter Your Bet Amount (Min: 500 UGX)</label>
+                            <input type="number" id="lubBetAmount" placeholder="Enter amount (e.g., 550)" min="500" step="50" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem;" />
+                            <small style="color: var(--gray); margin-top: 0.5rem; display: block;">💡 Tip: Choose an unusual amount to be unique!</small>
+                        </div>
+                        
+                        <button class="btn btn-success btn-block" onclick="placeLUBBet()">
+                            🎲 Place Bet
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Current Round Participants -->
+                <div id="currentParticipantsSection" class="hidden">
+                    <h3>Current Round Participants</h3>
+                    <div style="background: #f9fafb; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                        <p style="color: var(--gray); margin: 0;">
+                            <strong>Total Players:</strong> <span id="totalPlayers">0</span> | 
+                            <strong>Total Stakes:</strong> <span id="totalStakes">0</span> UGX
+                        </p>
+                    </div>
+                    <p style="color: var(--gray); font-size: 0.875rem; margin-bottom: 1rem;">
+                        ⏳ Bet amounts are hidden until results are revealed
+                    </p>
+                </div>
+                
+                <!-- My Active Bets -->
+                <div style="margin-top: 2rem;">
+                    <h3>📋 My Active Bet</h3>
+                    <div id="myActiveLUBBet">
+                        <p class="text-center" style="color: var(--gray); padding: 1rem;">No active bet in current round</p>
+                    </div>
+                </div>
+                
+                <!-- Game History -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+                    <h3>🏆 Previous Winners</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Round</th>
+                                    <th>Winner</th>
+                                    <th>Winning Bet</th>
+                                    <th>Prize</th>
+                                    <th>Players</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lubHistoryBody">
+                                <tr><td colspan="6" class="text-center">No history yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Wallet Section -->
         <div id="walletSection" class="hidden">
             <div class="card">
@@ -1974,6 +2101,7 @@
                 <div class="nav-link" onclick="showAdminSection('deposits')">Deposits</div>
                 <div class="nav-link" onclick="showAdminSection('withdrawals')">Withdrawals</div>
                 <div class="nav-link" onclick="showAdminSection('candidates')">Candidates</div>
+                <div class="nav-link" onclick="showAdminSection('lubGame')">LUB Game</div>
                 <div class="nav-link" onclick="logout()">Logout</div>
             </div>
         </div>
@@ -2240,6 +2368,92 @@
                 </div>
             </div>
         </div>
+
+        <!-- Admin LUB Game Management -->
+        <div id="adminLUBGameSection" class="hidden">
+            <div class="card">
+                <h2>🎲 LUB Game Management</h2>
+                
+                <!-- Admin Stats -->
+                <div class="grid grid-4 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Rounds</div>
+                        <div class="stat-value" id="adminLUBTotalRounds">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Round Players</div>
+                        <div class="stat-value" id="adminLUBActivePlayers">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Admin Earnings</div>
+                        <div class="stat-value" id="adminLUBEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Prizes Paid</div>
+                        <div class="stat-value" id="adminLUBPrizesPaid">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                </div>
+                
+                <!-- Current Round Details -->
+                <h3>Current Round</h3>
+                <div id="adminCurrentLUBRound" style="background: #f9fafb; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                    <p class="text-center" style="color: var(--gray);">Loading...</p>
+                </div>
+                
+                <!-- All Bets in Current Round -->
+                <h3>Current Round Bets</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Bet Amount</th>
+                                <th>Placed At</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminLUBCurrentBetsBody">
+                            <tr><td colspan="5" class="text-center">No bets yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Manual Controls -->
+                <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.2)); border: 2px solid var(--error); border-radius: 12px;">
+                    <h3 style="color: var(--error); margin: 0 0 1rem 0;">⚠️ Manual Controls</h3>
+                    <button class="btn" style="background: var(--warning); margin-right: 1rem;" onclick="manualProcessLUBRound()">
+                        🔄 Process Current Round Now
+                    </button>
+                    <button class="btn" style="background: var(--success);" onclick="manualStartNewLUBRound()">
+                        ➕ Start New Round
+                    </button>
+                </div>
+                
+                <!-- Completed Rounds History -->
+                <h3 class="mt-3">Completed Rounds</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Players</th>
+                                <th>Total Stakes</th>
+                                <th>Winner</th>
+                                <th>Prize Paid</th>
+                                <th>Admin Earned</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminLUBHistoryBody">
+                            <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2257,6 +2471,10 @@
         <div class="bottom-nav-item" onclick="showSection('tasks')" data-section="tasks">
             <div class="bottom-nav-icon">✅</div>
             <div class="bottom-nav-label">Tasks</div>
+        </div>
+        <div class="bottom-nav-item" onclick="showSection('lubGame')" data-section="lubGame">
+            <div class="bottom-nav-icon">🎲</div>
+            <div class="bottom-nav-label">LUB Game</div>
         </div>
         <div class="bottom-nav-item" onclick="showSection('referrals')" data-section="referrals">
             <div class="bottom-nav-icon">👥</div>
@@ -2489,9 +2707,12 @@
     let currentUser = null;
     let selectedPlan = null;
     let isProcessingReferral = false;
+    const REFERRAL_STORAGE_KEY = 'vaultpro_referral_code';
+    const REFERRAL_EXPIRY_KEY = 'vaultpro_referral_expiry';
+    const REFERRAL_EXPIRY_HOURS = 24; // Code valid for 24 hours
     let allowManualRegistration = false;
 
-    // Store referral code in sessionStorage when link is clicked
+    // Store referral code with expiry in localStorage
     function captureReferralCode() {
         console.log('captureReferralCode() called');
         console.log('Current URL:', window.location.href);
@@ -2502,8 +2723,10 @@
         console.log('Referral code found:', refCode);
         
         if (refCode) {
-            console.log('Storing referral code in sessionStorage:', refCode);
-            sessionStorage.setItem('pendingReferralCode', refCode);
+            console.log('Storing referral code in localStorage with expiry:', refCode);
+            const expiryTime = Date.now() + (REFERRAL_EXPIRY_HOURS * 60 * 60 * 1000);
+            localStorage.setItem(REFERRAL_STORAGE_KEY, refCode);
+            localStorage.setItem(REFERRAL_EXPIRY_KEY, expiryTime.toString());
             // Clean URL immediately
             window.history.replaceState({}, document.title, window.location.pathname);
             console.log('URL cleaned, new URL:', window.location.href);
@@ -2607,6 +2830,564 @@
         legendary: { name: '🕊️ Legendary', amount: 90000000, days: 30, profit: 0.60, dailyROI: 2.0 }
     };
 
+    // Store referral code with expiry
+    function storeReferralCode(code) {
+        const expiryTime = new Date().getTime() + (REFERRAL_EXPIRY_HOURS * 60 * 60 * 1000);
+        localStorage.setItem(REFERRAL_STORAGE_KEY, code);
+        localStorage.setItem(REFERRAL_EXPIRY_KEY, expiryTime.toString());
+        console.log('Referral code stored:', code);
+    }
+
+    // Retrieve referral code if not expired
+    function getStoredReferralCode() {
+        const code = localStorage.getItem(REFERRAL_STORAGE_KEY);
+        const expiry = localStorage.getItem(REFERRAL_EXPIRY_KEY);
+        
+        if (!code || !expiry) return null;
+        
+        const now = new Date().getTime();
+        if (now > parseInt(expiry)) {
+            // Expired - clean up
+            clearStoredReferralCode();
+            return null;
+        }
+        
+        return code;
+    }
+
+    // Clear stored referral code
+    function clearStoredReferralCode() {
+        localStorage.removeItem(REFERRAL_STORAGE_KEY);
+        localStorage.removeItem(REFERRAL_EXPIRY_KEY);
+        console.log('Referral code cleared');
+    }
+
+    // Validate referral code against database
+    async function validateReferralCode(code) {
+        try {
+            const referrerQuery = await db.collection('users')
+                .where('referralCode', '==', code)
+                .limit(1)
+                .get();
+            
+            if (referrerQuery.empty) {
+                return { valid: false, error: 'Invalid referral code' };
+            }
+            
+            const referrerData = referrerQuery.docs[0].data();
+            return { 
+                valid: true, 
+                referrerId: referrerQuery.docs[0].id,
+                referrerName: referrerData.fullName,
+                referrerEmail: referrerData.email
+            };
+        } catch (error) {
+            console.error('Error validating referral code:', error);
+            return { valid: false, error: 'Validation failed' };
+        }
+    }
+
+    // Show referral landing page
+    async function showReferralLanding(code) {
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('registerPage').classList.add('hidden');
+        document.getElementById('referralLandingPage').classList.remove('hidden');
+        
+        document.getElementById('displayReferralCode').textContent = code;
+        
+        // Validate and show referrer info
+        const validation = await validateReferralCode(code);
+        if (validation.valid) {
+            document.getElementById('referrerName').textContent = validation.referrerName;
+        } else {
+            document.getElementById('referrerName').textContent = 'Unknown';
+            showAlert('referralLandingAlert', validation.error, 'error');
+        }
+    }
+
+    // Proceed to registration with stored code
+    function proceedToRegistration() {
+        const code = getStoredReferralCode();
+        if (!code) {
+            showAlert('referralLandingAlert', 'Referral code expired', 'error');
+            setTimeout(() => showLogin(), 2000);
+            return;
+        }
+        
+        // Auto-fill the registration form
+        document.getElementById('inviteCode').value = code;
+        const inviteField = document.getElementById('inviteCode');
+        inviteField.style.borderColor = 'var(--success)';
+        inviteField.style.background = '#f0fdf4';
+        inviteField.readOnly = true;
+        
+        // Show registration page
+        document.getElementById('referralLandingPage').classList.add('hidden');
+        document.getElementById('registerPage').classList.remove('hidden');
+        
+        showAlert('registerAlert', `Complete your registration to join via ${document.getElementById('referrerName').textContent}'s invitation`, 'success');
+    }
+
+    // Lowest Unique Bet Game System
+    let currentLUBRound = null;
+    let lubUpdateInterval = null;
+
+    // Start a new LUB game round
+    async function startNewLUBRound() {
+        try {
+            const now = new Date();
+            const endTime = new Date(now.getTime() + (5 * 60 * 60 * 1000)); // 5 hours from now
+            
+            const roundData = {
+                roundNumber: Date.now(), // Unique round ID
+                startTime: now.toISOString(),
+                endTime: endTime.toISOString(),
+                status: 'active', // active, calculating, completed
+                participants: [],
+                totalStakes: 0,
+                totalPlayers: 0,
+                winner: null,
+                winningAmount: null,
+                createdDate: now.toISOString()
+            };
+            
+            await db.collection('lubGameRounds').add(roundData);
+            console.log('New LUB round started:', roundData.roundNumber);
+            
+            return roundData;
+        } catch (error) {
+            console.error('Error starting new LUB round:', error);
+            throw error;
+        }
+    }
+
+    // Get current active round
+    async function getCurrentLUBRound() {
+        try {
+            const roundsSnapshot = await db.collection('lubGameRounds')
+                .where('status', 'in', ['active', 'calculating'])
+                .orderBy('startTime', 'desc')
+                .limit(1)
+                .get();
+            
+            if (roundsSnapshot.empty) {
+                // No active round - start new one
+                return await startNewLUBRound();
+            }
+            
+            const roundDoc = roundsSnapshot.docs[0];
+            const roundData = { id: roundDoc.id, ...roundDoc.data() };
+            
+            // Check if round has ended
+            const now = new Date();
+            const endTime = new Date(roundData.endTime);
+            
+            if (now >= endTime && roundData.status === 'active') {
+                // Round ended - process results
+                await processLUBRoundResults(roundData.id);
+                // Start new round
+                return await startNewLUBRound();
+            }
+            
+            return roundData;
+        } catch (error) {
+            console.error('Error getting current LUB round:', error);
+            return null;
+        }
+    }
+
+    // Place a bet in current round
+    async function placeLUBBet() {
+        try {
+            // Check activation
+            if (!currentUser.isActivated) {
+                showAlert('lubGameAlert', 'You must activate your account to play this game.', 'error');
+                return;
+            }
+            
+            const betAmount = parseInt(document.getElementById('lubBetAmount').value);
+            
+            // Validation
+            if (!betAmount || betAmount < 500) {
+                showAlert('lubGameAlert', 'Minimum bet is 500 UGX', 'error');
+                return;
+            }
+            
+            // Check balance
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
+            const balance = userData.balance || 0;
+            
+            if (betAmount > balance) {
+                showAlert('lubGameAlert', 'Insufficient balance', 'error');
+                return;
+            }
+            
+            // Get current round
+            const round = await getCurrentLUBRound();
+            if (!round) {
+                showAlert('lubGameAlert', 'No active round available', 'error');
+                return;
+            }
+            
+            // Check if user already has a bet in this round
+            const existingBetQuery = await db.collection('lubGameBets')
+                .where('roundId', '==', round.id)
+                .where('userId', '==', currentUser.id)
+                .get();
+            
+            if (!existingBetQuery.empty) {
+                showAlert('lubGameAlert', 'You already have a bet in this round!', 'error');
+                return;
+            }
+            
+            // Deduct from balance
+            await db.collection('users').doc(currentUser.id).update({
+                balance: balance - betAmount
+            });
+            
+            // Place bet
+            await db.collection('lubGameBets').add({
+                roundId: round.id,
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                userEmail: currentUser.email,
+                betAmount: betAmount,
+                placedAt: new Date().toISOString(),
+                status: 'pending' // pending, won, lost
+            });
+            
+            // Update round stats
+            await db.collection('lubGameRounds').doc(round.id).update({
+                totalPlayers: (round.totalPlayers || 0) + 1,
+                totalStakes: (round.totalStakes || 0) + betAmount
+            });
+            
+            // Record transaction
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'lub_game_bet',
+                amount: betAmount,
+                roundId: round.id,
+                date: new Date().toISOString()
+            });
+            
+            currentUser.balance = balance - betAmount;
+            
+            showAlert('lubGameAlert', `Bet placed successfully! Your bet: ${betAmount.toLocaleString()} UGX`, 'success');
+            
+            document.getElementById('lubBetAmount').value = '';
+            updateLUBGameSection();
+            updateUserStats();
+            
+        } catch (error) {
+            console.error('Error placing LUB bet:', error);
+            showAlert('lubGameAlert', 'Failed to place bet: ' + error.message, 'error');
+        }
+    }
+
+    // Process round results
+    async function processLUBRoundResults(roundId) {
+        try {
+            console.log('Processing LUB round results:', roundId);
+            
+            // Update status to calculating
+            await db.collection('lubGameRounds').doc(roundId).update({
+                status: 'calculating'
+            });
+            
+            // Get all bets for this round
+            const betsSnapshot = await db.collection('lubGameBets')
+                .where('roundId', '==', roundId)
+                .get();
+            
+            if (betsSnapshot.empty) {
+                // No bets - mark round as completed
+                await db.collection('lubGameRounds').doc(roundId).update({
+                    status: 'completed',
+                    completedAt: new Date().toISOString()
+                });
+                return;
+            }
+            
+            // Calculate total stakes for admin earnings
+            let totalLosses = 0;
+            betsSnapshot.docs.forEach(doc => {
+                totalLosses += doc.data().betAmount;
+            });
+            
+            // Group bets by amount
+            const betsByAmount = {};
+            betsSnapshot.docs.forEach(doc => {
+                const bet = doc.data();
+                if (!betsByAmount[bet.betAmount]) {
+                    betsByAmount[bet.betAmount] = [];
+                }
+                betsByAmount[bet.betAmount].push({ id: doc.id, ...bet });
+            });
+            
+            // Find unique bets
+            const uniqueBets = [];
+            for (const [amount, bets] of Object.entries(betsByAmount)) {
+                if (bets.length === 1) {
+                    uniqueBets.push({ amount: parseInt(amount), bet: bets[0] });
+                }
+            }
+            
+            if (uniqueBets.length === 0) {
+                // No unique bets - everyone loses, admin gets everything
+                await db.collection('lubGameRounds').doc(roundId).update({
+                    status: 'completed',
+                    completedAt: new Date().toISOString(),
+                    winner: null,
+                    winningAmount: null,
+                    result: 'no_winner',
+                    adminEarnings: totalLosses
+                });
+                
+                // Mark all bets as lost
+                const updatePromises = betsSnapshot.docs.map(doc => 
+                    db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+                );
+                await Promise.all(updatePromises);
+                
+                // Record admin earnings transaction
+                await db.collection('transactions').add({
+                    userId: 'admin',
+                    userName: 'Administrator',
+                    type: 'lub_game_admin_earnings',
+                    amount: totalLosses,
+                    description: `LUB Game Round #${roundId.slice(-6)} - All bets lost (No unique bets)`,
+                    roundId: roundId,
+                    date: new Date().toISOString()
+                });
+                
+                console.log('No unique bets. Admin earned:', totalLosses);
+                return;
+            }
+            
+            // Find lowest unique bet
+            uniqueBets.sort((a, b) => a.amount - b.amount);
+            const winningBet = uniqueBets[0];
+            const prize = winningBet.amount * 10;
+            
+            // Calculate admin earnings (all losing bets)
+            const adminEarnings = totalLosses - winningBet.amount;
+            
+            // Update winner's balance
+            const winnerDoc = await db.collection('users').doc(winningBet.bet.userId).get();
+            const winnerBalance = winnerDoc.data().balance || 0;
+            
+            await db.collection('users').doc(winningBet.bet.userId).update({
+                balance: winnerBalance + prize
+            });
+            
+            // Update winning bet
+            await db.collection('lubGameBets').doc(winningBet.bet.id).update({
+                status: 'won',
+                prize: prize
+            });
+            
+            // Mark other bets as lost
+            const lostBets = betsSnapshot.docs.filter(doc => doc.id !== winningBet.bet.id);
+            const lostUpdatePromises = lostBets.map(doc => 
+                db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+            );
+            await Promise.all(lostUpdatePromises);
+            
+            // Update round
+            await db.collection('lubGameRounds').doc(roundId).update({
+                status: 'completed',
+                completedAt: new Date().toISOString(),
+                winner: winningBet.bet.userName,
+                winnerId: winningBet.bet.userId,
+                winningAmount: winningBet.amount,
+                prize: prize,
+                result: 'winner_found',
+                adminEarnings: adminEarnings
+            });
+            
+            // Record winner transaction
+            await db.collection('transactions').add({
+                userId: winningBet.bet.userId,
+                userName: winningBet.bet.userName,
+                type: 'lub_game_win',
+                amount: prize,
+                betAmount: winningBet.amount,
+                roundId: roundId,
+                date: new Date().toISOString()
+            });
+            
+            // Record admin earnings transaction
+            await db.collection('transactions').add({
+                userId: 'admin',
+                userName: 'Administrator',
+                type: 'lub_game_admin_earnings',
+                amount: adminEarnings,
+                description: `LUB Game Round #${roundId.slice(-6)} - Losing bets (Winner: ${winningBet.bet.userName})`,
+                roundId: roundId,
+                winnerBet: winningBet.amount,
+                totalPlayers: betsSnapshot.size,
+                date: new Date().toISOString()
+            });
+            
+            console.log('LUB round results processed.');
+            console.log('Winner:', winningBet.bet.userName, '- Prize:', prize);
+            console.log('Admin earned from losing bets:', adminEarnings);
+            
+        } catch (error) {
+            console.error('Error processing LUB round results:', error);
+        }
+    }
+
+    // Update LUB game section
+    async function updateLUBGameSection() {
+        try {
+            const round = await getCurrentLUBRound();
+            
+            if (!round) {
+                document.getElementById('gameStatus').innerHTML = '<p class="text-center" style="color: var(--error);">No active round</p>';
+                return;
+            }
+            
+            currentLUBRound = round;
+            
+            // Update wallet balance
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const balance = userDoc.data().balance || 0;
+            document.getElementById('lubWalletBalance').textContent = balance.toLocaleString();
+            
+            // Calculate time remaining
+            const now = new Date();
+            const endTime = new Date(round.endTime);
+            const timeRemaining = endTime - now;
+            
+            if (timeRemaining > 0) {
+                // Round is active
+                const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                
+                document.getElementById('gameStatus').innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
+                            <h2 style="margin: 0 0 0.5rem 0; color: white;">⏰ Time Remaining</h2>
+                            <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;">${hours}h ${minutes}m ${seconds}s</div>
+                            <p style="margin: 0; opacity: 0.9;">Round ends at ${endTime.toLocaleTimeString()}</p>
+                        </div>
+                        <p style="color: var(--gray);">Round #${round.roundNumber}</p>
+                    </div>
+                `;
+                
+                // Check if user has bet in this round
+                const userBetQuery = await db.collection('lubGameBets')
+                    .where('roundId', '==', round.id)
+                    .where('userId', '==', currentUser.id)
+                    .get();
+                
+                if (userBetQuery.empty) {
+                    // User hasn't bet - show bet form
+                    document.getElementById('placeBetSection').classList.remove('hidden');
+                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active bet in current round</p>';
+                } else {
+                    // User has bet - hide form and show bet
+                    document.getElementById('placeBetSection').classList.add('hidden');
+                    const userBet = userBetQuery.docs[0].data();
+                    
+                    document.getElementById('myActiveLUBBet').innerHTML = `
+                        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); border: 2px solid var(--success); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: var(--success);">✅ Bet Placed</h4>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin: 1rem 0;">${userBet.betAmount.toLocaleString()} UGX</div>
+                            <p style="margin: 0; color: var(--gray); font-size: 0.875rem;">Potential win: ${(userBet.betAmount * 10).toLocaleString()} UGX</p>
+                            <p style="margin: 0.5rem 0 0 0; color: var(--gray); font-size: 0.875rem;">🔒 Locked until results</p>
+                        </div>
+                    `;
+                }
+                
+                // Show participants
+                document.getElementById('currentParticipantsSection').classList.remove('hidden');
+                document.getElementById('totalPlayers').textContent = round.totalPlayers || 0;
+                document.getElementById('totalStakes').textContent = (round.totalStakes || 0).toLocaleString();
+                
+            } else {
+                // Round ended - calculating
+                document.getElementById('gameStatus').innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                        <h3 style="color: var(--primary);">🎲 Calculating Results...</h3>
+                        <p style="color: var(--gray);">Please wait while we determine the winner</p>
+                    </div>
+                `;
+                document.getElementById('placeBetSection').classList.add('hidden');
+                document.getElementById('currentParticipantsSection').classList.add('hidden');
+            }
+            
+            // Load history
+            await loadLUBGameHistory();
+            
+        } catch (error) {
+            console.error('Error updating LUB game section:', error);
+        }
+    }
+
+    // Load game history
+    async function loadLUBGameHistory() {
+        try {
+            const historySnapshot = await db.collection('lubGameRounds')
+                .where('status', '==', 'completed')
+                .orderBy('completedAt', 'desc')
+                .limit(10)
+                .get();
+            
+            if (historySnapshot.empty) {
+                document.getElementById('lubHistoryBody').innerHTML = '<tr><td colspan="6" class="text-center">No history yet</td></tr>';
+                return;
+            }
+            
+            const historyHTML = historySnapshot.docs.map(doc => {
+                const round = doc.data();
+                return `
+                    <tr>
+                        <td>#${round.roundNumber.toString().slice(-6)}</td>
+                        <td>${round.winner || 'No winner'}</td>
+                        <td>${round.winningAmount ? round.winningAmount.toLocaleString() + ' UGX' : '-'}</td>
+                        <td>${round.prize ? round.prize.toLocaleString() + ' UGX' : '-'}</td>
+                        <td>${round.totalPlayers || 0}</td>
+                        <td>${new Date(round.completedAt).toLocaleDateString()}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('lubHistoryBody').innerHTML = historyHTML;
+            
+        } catch (error) {
+            console.error('Error loading LUB game history:', error);
+        }
+    }
+
+    // Start auto-update for LUB game
+    function startLUBGameAutoUpdate() {
+        if (lubUpdateInterval) {
+            clearInterval(lubUpdateInterval);
+        }
+        
+        lubUpdateInterval = setInterval(() => {
+            if (!document.getElementById('lubGameSection').classList.contains('hidden')) {
+                updateLUBGameSection();
+            }
+        }, 1000); // Update every second for countdown
+    }
+
+    // Stop auto-update
+    function stopLUBGameAutoUpdate() {
+        if (lubUpdateInterval) {
+            clearInterval(lubUpdateInterval);
+            lubUpdateInterval = null;
+        }
+    }
+
     // Initialize app
     async function init() {
         document.getElementById('loadingScreen').classList.remove('hidden');
@@ -2616,42 +3397,62 @@
             document.getElementById('firebaseSetup').classList.remove('hidden');
             return;
         }
-    
-        // Setup authentication state listener FIRST
+
+        // Setup authentication state listener
         setupAuthStateListener();
-    
+
         try {
-
-    
-            document.getElementById('loadingScreen').classList.add('hidden');
-
-            // Check for stored referral code
-            const storedRefCode = sessionStorage.getItem('pendingReferralCode');
-            console.log('Init: Checking for stored referral code:', storedRefCode);
+            // STEP 1: Check URL for referral code FIRST (before anything else)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlRefCode = urlParams.get('ref');
             
-            if (storedRefCode) {
-                console.log('Init: Found stored referral code, validating...');
-                // Validate and use the stored code
-                validateAndShowRegistration(storedRefCode);
-            } else {
-                // No referral code - check if mobile and show register page first
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (urlRefCode) {
+                console.log('Referral code detected in URL:', urlRefCode);
                 
-                if (isMobile) {
-                    console.log('No referral code found, but mobile detected - showing register page first...');
-                    showRegisterWithReferral(); // This will show error message about no referral code
-                } else {
-                    console.log('No referral code found, showing login...');
-                    showLogin();
-                }
+                // Store it immediately
+                storeReferralCode(urlRefCode);
+                
+                // Clean URL to prevent reprocessing
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+                
+                // Wait for Firebase to be ready
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Show landing page with code
+                await showReferralLanding(urlRefCode);
+                return; // Stop here - don't proceed to normal flow
             }
-        }
-        catch (error) {
+            
+            // STEP 2: Check for stored referral code (user clicked link earlier)
+            const storedRefCode = getStoredReferralCode();
+            if (storedRefCode) {
+                console.log('Found stored referral code:', storedRefCode);
+                await showReferralLanding(storedRefCode);
+                return;
+            }
+            
+            // STEP 3: No referral code - normal flow
+            document.getElementById('loadingScreen').classList.add('hidden');
+            
+            // If user is already logged in, auth listener will handle it
+            // Otherwise show login
+            if (!auth.currentUser) {
+                showLogin();
+            }
+            
+            // Hide bottom nav on initial load
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) {
+                bottomNav.style.display = 'none';
+            }
+            
+        } catch (error) {
             console.error("Initialization error:", error);
             document.getElementById('loadingScreen').innerHTML = `
                 <div class="spinner"></div>
                 <h2>Error</h2>
-                <p>Failed to connect to database: ${error.message}</p>
+                <p>Failed to initialize: ${error.message}</p>
             `;
         }
     }
@@ -2876,13 +3677,20 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            // CRITICAL: Verify invite code was pre-filled (not manually entered)
-            if (!inviteCode) {
-                showAlert('registerAlert', 'Registration is by invitation only. Please use a referral link.', 'error');
+
+            // Verify code matches stored code or validate fresh
+            const storedCode = getStoredReferralCode();
+            if (storedCode && inviteCode !== storedCode) {
+                showAlert('registerAlert', 'Referral code mismatch. Please use the provided code.', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Register';
-                setTimeout(() => showLogin(), 2000);
+                return;
+            }
+
+            if (!inviteCode) {
+                showAlert('registerAlert', 'Referral code is required. Please use a valid invitation link.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Register';
                 return;
             }
             
@@ -3007,6 +3815,10 @@
             await processReferralRewards(referrerId, userId, fullName);
 
             showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
+            
+            // Clear referral code after successful registration
+            clearStoredReferralCode();
+            
             setTimeout(() => {
                 currentUser = newUser;
                 showUserDashboard();
@@ -3116,18 +3928,31 @@
         }
         
         currentUser = null;
+        
+        // Hide all dashboards and sections
         document.getElementById('userDashboard').classList.add('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
-        showLogin();
-
-        // Disable entire bottom navigation when logged out
+        
+        // Hide ALL user sections
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
+            const el = document.getElementById(section + 'Section');
+            if (el) el.classList.add('hidden');
+        });
+        
+        // Disable and hide bottom navigation completely
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = 'none';
+        }
+        
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
             item.classList.remove('active');
-            item.classList.add('disabled');
             item.style.pointerEvents = 'none';
             item.style.opacity = '0.5';
             item.style.cursor = 'not-allowed';
         });
+        
+        showLogin();
     }
 
     // Streak system
@@ -3253,46 +4078,45 @@
     }
 
     function showRegisterWithReferral() {
-        // This function allows manual access to registration and checks for stored referral code
-        console.log('showRegisterWithReferral() called');
-        allowManualRegistration = true; // Allow manual access to registration
+        const storedCode = getStoredReferralCode();
         
-        // Check for stored referral code first
-        const storedRefCode = sessionStorage.getItem('pendingReferralCode');
-        console.log('Stored referral code:', storedRefCode);
-        
-        if (storedRefCode) {
-            // If there's a stored referral code, validate and use it
-            console.log('Found stored referral code:', storedRefCode);
-            validateAndShowRegistration(storedRefCode);
-            return;
-        }
-        
-        // No stored referral code - show helpful message
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-            showAlert('registerAlert', 'Registration is by invitation only. Please ask an existing member for their referral link, or go back to login if you already have an account.', 'info');
+        if (storedCode) {
+            // Use stored code
+            document.getElementById('inviteCode').value = storedCode;
+            const inviteField = document.getElementById('inviteCode');
+            inviteField.style.borderColor = 'var(--success)';
+            inviteField.style.background = '#f0fdf4';
+            inviteField.readOnly = true;
         } else {
-            showAlert('registerAlert', 'No referral code found. Please use a referral link from an existing member.', 'error');
+            // No stored code
+            showAlert('registerAlert', 'No referral code found. Please use a valid invitation link from an existing member.', 'error');
             setTimeout(() => showLogin(), 3000);
             return;
         }
         
-        // Show registration page
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('registerPage').classList.remove('hidden');
-        
-        // Clear the flag after 30 seconds to prevent indefinite access
-        setTimeout(() => {
-            allowManualRegistration = false;
-            console.log('Manual registration flag cleared after timeout');
-        }, 30000);
     }
 
     function showLogin() {
+        // Hide ALL sections and dashboards
         document.getElementById('registerPage').classList.add('hidden');
         document.getElementById('loginPage').classList.remove('hidden');
+        document.getElementById('userDashboard').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('referralLandingPage').classList.add('hidden');
+        
+        // Hide all user sections
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
+            const el = document.getElementById(section + 'Section');
+            if (el) el.classList.add('hidden');
+        });
+        
+        // Hide bottom navigation
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = 'none';
+        }
         
         // Clear any alerts
         document.getElementById('loginAlert').innerHTML = '';
@@ -3305,29 +4129,34 @@
     function showUserDashboard() {
         document.getElementById('registerPage').classList.add('hidden');
         document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('referralLandingPage').classList.add('hidden');
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
+        
+        // Show and enable bottom navigation for logged-in users
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = 'block';
+        }
+        
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            item.style.pointerEvents = '';
+            item.style.opacity = '';
+            item.style.cursor = '';
+        });
         
         // Show home section immediately
         showSection('home');
         
-        // Ensure home section is shown after async operations
-        setTimeout(() => {
-            showSection('home');
-        }, 100);
-        
+        // Rest of your existing code...
         updateUserStats();
         updateFeatureAccess();
         
-        // Ensure profile section is properly initialized
         if (currentUser) {
             updateProfileSection();
         }
         
-        // Ensure all sections are properly hidden initially
         ensureAllSectionsHidden();
-        
-        // Check for referral links when user dashboard is shown
         handleReferralLink();
     }
 
@@ -3625,15 +4454,22 @@
     }
 
     function showSection(section) {
-        // Guard: block section switching for unactivated non-admin users; allow only 'home'
+        // Guard: Only allow section switching if user is logged in
+        if (!currentUser) {
+            console.warn('Cannot switch sections - user not logged in');
+            return;
+        }
+        
+        // Guard: block section switching for unactivated non-admin users
         if (currentUser && !currentUser.isAdmin && currentUser.isActivated === false) {
             const allowed = ['home'];
             if (!allowed.includes(section)) {
-                // Keep user on home section
                 section = 'home';
             }
         }
-        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(s => {
+        
+        // Hide all sections
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake', 'lubGame'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
                 el.classList.add('hidden');
@@ -3644,7 +4480,7 @@
         if (sectionEl) {
             sectionEl.classList.remove('hidden');
         }
-    
+
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
             item.classList.remove('active');
         });
@@ -3652,10 +4488,11 @@
         if (activeNavItem) {
             activeNavItem.classList.add('active');
         }
-    
+
         // Update feature access when switching sections
         updateFeatureAccess();
 
+        // Section-specific updates
         if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
         else if (section === 'stake') {
@@ -3666,14 +4503,12 @@
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') {
             updateTasksSection();
-            // Ensure dashboard task earnings reflects latest total
             const taskEarningsEl = document.getElementById('taskEarnings');
             if (taskEarningsEl && currentUser) {
                 taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
             }
         }
         else if (section === 'profile') {
-            // Refresh user data before updating profile section
             if (currentUser && currentUser.id) {
                 refreshUserData().then(() => {
                     updateProfileSection();
@@ -3681,6 +4516,12 @@
             } else {
                 updateProfileSection();
             }
+        }
+        else if (section === 'lubGame') {
+            updateLUBGameSection();
+            startLUBGameAutoUpdate();
+        } else {
+            stopLUBGameAutoUpdate();
         }
     }
 
@@ -3757,19 +4598,20 @@
     }
 
     function showAdminSection(section) {
-        ['Stats', 'Users', 'Tasks', 'Transactions', 'Deposits', 'Withdrawals', 'Candidates'].forEach(s => {
+        ['Stats', 'Users', 'Tasks', 'Transactions', 'Deposits', 'Withdrawals', 'Candidates', 'LUBGame'].forEach(s => {
             const el = document.getElementById('admin' + s + 'Section');
             if (el) el.classList.add('hidden');
         });
         const sectionEl = document.getElementById('admin' + section.charAt(0).toUpperCase() + section.slice(1) + 'Section');
         if (sectionEl) sectionEl.classList.remove('hidden');
-    
+
         if (section === 'users') updateAdminUsers();
         if (section === 'tasks') updateAdminTasks();
         if (section === 'transactions') updateAdminTransactions();
         if (section === 'deposits') updateAdminDeposits();
         if (section === 'withdrawals') updateAdminWithdrawals();
         if (section === 'candidates') updateAdminCandidates();
+        if (section === 'lubGame') updateAdminLUBGame();
     }
 
     // User stats
@@ -6336,6 +7178,206 @@
         }
     }
 
+    // Admin LUB Game Functions
+    async function updateAdminLUBGame() {
+        try {
+            // Get current round
+            const currentRound = await getCurrentLUBRound();
+            
+            if (currentRound) {
+                const now = new Date();
+                const endTime = new Date(currentRound.endTime);
+                const timeRemaining = endTime - now;
+                
+                let statusHTML = '';
+                if (timeRemaining > 0) {
+                    const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    statusHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <strong>Status:</strong> 
+                                <span style="color: var(--success);">Active</span>
+                            </div>
+                            <div>
+                                <strong>Time Remaining:</strong> 
+                                <span style="color: var(--primary);">${hours}h ${minutes}m</span>
+                            </div>
+                            <div>
+                                <strong>Total Players:</strong> ${currentRound.totalPlayers || 0}
+                            </div>
+                            <div>
+                                <strong>Total Stakes:</strong> ${(currentRound.totalStakes || 0).toLocaleString()} UGX
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    statusHTML = `
+                        <div style="text-align: center; color: var(--warning);">
+                            <strong>⏰ Round Ended - Processing results...</strong>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('adminCurrentLUBRound').innerHTML = statusHTML;
+                document.getElementById('adminLUBActivePlayers').textContent = currentRound.totalPlayers || 0;
+                
+                // Load current round bets
+                const betsSnapshot = await db.collection('lubGameBets')
+                    .where('roundId', '==', currentRound.id)
+                    .get();
+                
+                if (betsSnapshot.empty) {
+                    document.getElementById('adminLUBCurrentBetsBody').innerHTML = '<tr><td colspan="5" class="text-center">No bets yet</td></tr>';
+                } else {
+                    const betsHTML = betsSnapshot.docs.map(doc => {
+                        const bet = doc.data();
+                        return `
+                            <tr>
+                                <td>${bet.userName}<br><small style="color: var(--gray);">${bet.userEmail}</small></td>
+                                <td>${bet.betAmount.toLocaleString()} UGX</td>
+                                <td>${new Date(bet.placedAt).toLocaleString()}</td>
+                                <td><span class="status-badge status-pending">${bet.status.toUpperCase()}</span></td>
+                                <td>
+                                    <button class="btn" style="background: var(--error); padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="cancelLUBBet('${doc.id}', '${bet.userId}', ${bet.betAmount})">
+                                        Cancel & Refund
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                    
+                    document.getElementById('adminLUBCurrentBetsBody').innerHTML = betsHTML;
+                }
+            }
+            
+            // Calculate stats
+            const allRoundsSnapshot = await db.collection('lubGameRounds').get();
+            const completedRounds = allRoundsSnapshot.docs.filter(doc => doc.data().status === 'completed');
+            
+            let totalAdminEarnings = 0;
+            let totalPrizesPaid = 0;
+            
+            completedRounds.forEach(doc => {
+                const round = doc.data();
+                totalAdminEarnings += round.adminEarnings || 0;
+                totalPrizesPaid += round.prize || 0;
+            });
+            
+            document.getElementById('adminLUBTotalRounds').textContent = completedRounds.length;
+            document.getElementById('adminLUBEarnings').textContent = totalAdminEarnings.toLocaleString();
+            document.getElementById('adminLUBPrizesPaid').textContent = totalPrizesPaid.toLocaleString();
+            
+            // Load history
+            const historySnapshot = await db.collection('lubGameRounds')
+                .where('status', '==', 'completed')
+                .orderBy('completedAt', 'desc')
+                .limit(20)
+                .get();
+            
+            if (historySnapshot.empty) {
+                document.getElementById('adminLUBHistoryBody').innerHTML = '<tr><td colspan="7" class="text-center">No completed rounds yet</td></tr>';
+            } else {
+                const historyHTML = historySnapshot.docs.map(doc => {
+                    const round = doc.data();
+                    return `
+                        <tr>
+                            <td>#${round.roundNumber.toString().slice(-6)}</td>
+                            <td>${round.totalPlayers || 0}</td>
+                            <td>${(round.totalStakes || 0).toLocaleString()} UGX</td>
+                            <td>${round.winner || 'No winner'}<br>
+                                ${round.winningAmount ? `<small style="color: var(--gray);">Bet: ${round.winningAmount.toLocaleString()} UGX</small>` : ''}
+                            </td>
+                            <td style="color: var(--error); font-weight: 600;">${(round.prize || 0).toLocaleString()} UGX</td>
+                            <td style="color: var(--success); font-weight: 600;">${(round.adminEarnings || 0).toLocaleString()} UGX</td>
+                            <td>${new Date(round.completedAt).toLocaleString()}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                document.getElementById('adminLUBHistoryBody').innerHTML = historyHTML;
+            }
+            
+        } catch (error) {
+            console.error('Error updating admin LUB game:', error);
+        }
+    }
+
+    // Manual process current round
+    async function manualProcessLUBRound() {
+        if (!confirm('Are you sure you want to process the current round now? This will calculate winners and end the round immediately.')) {
+            return;
+        }
+        
+        try {
+            const currentRound = await getCurrentLUBRound();
+            if (currentRound && currentRound.status === 'active') {
+                await processLUBRoundResults(currentRound.id);
+                alert('Round processed successfully!');
+                updateAdminLUBGame();
+            } else {
+                alert('No active round to process');
+            }
+        } catch (error) {
+            console.error('Error manually processing round:', error);
+            alert('Failed to process round: ' + error.message);
+        }
+    }
+
+    // Manual start new round
+    async function manualStartNewLUBRound() {
+        if (!confirm('Are you sure you want to start a new round? This should only be done if there is no active round.')) {
+            return;
+        }
+        
+        try {
+            await startNewLUBRound();
+            alert('New round started successfully!');
+            updateAdminLUBGame();
+        } catch (error) {
+            console.error('Error starting new round:', error);
+            alert('Failed to start new round: ' + error.message);
+        }
+    }
+
+    // Cancel and refund a bet
+    async function cancelLUBBet(betId, userId, amount) {
+        if (!confirm(`Refund ${amount.toLocaleString()} UGX to this user?`)) {
+            return;
+        }
+        
+        try {
+            // Refund to user
+            const userDoc = await db.collection('users').doc(userId).get();
+            const currentBalance = userDoc.data().balance || 0;
+            
+            await db.collection('users').doc(userId).update({
+                balance: currentBalance + amount
+            });
+            
+            // Delete bet
+            await db.collection('lubGameBets').doc(betId).delete();
+            
+            // Update round stats
+            const bet = (await db.collection('lubGameBets').doc(betId).get()).data();
+            const roundDoc = await db.collection('lubGameRounds').doc(bet.roundId).get();
+            const round = roundDoc.data();
+            
+            await db.collection('lubGameRounds').doc(bet.roundId).update({
+                totalPlayers: Math.max(0, (round.totalPlayers || 1) - 1),
+                totalStakes: Math.max(0, (round.totalStakes || amount) - amount)
+            });
+            
+            alert('Bet cancelled and refunded!');
+            updateAdminLUBGame();
+            
+        } catch (error) {
+            console.error('Error cancelling bet:', error);
+            alert('Failed to cancel bet: ' + error.message);
+        }
+    }
+
     async function updateAdminUsers() {
         try {
             const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
@@ -7072,3 +8114,4 @@
 </script>
 </body>
 </html>
+
