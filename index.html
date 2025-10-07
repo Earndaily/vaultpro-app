@@ -1560,8 +1560,8 @@
                 <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--success);">
                     <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
-                        <li><strong>4000 SHS</strong> for each direct referral</li>
-                        <li><strong>2000 SHS</strong> when your referral refers someone else</li>
+                        <li><strong>4000 UGX</strong> for each direct referral</li>
+                        <li><strong>2000 UGX</strong> when your referral refers someone else</li>
                     </ul>
                 </div>
                 
@@ -3918,7 +3918,7 @@
         try {
             console.log('Processing referral rewards for:', referrerId, 'new user:', newUserId);
             
-            // 1. Give 4000 SHS to direct referrer
+            // 1. Give 4000 UGX to direct referrer
             const directReferrerDoc = await db.collection('users').doc(referrerId).get();
             if (directReferrerDoc.exists) {
                 const directReferrerData = directReferrerDoc.data();
@@ -3947,7 +3947,7 @@
                     date: new Date().toISOString()
                 });
                 
-                console.log('Direct referral reward: 4000 SHS given to', directReferrerData.fullName);
+                console.log('Direct referral reward: 4000 UGX given to', directReferrerData.fullName);
             }
             
             // 2. Check for second-level referrer (the person who referred the direct referrer)
@@ -3975,7 +3975,7 @@
                         date: new Date().toISOString()
                     });
                     
-                    console.log('Second-level referral reward: 2000 SHS given to', secondLevelReferrerData.fullName);
+                    console.log('Second-level referral reward: 2000 UGX given to', secondLevelReferrerData.fullName);
                 }
             }
             
@@ -7672,17 +7672,18 @@
             const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
             const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
 
-            const depositEarnings = deposits.reduce((sum, t) => sum + t.adminFee, 0);
-            const withdrawEarnings = withdrawals.reduce((sum, t) => sum + t.adminFee, 0);
-            const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
+            const depositEarnings = deposits.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+            const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+            const referralEarnings = referrals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
 
             // Include activation fee admin earnings (16,000 UGX per activation)
             const activationFees = transactions.filter(t => t.type === 'activation_fee');
             const activationAdminEarnings = activationFees.length * 16000;
             
-            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings + activationAdminEarnings;
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            
+            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings + activationAdminEarnings + lubGameEarnings;
             
             // Update the display
             const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
