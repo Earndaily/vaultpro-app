@@ -6216,11 +6216,8 @@
 
             let pictureUrl = null;
             if (pictureFile) {
-                // Upload the image file to Firebase Storage
-                const storageRef = firebase.storage().ref();
-                const imageRef = storageRef.child(`candidate-pictures/${Date.now()}-${pictureFile.name}`);
-                const uploadTask = await imageRef.put(pictureFile);
-                pictureUrl = await uploadTask.ref.getDownloadURL();
+                // Use local file path instead of uploading to storage
+                pictureUrl = `./images/candidates/${pictureFile.name}`;
             }
 
             await db.collection('electionCandidates').add({
@@ -6413,11 +6410,8 @@
 
             let pictureUrl = null;
             if (pictureFile) {
-                // Upload the new image file to Firebase Storage
-                const storageRef = firebase.storage().ref();
-                const imageRef = storageRef.child(`candidate-pictures/${Date.now()}-${pictureFile.name}`);
-                const uploadTask = await imageRef.put(pictureFile);
-                pictureUrl = await uploadTask.ref.getDownloadURL();
+                // Use local file path instead of uploading to storage
+                pictureUrl = `./images/candidates/${pictureFile.name}`;
             } else {
                 // Keep existing picture if no new file is uploaded
                 const existingCandidate = await db.collection('electionCandidates').doc(candidateId).get();
