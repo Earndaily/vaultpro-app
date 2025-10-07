@@ -1295,7 +1295,7 @@
                         <div class="stat-label">👥 Referrals</div>
                         <div class="stat-value" id="totalReferrals">0</div>
                     </div>
-                                    <div class="stat-card">
+                                    <div class="stat-card compact">
                          <div class="stat-label">LUB Game Earnings</div>
                          <div class="stat-value" id="adminLUBGameEarnings">0</div>
                          <div class="stat-unit">UGX</div>
@@ -1325,6 +1325,11 @@
                         <div class="stat-label">🎯 Tasks</div>
                         <div class="stat-value" id="taskEarnings">0</div>
                         <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card compact" id="userLevelCard" style="background: linear-gradient(135deg, #6b7280, #6b7280dd);">
+                        <div class="stat-label" style="color: white;">Your Level</div>
+                        <div class="stat-value" style="font-size: 2rem; color: white;">🌱</div>
+                        <div class="stat-unit" style="color: white; font-weight: 600;">Beginner</div>
                     </div>
                 </div>
             </div>
@@ -1365,6 +1370,36 @@
                 </div>
             </div>
 
+            <!-- Top Referrers Leaderboard -->
+            <div class="card" id="leaderboardCard">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('leaderboardSection')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🏆 Top Referrers This Week
+                        </h3>
+                    </div>
+                    <div id="leaderboardSection" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #92400e; margin-bottom: 0.5rem;">
+                                    💰 Weekly Prize: 50,000 UGX
+                                </div>
+                                <div style="font-size: 0.875rem; color: #92400e;">
+                                    Top referrer wins every Sunday at midnight!
+                                </div>
+                                <div id="weekResetTimer" style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem;">
+                                    Resets in: <span id="timeUntilReset">Loading...</span>
+                                </div>
+                            </div>
+                            
+                            <div id="leaderboardList">
+                                <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading leaderboard...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
         </div>
 
@@ -3046,8 +3081,10 @@
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
             const balance = userData.balance || 0;
+            const activationFeePaid = userData.activationFeePaid || 0;
+            const usableBalance = balance - activationFeePaid;
             
-            if (betAmount > balance) {
+            if (betAmount > usableBalance) {
                 showAlert('lubGameAlert', 'Insufficient balance', 'error');
                 return;
             }
@@ -3196,8 +3233,14 @@
                 return;
             }
             
-            // Find lowest unique bet
-            uniqueBets.sort((a, b) => a.amount - b.amount);
+            // Find lowest unique bet - if multiple people have same lowest amount, first bet wins
+            uniqueBets.sort((a, b) => {
+                if (a.amount === b.amount) {
+                    // If amounts are equal, sort by timestamp (earlier bet wins)
+                    return new Date(a.bet.placedAt) - new Date(b.bet.placedAt);
+                }
+                return a.amount - b.amount;
+            });
             const winningBet = uniqueBets[0];
             const prize = winningBet.amount * 10;
             
@@ -3414,6 +3457,181 @@
             clearInterval(lubUpdateInterval);
             lubUpdateInterval = null;
         }
+    }
+
+    // Leaderboard Functions
+    async function updateLeaderboard() {
+        try {
+            // Get current week's start (Monday)
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - daysUntilMonday);
+            weekStart.setHours(0, 0, 0, 0);
+            
+            // Get all users (exclude admin)
+            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+            
+            // Calculate weekly referrals for each user
+            const leaderboardData = await Promise.all(usersSnapshot.docs.map(async (doc) => {
+                const userData = doc.data();
+                const userId = doc.id;
+                
+                // Count referrals made this week
+                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
+                const weeklyReferrals = referralsSnapshot.docs.filter(refDoc => {
+                    const refData = refDoc.data();
+                    const refDate = new Date(refData.date);
+                    return refDate >= weekStart;
+                }).length;
+                
+                return {
+                    userId: userId,
+                    userName: userData.fullName,
+                    weeklyReferrals: weeklyReferrals,
+                    totalReferrals: referralsSnapshot.size
+                };
+            }));
+            
+            // Sort by weekly referrals
+            leaderboardData.sort((a, b) => b.weeklyReferrals - a.weeklyReferrals);
+            
+            // Take top 10
+            const top10 = leaderboardData.slice(0, 10);
+            
+            // Display leaderboard
+            const leaderboardList = document.getElementById('leaderboardList');
+            if (top10.length === 0 || top10[0].weeklyReferrals === 0) {
+                leaderboardList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No referrals this week yet. Be the first!</p>';
+            } else {
+                const trophies = ['🥇', '🥈', '🥉'];
+                leaderboardList.innerHTML = top10.map((user, index) => {
+                    const trophy = index < 3 ? trophies[index] : `${index + 1}.`;
+                    const isWinner = index === 0;
+                    
+                    return `
+                        <div style="background: ${isWinner ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f9fafb'}; 
+                                    border: 2px solid ${isWinner ? '#f59e0b' : '#e5e7eb'}; 
+                                    border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; 
+                                    display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">${trophy}</div>
+                                <div>
+                                    <div style="font-weight: 700; color: var(--dark);">${user.userName}</div>
+                                    <div style="font-size: 0.875rem; color: var(--gray);">Total: ${user.totalReferrals} referrals</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: ${isWinner ? '#f59e0b' : 'var(--primary)'};">
+                                    ${user.weeklyReferrals}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray);">this week</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Update countdown timer
+            updateWeekResetTimer();
+            
+        } catch (error) {
+            console.error('Error updating leaderboard:', error);
+        }
+    }
+
+    function updateWeekResetTimer() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        
+        // Calculate days until Sunday
+        const daysUntilSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
+        const nextSunday = new Date(now);
+        nextSunday.setDate(now.getDate() + daysUntilSunday);
+        nextSunday.setHours(23, 59, 59, 999);
+        
+        const timeRemaining = nextSunday - now;
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        
+        const timerEl = document.getElementById('timeUntilReset');
+        if (timerEl) {
+            timerEl.textContent = `${days}d ${hours}h ${minutes}m`;
+        }
+    }
+
+    // Award weekly winner (admin function)
+    async function awardWeeklyWinner() {
+        try {
+            // Get current week's start
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - daysUntilMonday);
+            weekStart.setHours(0, 0, 0, 0);
+            
+            // Find top referrer
+            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+            
+            let topReferrer = null;
+            let maxReferrals = 0;
+            
+            for (const doc of usersSnapshot.docs) {
+                const userData = doc.data();
+                const userId = doc.id;
+                
+                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
+                const weeklyReferrals = referralsSnapshot.docs.filter(refDoc => {
+                    const refData = refDoc.data();
+                    const refDate = new Date(refData.date);
+                    return refDate >= weekStart;
+                }).length;
+                
+                if (weeklyReferrals > maxReferrals) {
+                    maxReferrals = weeklyReferrals;
+                    topReferrer = { userId, userData, weeklyReferrals };
+                }
+            }
+            
+            if (topReferrer && topReferrer.weeklyReferrals > 0) {
+                // Award 50,000 UGX
+                const currentBalance = topReferrer.userData.balance || 0;
+                await db.collection('users').doc(topReferrer.userId).update({
+                    balance: currentBalance + 50000
+                });
+                
+                // Record transaction
+                await db.collection('transactions').add({
+                    userId: topReferrer.userId,
+                    userName: topReferrer.userData.fullName,
+                    type: 'weekly_referral_prize',
+                    amount: 50000,
+                    description: `Weekly Top Referrer Prize (${topReferrer.weeklyReferrals} referrals)`,
+                    date: new Date().toISOString()
+                });
+                
+                console.log(`Weekly winner: ${topReferrer.userData.fullName} with ${topReferrer.weeklyReferrals} referrals`);
+                return topReferrer;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error awarding weekly winner:', error);
+            return null;
+        }
+    }
+
+    // Check and award winner every Sunday at midnight (admin automation)
+    function scheduleWeeklyAward() {
+        setInterval(async () => {
+            const now = new Date();
+            if (now.getDay() === 0 && now.getHours() === 0 && now.getMinutes() === 0) {
+                await awardWeeklyWinner();
+            }
+        }, 60000); // Check every minute
     }
 
     // Initialize app
@@ -4207,12 +4425,21 @@
         updateUserStats();
         updateFeatureAccess();
         
+        // Update leaderboard and schedule weekly awards
+        updateLeaderboard();
+        scheduleWeeklyAward();
+        
         if (currentUser) {
             updateProfileSection();
         }
         
         ensureAllSectionsHidden();
         handleReferralLink();
+        
+        // Update timers every minute
+        setInterval(() => {
+            updateWeekResetTimer();
+        }, 60000);
     }
 
     function updateFeatureAccess() {
@@ -4724,11 +4951,56 @@
            const baseUrl = window.location.href.split('?')[0];
            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
    
+           // Calculate user level based on vault subscriptions
+           function calculateUserLevel(vaults) {
+               if (vaults.length === 0) return { level: 'Beginner', icon: '🌱', color: '#6b7280' };
+               
+               const totalInvested = vaults.reduce((sum, v) => sum + v.amount, 0);
+               
+               if (totalInvested >= 90000000) return { level: 'Legendary', icon: '🕊️', color: '#9333ea' };
+               if (totalInvested >= 60000000) return { level: 'Supreme', icon: '🔱', color: '#7c3aed' };
+               if (totalInvested >= 35000000) return { level: 'Icon', icon: '💫', color: '#6366f1' };
+               if (totalInvested >= 20000000) return { level: 'Emperor', icon: '🦅', color: '#8b5cf6' };
+               if (totalInvested >= 10000000) return { level: 'King', icon: '👑', color: '#a855f7' };
+               if (totalInvested >= 5000000) return { level: 'Titan', icon: '💪', color: '#c026d3' };
+               if (totalInvested >= 1800000) return { level: 'Mastermind', icon: '🧠', color: '#d946ef' };
+               if (totalInvested >= 600000) return { level: 'Nova', icon: '💡', color: '#e879f9' };
+               if (totalInvested >= 180000) return { level: 'Rising', icon: '🌅', color: '#f0abfc' };
+               if (totalInvested >= 45000) return { level: 'Seed', icon: '🌱', color: '#10b981' };
+               
+               return { level: 'Beginner', icon: '🌱', color: '#6b7280' };
+           }
+
+           const userLevel = calculateUserLevel(vaults);
+           
+           // Update user level card
+           const userLevelCard = document.getElementById('userLevelCard');
+           if (userLevelCard) {
+               userLevelCard.style.background = `linear-gradient(135deg, ${userLevel.color}, ${userLevel.color}dd)`;
+               userLevelCard.querySelector('.stat-value').textContent = userLevel.icon;
+               userLevelCard.querySelector('.stat-unit').textContent = userLevel.level;
+           }
+   
+           // Update leaderboard
+           updateLeaderboard();
+   
            updateVaultTable(vaults);
            
            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
                updateVaultSection();
            }
+           
+           // Auto-refresh vault countdown every minute
+           if (window.vaultCountdownInterval) clearInterval(window.vaultCountdownInterval);
+           window.vaultCountdownInterval = setInterval(() => {
+               if (!document.getElementById('homeSection').classList.contains('hidden')) {
+                   const vaultsSnapshot = db.collection('users').doc(currentUser.id).collection('vaults').get();
+                   vaultsSnapshot.then(snapshot => {
+                       const vaults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                       updateVaultTable(vaults);
+                   });
+               }
+           }, 60000); // Update every minute
        } catch (error) {
            console.error("Error updating user stats:", error);
        }
@@ -4745,16 +5017,22 @@
             const now = new Date();
             const maturityDate = new Date(v.maturityDate);
             const isMatured = now >= maturityDate;
-            const daysRemaining = Math.ceil((maturityDate - now) / (1000 * 60 * 60 * 24));
+            const timeRemaining = maturityDate - now;
+            
+            // Calculate days, hours, minutes
+            const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+            const hoursRemaining = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
             
             let statusBadge = '';
+            let countdownDisplay = '';
             let actionButtons = '';
             
             if (isMatured) {
                 if (v.withdrawalOption) {
                     statusBadge = '<span class="status-badge status-completed">Matured & Withdrawn</span>';
                 } else {
-                    statusBadge = '<span class="status-badge status-matured">Matured</span>';
+                    statusBadge = '<span class="status-badge status-matured">Matured - Ready to Withdraw!</span>';
                     actionButtons = `
                         <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                             <button class="btn" style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
@@ -4773,7 +5051,18 @@
                     `;
                 }
             } else {
-                statusBadge = `<span class="status-badge status-active">Active (${daysRemaining} days left)</span>`;
+                statusBadge = `<span class="status-badge status-active">Active</span>`;
+                countdownDisplay = `
+                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); 
+                                padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                            ${daysRemaining}d ${hoursRemaining}h ${minutesRemaining}m
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--gray); margin-top: 0.25rem;">
+                            Time until maturity
+                        </div>
+                    </div>
+                `;
             }
             
             return `
@@ -4782,7 +5071,7 @@
                     <td>${v.amount.toLocaleString()} UGX</td>
                     <td>${v.duration} days</td>
                     <td>${v.expectedProfit.toLocaleString()} UGX</td>
-                    <td>${statusBadge}</td>
+                    <td>${statusBadge}${countdownDisplay}</td>
                     <td>${actionButtons}</td>
                 </tr>
             `;
@@ -5643,7 +5932,14 @@
         }
 
 
-        if (stakeAmount > currentUser.balance) {
+        // Check balance with activation fee consideration
+        const userDoc = await db.collection('users').doc(currentUser.id).get();
+        const userData = userDoc.data();
+        const currentBalance = userData.balance || 0;
+        const activationFeePaid = userData.activationFeePaid || 0;
+        const usableBalance = currentBalance - activationFeePaid;
+
+        if (stakeAmount > usableBalance) {
             showAlert('stakeConfirmAlert', 'Insufficient balance', 'error');
             return;
         }
