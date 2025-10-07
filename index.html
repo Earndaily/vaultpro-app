@@ -1295,6 +1295,12 @@
                         <div class="stat-label">👥 Referrals</div>
                         <div class="stat-value" id="totalReferrals">0</div>
                     </div>
+                                    <div class="stat-card">
+                         <div class="stat-label">LUB Game Earnings</div>
+                         <div class="stat-value" id="adminLUBGameEarnings">0</div>
+                         <div class="stat-unit">UGX</div>
+                     </div>
+                   
                     <div class="stat-card compact">
                         <div class="stat-label">💵 Earnings</div>
                         <div class="stat-value" id="referralEarnings">0</div>
@@ -2713,27 +2719,49 @@
     let allowManualRegistration = false;
 
     // Store referral code with expiry in localStorage
-    function captureReferralCode() {
-        console.log('captureReferralCode() called');
-        console.log('Current URL:', window.location.href);
-        console.log('User agent:', navigator.userAgent);
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const refCode = urlParams.get('ref');
-        console.log('Referral code found:', refCode);
-        
-        if (refCode) {
-            console.log('Storing referral code in localStorage with expiry:', refCode);
-            const expiryTime = Date.now() + (REFERRAL_EXPIRY_HOURS * 60 * 60 * 1000);
-            localStorage.setItem(REFERRAL_STORAGE_KEY, refCode);
-            localStorage.setItem(REFERRAL_EXPIRY_KEY, expiryTime.toString());
-            // Clean URL immediately
-            window.history.replaceState({}, document.title, window.location.pathname);
-            console.log('URL cleaned, new URL:', window.location.href);
-        } else {
-            console.log('No referral code found in URL');
-        }
-    }
+   function captureReferralCode() {
+       console.log('captureReferralCode() called');
+       console.log('Current URL:', window.location.href);
+       console.log('User agent:', navigator.userAgent);
+       
+       // Try multiple ways to get the referral code
+       const urlParams = new URLSearchParams(window.location.search);
+       let refCode = urlParams.get('ref');
+       
+       // Also check hash fragment (some mobile browsers use this)
+       if (!refCode && window.location.hash) {
+           const hashParams = new URLSearchParams(window.location.hash.substring(1));
+           refCode = hashParams.get('ref');
+       }
+       
+       console.log('Referral code found:', refCode);
+       
+       if (refCode) {
+           console.log('Storing referral code in localStorage with expiry:', refCode);
+           const expiryTime = Date.now() + (REFERRAL_EXPIRY_HOURS * 60 * 60 * 1000);
+           localStorage.setItem(REFERRAL_STORAGE_KEY, refCode);
+           localStorage.setItem(REFERRAL_EXPIRY_KEY, expiryTime.toString());
+           
+           // Also store in sessionStorage as backup
+           sessionStorage.setItem('pending_ref_code', refCode);
+           
+           // Clean URL immediately
+           const cleanUrl = window.location.origin + window.location.pathname;
+           window.history.replaceState({}, document.title, cleanUrl);
+           console.log('URL cleaned, new URL:', window.location.href);
+       } else {
+           console.log('No referral code found in URL');
+           
+           // Check sessionStorage backup
+           const sessionRef = sessionStorage.getItem('pending_ref_code');
+           if (sessionRef) {
+               console.log('Found referral code in sessionStorage:', sessionRef);
+               const expiryTime = Date.now() + (REFERRAL_EXPIRY_HOURS * 60 * 60 * 1000);
+               localStorage.setItem(REFERRAL_STORAGE_KEY, sessionRef);
+               localStorage.setItem(REFERRAL_EXPIRY_KEY, expiryTime.toString());
+           }
+       }
+   }
 
     async function validateAndShowRegistration(refCode) {
         try {
@@ -3401,36 +3429,49 @@
         // Setup authentication state listener
         setupAuthStateListener();
 
-        try {
-            // STEP 1: Check URL for referral code FIRST (before anything else)
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlRefCode = urlParams.get('ref');
-            
-            if (urlRefCode) {
-                console.log('Referral code detected in URL:', urlRefCode);
-                
-                // Store it immediately
-                storeReferralCode(urlRefCode);
-                
-                // Clean URL to prevent reprocessing
-                const cleanUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
-                
-                // Wait for Firebase to be ready
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Show landing page with code
-                await showReferralLanding(urlRefCode);
-                return; // Stop here - don't proceed to normal flow
-            }
-            
-            // STEP 2: Check for stored referral code (user clicked link earlier)
-            const storedRefCode = getStoredReferralCode();
-            if (storedRefCode) {
-                console.log('Found stored referral code:', storedRefCode);
-                await showReferralLanding(storedRefCode);
-                return;
-            }
+      // Inside init() function, replace the referral code checking section with:
+      
+      try {
+          // STEP 1: Check URL for referral code FIRST (before anything else)
+          const urlParams = new URLSearchParams(window.location.search);
+          let urlRefCode = urlParams.get('ref');
+          
+          // Also check hash fragment for mobile browsers
+          if (!urlRefCode && window.location.hash) {
+              const hashParams = new URLSearchParams(window.location.hash.substring(1));
+              urlRefCode = hashParams.get('ref');
+          }
+          
+          if (urlRefCode) {
+              console.log('Referral code detected in URL:', urlRefCode);
+              
+              // Store it immediately with multiple backups
+              storeReferralCode(urlRefCode);
+              sessionStorage.setItem('pending_ref_code', urlRefCode);
+              
+              // Clean URL to prevent reprocessing
+              const cleanUrl = window.location.origin + window.location.pathname;
+              window.history.replaceState({}, document.title, cleanUrl);
+              
+              // Wait for Firebase to be ready
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              // Show landing page with code
+              await showReferralLanding(urlRefCode);
+              return; // Stop here - don't proceed to normal flow
+          }
+          
+          // STEP 2: Check for stored referral code (user clicked link earlier)
+          const storedRefCode = getStoredReferralCode();
+          const sessionRefCode = sessionStorage.getItem('pending_ref_code');
+          
+          if (storedRefCode || sessionRefCode) {
+              console.log('Found stored referral code:', storedRefCode || sessionRefCode);
+              await showReferralLanding(storedRefCode || sessionRefCode);
+              return;
+          }
+          
+          // Rest of init() continues...
             
             // STEP 3: No referral code - normal flow
             document.getElementById('loadingScreen').classList.add('hidden');
@@ -7164,7 +7205,15 @@
             const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
 
             const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings;
-
+            const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
+            const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            
+            // Update the display
+            const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
+            if (lubGameEarningsEl) {
+                lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
+            }
+              
             document.getElementById('adminTotalUsers').textContent = totalUsers;
             document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
@@ -7179,151 +7228,196 @@
     }
 
     // Admin LUB Game Functions
-    async function updateAdminLUBGame() {
-        try {
-            // Get current round
-            const currentRound = await getCurrentLUBRound();
-            
-            if (currentRound) {
-                const now = new Date();
-                const endTime = new Date(currentRound.endTime);
-                const timeRemaining = endTime - now;
-                
-                let statusHTML = '';
-                if (timeRemaining > 0) {
-                    const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-                    
-                    statusHTML = `
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div>
-                                <strong>Status:</strong> 
-                                <span style="color: var(--success);">Active</span>
-                            </div>
-                            <div>
-                                <strong>Time Remaining:</strong> 
-                                <span style="color: var(--primary);">${hours}h ${minutes}m</span>
-                            </div>
-                            <div>
-                                <strong>Total Players:</strong> ${currentRound.totalPlayers || 0}
-                            </div>
-                            <div>
-                                <strong>Total Stakes:</strong> ${(currentRound.totalStakes || 0).toLocaleString()} UGX
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    statusHTML = `
-                        <div style="text-align: center; color: var(--warning);">
-                            <strong>⏰ Round Ended - Processing results...</strong>
-                        </div>
-                    `;
-                }
-                
-                document.getElementById('adminCurrentLUBRound').innerHTML = statusHTML;
-                document.getElementById('adminLUBActivePlayers').textContent = currentRound.totalPlayers || 0;
-                
-                // Load current round bets
-                const betsSnapshot = await db.collection('lubGameBets')
-                    .where('roundId', '==', currentRound.id)
-                    .get();
-                
-                if (betsSnapshot.empty) {
-                    document.getElementById('adminLUBCurrentBetsBody').innerHTML = '<tr><td colspan="5" class="text-center">No bets yet</td></tr>';
-                } else {
-                    const betsHTML = betsSnapshot.docs.map(doc => {
-                        const bet = doc.data();
-                        return `
-                            <tr>
-                                <td>${bet.userName}<br><small style="color: var(--gray);">${bet.userEmail}</small></td>
-                                <td>${bet.betAmount.toLocaleString()} UGX</td>
-                                <td>${new Date(bet.placedAt).toLocaleString()}</td>
-                                <td><span class="status-badge status-pending">${bet.status.toUpperCase()}</span></td>
-                                <td>
-                                    <button class="btn" style="background: var(--error); padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="cancelLUBBet('${doc.id}', '${bet.userId}', ${bet.betAmount})">
-                                        Cancel & Refund
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-                    
-                    document.getElementById('adminLUBCurrentBetsBody').innerHTML = betsHTML;
-                }
-            }
-            
-            // Calculate stats
-            const allRoundsSnapshot = await db.collection('lubGameRounds').get();
-            const completedRounds = allRoundsSnapshot.docs.filter(doc => doc.data().status === 'completed');
-            
-            let totalAdminEarnings = 0;
-            let totalPrizesPaid = 0;
-            
-            completedRounds.forEach(doc => {
-                const round = doc.data();
-                totalAdminEarnings += round.adminEarnings || 0;
-                totalPrizesPaid += round.prize || 0;
-            });
-            
-            document.getElementById('adminLUBTotalRounds').textContent = completedRounds.length;
-            document.getElementById('adminLUBEarnings').textContent = totalAdminEarnings.toLocaleString();
-            document.getElementById('adminLUBPrizesPaid').textContent = totalPrizesPaid.toLocaleString();
-            
-            // Load history
-            const historySnapshot = await db.collection('lubGameRounds')
-                .where('status', '==', 'completed')
-                .orderBy('completedAt', 'desc')
-                .limit(20)
-                .get();
-            
-            if (historySnapshot.empty) {
-                document.getElementById('adminLUBHistoryBody').innerHTML = '<tr><td colspan="7" class="text-center">No completed rounds yet</td></tr>';
-            } else {
-                const historyHTML = historySnapshot.docs.map(doc => {
-                    const round = doc.data();
-                    return `
-                        <tr>
-                            <td>#${round.roundNumber.toString().slice(-6)}</td>
-                            <td>${round.totalPlayers || 0}</td>
-                            <td>${(round.totalStakes || 0).toLocaleString()} UGX</td>
-                            <td>${round.winner || 'No winner'}<br>
-                                ${round.winningAmount ? `<small style="color: var(--gray);">Bet: ${round.winningAmount.toLocaleString()} UGX</small>` : ''}
-                            </td>
-                            <td style="color: var(--error); font-weight: 600;">${(round.prize || 0).toLocaleString()} UGX</td>
-                            <td style="color: var(--success); font-weight: 600;">${(round.adminEarnings || 0).toLocaleString()} UGX</td>
-                            <td>${new Date(round.completedAt).toLocaleString()}</td>
-                        </tr>
-                    `;
-                }).join('');
-                
-                document.getElementById('adminLUBHistoryBody').innerHTML = historyHTML;
-            }
-            
-        } catch (error) {
-            console.error('Error updating admin LUB game:', error);
-        }
-    }
-
-    // Manual process current round
-    async function manualProcessLUBRound() {
-        if (!confirm('Are you sure you want to process the current round now? This will calculate winners and end the round immediately.')) {
-            return;
-        }
-        
-        try {
-            const currentRound = await getCurrentLUBRound();
-            if (currentRound && currentRound.status === 'active') {
-                await processLUBRoundResults(currentRound.id);
-                alert('Round processed successfully!');
-                updateAdminLUBGame();
-            } else {
-                alert('No active round to process');
-            }
-        } catch (error) {
-            console.error('Error manually processing round:', error);
-            alert('Failed to process round: ' + error.message);
-        }
-    }
+   async function updateAdminLUBGame() {
+       try {
+           console.log('Updating admin LUB game section...');
+           
+           // Get current round with better error handling
+           let currentRound = null;
+           try {
+               currentRound = await getCurrentLUBRound();
+               console.log('Current round:', currentRound);
+           } catch (error) {
+               console.error('Error getting current round:', error);
+           }
+           
+           const adminCurrentRoundEl = document.getElementById('adminCurrentLUBRound');
+           const adminLUBActivePlayersEl = document.getElementById('adminLUBActivePlayers');
+           
+           if (!adminCurrentRoundEl) {
+               console.error('Admin current round element not found');
+               return;
+           }
+           
+           if (currentRound) {
+               const now = new Date();
+               const endTime = new Date(currentRound.endTime);
+               const timeRemaining = endTime - now;
+               
+               let statusHTML = '';
+               if (timeRemaining > 0) {
+                   const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                   const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                   
+                   statusHTML = `
+                       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                           <div>
+                               <strong>Status:</strong> 
+                               <span style="color: var(--success);">Active</span>
+                           </div>
+                           <div>
+                               <strong>Round ID:</strong> 
+                               <span style="color: var(--primary);">#${currentRound.roundNumber.toString().slice(-6)}</span>
+                           </div>
+                           <div>
+                               <strong>Time Remaining:</strong> 
+                               <span style="color: var(--primary);">${hours}h ${minutes}m</span>
+                           </div>
+                           <div>
+                               <strong>Total Players:</strong> ${currentRound.totalPlayers || 0}
+                           </div>
+                           <div>
+                               <strong>Total Stakes:</strong> ${(currentRound.totalStakes || 0).toLocaleString()} UGX
+                           </div>
+                       </div>
+                   `;
+               } else {
+                   statusHTML = `
+                       <div style="text-align: center; color: var(--warning); padding: 1rem;">
+                           <strong>⏰ Round Ended - Processing results...</strong>
+                       </div>
+                   `;
+               }
+               
+               adminCurrentRoundEl.innerHTML = statusHTML;
+               if (adminLUBActivePlayersEl) {
+                   adminLUBActivePlayersEl.textContent = currentRound.totalPlayers || 0;
+               }
+               
+               // Load current round bets with better error handling
+               try {
+                   const betsSnapshot = await db.collection('lubGameBets')
+                       .where('roundId', '==', currentRound.id)
+                       .get();
+                   
+                   const betsBody = document.getElementById('adminLUBCurrentBetsBody');
+                   if (betsBody) {
+                       if (betsSnapshot.empty) {
+                           betsBody.innerHTML = '<tr><td colspan="5" class="text-center">No bets yet</td></tr>';
+                       } else {
+                           const betsHTML = betsSnapshot.docs.map(doc => {
+                               const bet = doc.data();
+                               return `
+                                   <tr>
+                                       <td>${bet.userName}<br><small style="color: var(--gray);">${bet.userEmail}</small></td>
+                                       <td>${bet.betAmount.toLocaleString()} UGX</td>
+                                       <td>${new Date(bet.placedAt).toLocaleString()}</td>
+                                       <td><span class="status-badge status-pending">${bet.status.toUpperCase()}</span></td>
+                                       <td>
+                                           <button class="btn" style="background: var(--error); padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="cancelLUBBet('${doc.id}', '${bet.userId}', ${bet.betAmount})">
+                                               Cancel & Refund
+                                           </button>
+                                       </td>
+                                   </tr>
+                               `;
+                           }).join('');
+                           
+                           betsBody.innerHTML = betsHTML;
+                       }
+                   }
+               } catch (error) {
+                   console.error('Error loading bets:', error);
+                   const betsBody = document.getElementById('adminLUBCurrentBetsBody');
+                   if (betsBody) {
+                       betsBody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--error);">Error loading bets</td></tr>';
+                   }
+               }
+           } else {
+               // No active round
+               adminCurrentRoundEl.innerHTML = `
+                   <div style="text-align: center; color: var(--gray); padding: 1rem;">
+                       <p>No active round</p>
+                       <button class="btn btn-success" onclick="manualStartNewLUBRound()" style="margin-top: 1rem;">
+                           ➕ Start New Round
+                       </button>
+                   </div>
+               `;
+               if (adminLUBActivePlayersEl) {
+                   adminLUBActivePlayersEl.textContent = '0';
+               }
+           }
+           
+           // Calculate stats from all rounds
+           try {
+               const allRoundsSnapshot = await db.collection('lubGameRounds').get();
+               const completedRounds = allRoundsSnapshot.docs.filter(doc => doc.data().status === 'completed');
+               
+               let totalAdminEarnings = 0;
+               let totalPrizesPaid = 0;
+               
+               completedRounds.forEach(doc => {
+                   const round = doc.data();
+                   totalAdminEarnings += round.adminEarnings || 0;
+                   totalPrizesPaid += round.prize || 0;
+               });
+               
+               const totalRoundsEl = document.getElementById('adminLUBTotalRounds');
+               const earningsEl = document.getElementById('adminLUBEarnings');
+               const prizesPaidEl = document.getElementById('adminLUBPrizesPaid');
+               
+               if (totalRoundsEl) totalRoundsEl.textContent = completedRounds.length;
+               if (earningsEl) earningsEl.textContent = totalAdminEarnings.toLocaleString();
+               if (prizesPaidEl) prizesPaidEl.textContent = totalPrizesPaid.toLocaleString();
+               
+               // Load history
+               const historySnapshot = await db.collection('lubGameRounds')
+                   .where('status', '==', 'completed')
+                   .orderBy('completedAt', 'desc')
+                   .limit(20)
+                   .get();
+               
+               const historyBody = document.getElementById('adminLUBHistoryBody');
+               if (historyBody) {
+                   if (historySnapshot.empty) {
+                       historyBody.innerHTML = '<tr><td colspan="7" class="text-center">No completed rounds yet</td></tr>';
+                   } else {
+                       const historyHTML = historySnapshot.docs.map(doc => {
+                           const round = doc.data();
+                           return `
+                               <tr>
+                                   <td>#${round.roundNumber.toString().slice(-6)}</td>
+                                   <td>${round.totalPlayers || 0}</td>
+                                   <td>${(round.totalStakes || 0).toLocaleString()} UGX</td>
+                                   <td>${round.winner || 'No winner'}<br>
+                                       ${round.winningAmount ? `<small style="color: var(--gray);">Bet: ${round.winningAmount.toLocaleString()} UGX</small>` : ''}
+                                   </td>
+                                   <td style="color: var(--error); font-weight: 600;">${(round.prize || 0).toLocaleString()} UGX</td>
+                                   <td style="color: var(--success); font-weight: 600;">${(round.adminEarnings || 0).toLocaleString()} UGX</td>
+                                   <td>${new Date(round.completedAt).toLocaleString()}</td>
+                               </tr>
+                           `;
+                       }).join('');
+                       
+                       historyBody.innerHTML = historyHTML;
+                   }
+               }
+           } catch (error) {
+               console.error('Error calculating stats:', error);
+           }
+           
+       } catch (error) {
+           console.error('Error updating admin LUB game:', error);
+           const adminCurrentRoundEl = document.getElementById('adminCurrentLUBRound');
+           if (adminCurrentRoundEl) {
+               adminCurrentRoundEl.innerHTML = `
+                   <div style="text-align: center; color: var(--error); padding: 1rem;">
+                       <p>Error loading LUB game data</p>
+                       <small>${error.message}</small>
+                   </div>
+               `;
+           }
+       }
+   }
 
     // Manual start new round
     async function manualStartNewLUBRound() {
