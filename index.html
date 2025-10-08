@@ -4275,8 +4275,9 @@
                 earnings: 0
             });
 
-            // Handle referral rewards
-            await processReferralRewards(referrerId, userId, fullName);
+            // Referral rewards will be processed when activation fee is approved
+            // await processReferralRewards(referrerId, userId, fullName); // DISABLED - rewards given on activation
+            console.log('Referral rewards will be processed upon activation fee approval');
 
             showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
             
@@ -8354,7 +8355,7 @@
             const isActivationFee = depositRequest.data().type === 'activation_fee';
             
             if (isActivationFee) {
-                // For activation fees: Admin gets 16,000 UGX, Referrer gets 4,000 UGX
+                // For activation fees: Admin gets 16,000 UGX, Direct Referrer gets 4,000 UGX (Total = 20,000)
                 const adminAmount = 16000;
                 const referrerAmount = 4000;
                 
@@ -8362,7 +8363,7 @@
                 updateData.activationFeePaid = amount; // Track the 20,000 UGX activation fee
                 await db.collection('users').doc(userId).update(updateData);
                 
-                // Give referrer their share if they exist
+                // Give referrer their share if they exist (ONLY DIRECT REFERRER)
                 if (userData.referredBy) {
                     const referrerDoc = await db.collection('users').doc(userData.referredBy).get();
                     if (referrerDoc.exists) {
