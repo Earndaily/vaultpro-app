@@ -2009,11 +2009,25 @@
                                 
                                 <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
                                     <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
-                                        <strong>💡 Note:</strong> Withdrawal fee: 5% | Minimum: 10,000 UGX
+                                        <strong>💡 Note:</strong> Withdrawal fee: 5% | Minimum: 4,000 UGX
                                     </p>
                                 </div>
                                 
-                                <input type="number" id="withdrawAmount" placeholder="Enter Amount" />
+                                <!-- Fund Category Selection -->
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">Select Fund Categories:</label>
+                                    <select id="withdrawCategories" multiple style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: white;">
+                                        <option value="referral">💰 Referral Earnings (Anytime)</option>
+                                        <option value="lubGame">🎲 LUB Game Winnings (Fri/Sat only)</option>
+                                        <option value="task">✅ Task Earnings (Fri/Sat only)</option>
+                                        <option value="vault">🏦 Vault Earnings (30 days)</option>
+                                    </select>
+                                    <small style="color: var(--gray); margin-top: 0.25rem; display: block;">
+                                        Hold Ctrl/Cmd to select multiple categories. Weekend categories (LUB/Task) only available Fri/Sat.
+                                    </small>
+                                </div>
+                                
+                                <input type="number" id="withdrawAmount" placeholder="Enter Amount" min="4000" />
                                 <select id="withdrawMethod">
                                     <option value="">Select Withdrawal Method</option>
                                     <option value="momo">Mobile Money</option>
@@ -7349,6 +7363,9 @@
                 withdrawPointsBalanceEl.textContent = pointsBalance.toLocaleString();
             }
             
+            // Update withdrawal funds display
+            await updateWithdrawalFundsDisplay();
+            
             // Set up event listeners if elements exist
             const withdrawAmountEl = document.getElementById('withdrawAmount');
             if (withdrawAmountEl && !withdrawAmountEl.hasAttribute('data-listener-added')) {
@@ -7458,10 +7475,17 @@
             case 'task':
                 // LUB game and task earnings only on Friday (5) and Saturday (6)
                 if (dayOfWeek !== 5 && dayOfWeek !== 6) {
-                    const daysUntilWeekend = dayOfWeek === 0 ? 5 : (5 - dayOfWeek);
+                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    let daysUntilWeekend;
+                    if (dayOfWeek === 0) { // Sunday
+                        daysUntilWeekend = 5; // 5 days until Friday
+                    } else if (dayOfWeek < 5) { // Monday to Thursday
+                        daysUntilWeekend = 5 - dayOfWeek;
+                    }
+                    
                     return { 
                         eligible: false, 
-                        reason: `LUB game and task earnings can only be withdrawn on Fridays and Saturdays. Next available: ${daysUntilWeekend} days` 
+                        reason: `${fundSource === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}. Next available: Friday (${daysUntilWeekend} days)` 
                     };
                 }
                 return { eligible: true, reason: '' };
@@ -7476,6 +7500,38 @@
         }
     }
 
+    function getSelectedCategories() {
+        const select = document.getElementById('withdrawCategories');
+        const selectedOptions = Array.from(select.selectedOptions);
+        return selectedOptions.map(option => option.value);
+    }
+
+    function validateSelectedCategories(selectedCategories) {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        // Check if weekend categories are selected on non-weekend days
+        const weekendCategories = ['lubGame', 'task'];
+        const hasWeekendCategories = selectedCategories.some(cat => weekendCategories.includes(cat));
+        
+        if (hasWeekendCategories && dayOfWeek !== 5 && dayOfWeek !== 6) {
+            let daysUntilWeekend;
+            if (dayOfWeek === 0) { // Sunday
+                daysUntilWeekend = 5; // 5 days until Friday
+            } else if (dayOfWeek < 5) { // Monday to Thursday
+                daysUntilWeekend = 5 - dayOfWeek;
+            }
+            
+            return {
+                valid: false,
+                reason: `LUB Game and Task earnings can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}. Next available: Friday (${daysUntilWeekend} days)`
+            };
+        }
+        
+        return { valid: true, reason: '' };
+    }
+
     async function withdraw() {
         try {
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
@@ -7487,8 +7543,8 @@
                 return;
             }
 
-            if (amount < 10000) {
-                alert('Minimum withdrawal amount is 10,000 UGX');
+            if (amount < 4000) {
+                alert('Minimum withdrawal amount is 4,000 UGX');
                 return;
             }
 
@@ -7509,6 +7565,20 @@
                 return;
             }
 
+            // Get selected categories
+            const selectedCategories = getSelectedCategories();
+            if (selectedCategories.length === 0) {
+                alert('Please select at least one fund category');
+                return;
+            }
+
+            // Validate selected categories
+            const categoryValidation = validateSelectedCategories(selectedCategories);
+            if (!categoryValidation.valid) {
+                alert(categoryValidation.reason);
+                return;
+            }
+
             // Get fund sources and check eligibility
             const fundSources = await getFundSources(currentUser.id);
             if (!fundSources) {
@@ -7516,55 +7586,34 @@
                 return;
             }
 
-            // Determine which fund sources to use for withdrawal
+            // Determine which fund sources to use for withdrawal based on selected categories
             let remainingAmount = amount;
             const withdrawalSources = [];
 
-            // Priority order: Referral (anytime) -> LUB/Task (Fri/Sat) -> Vault (30 days)
-            if (remainingAmount > 0 && fundSources.availableForWithdrawal.referral > 0) {
-                const referralAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.referral);
-                withdrawalSources.push({ source: 'referral', amount: referralAmount });
-                remainingAmount -= referralAmount;
-            }
-
-            if (remainingAmount > 0 && fundSources.availableForWithdrawal.lubGame > 0) {
-                const lubAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.lubGame);
-                const eligibility = checkWithdrawalEligibility('lubGame', lubAmount, userData);
-                if (eligibility.eligible) {
-                    withdrawalSources.push({ source: 'lubGame', amount: lubAmount });
-                    remainingAmount -= lubAmount;
-                } else {
-                    alert(eligibility.reason);
-                    return;
-                }
-            }
-
-            if (remainingAmount > 0 && fundSources.availableForWithdrawal.task > 0) {
-                const taskAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.task);
-                const eligibility = checkWithdrawalEligibility('task', taskAmount, userData);
-                if (eligibility.eligible) {
-                    withdrawalSources.push({ source: 'task', amount: taskAmount });
-                    remainingAmount -= taskAmount;
-                } else {
-                    alert(eligibility.reason);
-                    return;
-                }
-            }
-
-            if (remainingAmount > 0 && fundSources.availableForWithdrawal.vault > 0) {
-                const vaultAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.vault);
-                const eligibility = checkWithdrawalEligibility('vault', vaultAmount, userData);
-                if (eligibility.eligible) {
-                    withdrawalSources.push({ source: 'vault', amount: vaultAmount });
-                    remainingAmount -= vaultAmount;
-                } else {
-                    alert(eligibility.reason);
-                    return;
+            // Process selected categories in priority order
+            const categoryOrder = ['referral', 'lubGame', 'task', 'vault'];
+            
+            for (const category of categoryOrder) {
+                if (selectedCategories.includes(category) && remainingAmount > 0) {
+                    const availableAmount = fundSources.availableForWithdrawal[category] || 0;
+                    if (availableAmount > 0) {
+                        const categoryAmount = Math.min(remainingAmount, availableAmount);
+                        const eligibility = checkWithdrawalEligibility(category, categoryAmount, userData);
+                        
+                        if (eligibility.eligible) {
+                            withdrawalSources.push({ source: category, amount: categoryAmount });
+                            remainingAmount -= categoryAmount;
+                        } else {
+                            alert(eligibility.reason);
+                            return;
+                        }
+                    }
                 }
             }
 
             if (remainingAmount > 0) {
-                alert(`Insufficient withdrawable funds. Available: ${(amount - remainingAmount).toLocaleString()} UGX`);
+                const availableFromSelected = amount - remainingAmount;
+                alert(`Insufficient funds from selected categories. Available from selected categories: ${availableFromSelected.toLocaleString()} UGX`);
                 return;
             }
 
@@ -7597,11 +7646,76 @@
             document.getElementById('withdrawAmount').value = '';
             document.getElementById('withdrawMethod').value = '';
             document.getElementById('withdrawAccount').value = '';
+            document.getElementById('withdrawCategories').selectedIndex = -1; // Clear selections
             updateWithdrawHistory();
 
         } catch (error) {
             console.error("Withdrawal error:", error);
             alert('Withdrawal failed: ' + error.message);
+        }
+    }
+
+    // Function to display available funds for each category
+    async function updateWithdrawalFundsDisplay() {
+        if (!currentUser) return;
+
+        try {
+            const fundSources = await getFundSources(currentUser.id);
+            if (!fundSources) return;
+
+            // Create or update the funds display
+            let fundsDisplay = document.getElementById('withdrawalFundsDisplay');
+            if (!fundsDisplay) {
+                fundsDisplay = document.createElement('div');
+                fundsDisplay.id = 'withdrawalFundsDisplay';
+                fundsDisplay.style.cssText = `
+                    background: #f8fafc; 
+                    border: 1px solid #e2e8f0; 
+                    border-radius: 8px; 
+                    padding: 1rem; 
+                    margin-bottom: 1rem;
+                `;
+                
+                // Insert after the category selection
+                const categoryDiv = document.querySelector('#withdrawCategories').parentElement;
+                categoryDiv.parentNode.insertBefore(fundsDisplay, categoryDiv.nextSibling);
+            }
+
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
+            fundsDisplay.innerHTML = `
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--dark); font-size: 1rem;">💰 Available Funds</h4>
+                <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #10b981;">💰 Referral Earnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.referral.toLocaleString()} UGX</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #f59e0b;">🎲 LUB Game Winnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.lubGame.toLocaleString()} UGX</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #8b5cf6;">✅ Task Earnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.task.toLocaleString()} UGX</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #6366f1;">🏦 Vault Earnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.vault.toLocaleString()} UGX</span>
+                    </div>
+                </div>
+                ${!isWeekend ? `
+                    <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 0.75rem; margin-top: 0.75rem;">
+                        <p style="margin: 0; color: #92400e; font-size: 0.875rem;">
+                            <strong>📅 Weekend Notice:</strong> LUB Game and Task earnings can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}.
+                        </p>
+                    </div>
+                ` : ''}
+            `;
+        } catch (error) {
+            console.error('Error updating withdrawal funds display:', error);
         }
     }
 
