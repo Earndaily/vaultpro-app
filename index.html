@@ -1326,11 +1326,6 @@
                         <div class="stat-value" id="taskEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
-                    <div class="stat-card compact">
-                        <div class="stat-label">🎲 LUB Game</div>
-                        <div class="stat-value" id="lubGameEarnings">0</div>
-                        <div class="stat-unit">UGX</div>
-                    </div>
                     <div class="stat-card compact" id="userLevelCard" style="background: linear-gradient(135deg, #6b7280, #6b7280dd);">
                         <div class="stat-label" style="color: white;">Your Level</div>
                         <div class="stat-value" style="font-size: 2rem; color: white;">🌱</div>
@@ -1999,7 +1994,6 @@
                                     <option value="">-- Select Category --</option>
                                     <option value="total">Total Balance</option>
                                     <option value="referral">Referral Earnings Only</option>
-                                    <option value="lubGame">LUB Game Winnings Only</option>
                                     <option value="task">Task Earnings Only</option>
                                     <option value="vault">Vault Profits Only</option>
                                 </select>
@@ -2333,13 +2327,18 @@
                 <h3 class="mt-3">Earnings Breakdown</h3>
                 <div class="grid grid-2">
                     <div class="stat-card">
+                        <div class="stat-label">From Deposits (10%)</div>
+                        <div class="stat-value" id="depositEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card">
                         <div class="stat-label">From Withdrawals (5%)</div>
                         <div class="stat-value" id="withdrawEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">From LUB Game</div>
-                        <div class="stat-value" id="lubAdminEarnings">0</div>
+                        <div class="stat-label">From Referrals (2%)</div>
+                        <div class="stat-value" id="referralAdminEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
                     <div class="stat-card">
@@ -2541,7 +2540,7 @@
                     <input type="date" id="candidateElectionDate" placeholder="Election Date" />
                     <textarea id="candidateDescription" placeholder="Description (optional)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
                     
-                    <button class="btn btn-success btn-block mt-2" id="candidateFormBtn" onclick="addCandidate()">
+                    <button class="btn btn-success btn-block mt-2" onclick="addCandidate()">
                         Add Candidate
                     </button>
                 </div>
@@ -5335,22 +5334,6 @@
            if (taskEarningsEl) {
                taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
            }
-
-           // Calculate LUB Game earnings
-           const lubTransactionsSnapshot = await db.collection('transactions')
-               .where('userId', '==', currentUser.id)
-               .where('type', '==', 'lub_game_winnings')
-               .get();
-
-           const lubGameEarnings = lubTransactionsSnapshot.docs.reduce((sum, doc) => {
-               return sum + (doc.data().amount || 0);
-           }, 0);
-
-           // Update the display
-           const lubEarningsEl = document.getElementById('lubGameEarnings');
-           if (lubEarningsEl) {
-               lubEarningsEl.textContent = lubGameEarnings.toLocaleString();
-           }
            
            // Update user name and activation status in navbar
            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
@@ -6713,11 +6696,9 @@
             }
             
             // Change button text and onclick
-            const addBtn = document.getElementById('candidateFormBtn');
-            if (addBtn) {
-                addBtn.textContent = 'Update Candidate';
-                addBtn.onclick = () => updateCandidate(candidateId);
-            }
+            const addBtn = document.querySelector('button[onclick="addCandidate()"]');
+            addBtn.textContent = 'Update Candidate';
+            addBtn.onclick = () => updateCandidate(candidateId);
             
             // Scroll to form
             document.getElementById('candidateName').scrollIntoView({ behavior: 'smooth' });
@@ -6789,11 +6770,9 @@
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
             
-            const addBtn = document.getElementById('candidateFormBtn');
-            if (addBtn) {
-                addBtn.textContent = 'Add Candidate';
-                addBtn.onclick = addCandidate;
-            }
+            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
+            addBtn.textContent = 'Add Candidate';
+            addBtn.onclick = () => addCandidate();
             
             updateAdminCandidates();
         } catch (error) {
@@ -7734,16 +7713,6 @@
                 referralsSnapshot.docs.forEach(doc => {
                     availableAmount += doc.data().earnings || 0;
                 });
-            } else if (category === 'lubGame') {
-                // Get LUB game winnings from transactions
-                const lubTransactionsSnapshot = await db.collection('transactions')
-                    .where('userId', '==', currentUser.id)
-                    .where('type', '==', 'lub_game_winnings')
-                    .get();
-                
-                lubTransactionsSnapshot.docs.forEach(doc => {
-                    availableAmount += doc.data().amount || 0;
-                });
             } else if (category === 'task') {
                 availableAmount = userData.totalTaskEarnings || 0;
             } else if (category === 'vault') {
@@ -7824,42 +7793,33 @@
                 return;
             }
 
+            // Check 30-day waiting period from activation
+            const activationDate = new Date(userData.activationDate || userData.joinedDate);
+            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
             const now = new Date();
-            const dayOfWeek = now.getDay();
 
-            // Apply category-specific withdrawal rules
-            if (category === 'vault') {
-                // Vault profits: 30-day waiting period + weekend + last two weeks
-                const activationDate = new Date(userData.activationDate || userData.joinedDate);
-                const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-
-                if (now < thirtyDaysLater) {
-                    const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
-                    alert(`Vault profits can only be withdrawn after 30 days. You must wait ${daysLeft} more days.`);
-                    return;
-                }
-
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    alert('Vault profits can only be withdrawn on weekends (Saturday and Sunday)');
-                    return;
-                }
-
-                const currentDate = now.getDate();
-                const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                const lastTwoWeeksStart = lastDayOfMonth - 13;
-
-                if (currentDate < lastTwoWeeksStart) {
-                    alert('Vault profits can only be withdrawn in the last two weeks of the month');
-                    return;
-                }
-            } else if (category === 'lubGame' || category === 'task') {
-                // LUB Game and Task earnings: Weekend only
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    alert(`${category === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on weekends (Saturday and Sunday)`);
-                    return;
-                }
+            if (now < thirtyDaysLater) {
+                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
+                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
+                return;
             }
-            // Referral earnings and total balance: No time restrictions
+
+            // Check if it's weekend (Saturday or Sunday)
+            const dayOfWeek = now.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                alert('Withdrawals are only allowed on weekends (Saturday and Sunday)');
+                return;
+            }
+
+            // Check if it's the last two weeks of the month
+            const currentDate = now.getDate();
+            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const lastTwoWeeksStart = lastDayOfMonth - 13;
+
+            if (currentDate < lastTwoWeeksStart) {
+                alert('Withdrawals are only allowed in the last two weeks of the month');
+                return;
+            }
 
             const fee = amount * 0.05;
             const netAmount = amount - fee;
@@ -8538,12 +8498,11 @@
             const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
             const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
 
-            // No earnings from deposits anymore
-            const depositEarnings = 0;
+            const depositEarnings = deposits.reduce((sum, t) => sum + (t.adminFee || 0), 0);
             const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
             
-            // Referrals don't generate admin fees anymore
-            const referralEarnings = 0;
+            // Calculate referral admin earnings (2% of each referral reward)
+            const referralEarnings = referrals.reduce((sum, t) => sum + ((t.amount || 0) * 0.02), 0);
 
             // Get activation fee admin earnings from admin_commission transactions
             const adminCommissions = transactions.filter(t => 
@@ -8556,25 +8515,23 @@
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
-            // Admin only earns from withdrawals and LUB game
-            const totalAdminEarnings = withdrawEarnings + lubGameEarnings + activationAdminEarnings;
+            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings + activationAdminEarnings + lubGameEarnings;
             
             document.getElementById('adminTotalUsers').textContent = totalUsers;
             document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
             document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
 
-            // Update displays
-            document.getElementById('depositEarnings').textContent = '0'; // No longer earning from deposits
+            document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
             document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
-            document.getElementById('referralAdminEarnings').textContent = '0'; // No longer earning from referrals
+            document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
             
             const activationEarningsEl = document.getElementById('activationAdminEarnings');
             if (activationEarningsEl) {
                 activationEarningsEl.textContent = activationAdminEarnings.toLocaleString();
             }
             
-            const lubGameEarningsEl = document.getElementById('lubAdminEarnings');
+            const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
             if (lubGameEarningsEl) {
                 lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
             }
@@ -9036,15 +8993,16 @@
                 console.log('Activation fee admin commission: 16000 UGX');
                 
             } else {
-                // Regular deposit - user gets the full amount, NO ADMIN FEE
+                // Regular deposit - user gets the full amount
                 await db.collection('users').doc(userId).update(updateData);
                 
+                const adminFee = amount * 0.10;
                 await db.collection('transactions').add({
                     userId: userId,
                     userName: userDoc.data().fullName,
                     type: 'deposit',
                     amount: amount,
-                    adminFee: 0, // No admin fee on deposits
+                    adminFee: adminFee,
                     date: new Date().toISOString()
                 });
             }
