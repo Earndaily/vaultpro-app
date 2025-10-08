@@ -1326,6 +1326,11 @@
                         <div class="stat-value" id="taskEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">🎲 LUB Game</div>
+                        <div class="stat-value" id="lubGameEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
                     <div class="stat-card compact" id="userLevelCard" style="background: linear-gradient(135deg, #6b7280, #6b7280dd);">
                         <div class="stat-label" style="color: white;">Your Level</div>
                         <div class="stat-value" style="font-size: 2rem; color: white;">🌱</div>
@@ -2328,18 +2333,13 @@
                 <h3 class="mt-3">Earnings Breakdown</h3>
                 <div class="grid grid-2">
                     <div class="stat-card">
-                        <div class="stat-label">From Deposits (10%)</div>
-                        <div class="stat-value" id="depositEarnings">0</div>
-                        <div class="stat-unit">UGX</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-label">From Withdrawals (5%)</div>
                         <div class="stat-value" id="withdrawEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">From Referrals (2%)</div>
-                        <div class="stat-value" id="referralAdminEarnings">0</div>
+                        <div class="stat-label">From LUB Game</div>
+                        <div class="stat-value" id="lubAdminEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
                     <div class="stat-card">
@@ -5334,6 +5334,22 @@
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
                taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
+           }
+
+           // Calculate LUB Game earnings
+           const lubTransactionsSnapshot = await db.collection('transactions')
+               .where('userId', '==', currentUser.id)
+               .where('type', '==', 'lub_game_winnings')
+               .get();
+
+           const lubGameEarnings = lubTransactionsSnapshot.docs.reduce((sum, doc) => {
+               return sum + (doc.data().amount || 0);
+           }, 0);
+
+           // Update the display
+           const lubEarningsEl = document.getElementById('lubGameEarnings');
+           if (lubEarningsEl) {
+               lubEarningsEl.textContent = lubGameEarnings.toLocaleString();
            }
            
            // Update user name and activation status in navbar
@@ -8518,11 +8534,12 @@
             const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
             const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
 
-            const depositEarnings = deposits.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+            // No earnings from deposits anymore
+            const depositEarnings = 0;
             const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
             
-            // Calculate referral admin earnings (2% of each referral reward)
-            const referralEarnings = referrals.reduce((sum, t) => sum + ((t.amount || 0) * 0.02), 0);
+            // Referrals don't generate admin fees anymore
+            const referralEarnings = 0;
 
             // Get activation fee admin earnings from admin_commission transactions
             const adminCommissions = transactions.filter(t => 
@@ -8535,23 +8552,25 @@
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
-            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings + activationAdminEarnings + lubGameEarnings;
+            // Admin only earns from withdrawals and LUB game
+            const totalAdminEarnings = withdrawEarnings + lubGameEarnings + activationAdminEarnings;
             
             document.getElementById('adminTotalUsers').textContent = totalUsers;
             document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
             document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
 
-            document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
+            // Update displays
+            document.getElementById('depositEarnings').textContent = '0'; // No longer earning from deposits
             document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
-            document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
+            document.getElementById('referralAdminEarnings').textContent = '0'; // No longer earning from referrals
             
             const activationEarningsEl = document.getElementById('activationAdminEarnings');
             if (activationEarningsEl) {
                 activationEarningsEl.textContent = activationAdminEarnings.toLocaleString();
             }
             
-            const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
+            const lubGameEarningsEl = document.getElementById('lubAdminEarnings');
             if (lubGameEarningsEl) {
                 lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
             }
@@ -9013,16 +9032,15 @@
                 console.log('Activation fee admin commission: 16000 UGX');
                 
             } else {
-                // Regular deposit - user gets the full amount
+                // Regular deposit - user gets the full amount, NO ADMIN FEE
                 await db.collection('users').doc(userId).update(updateData);
                 
-                const adminFee = amount * 0.10;
                 await db.collection('transactions').add({
                     userId: userId,
                     userName: userDoc.data().fullName,
                     type: 'deposit',
                     amount: amount,
-                    adminFee: adminFee,
+                    adminFee: 0, // No admin fee on deposits
                     date: new Date().toISOString()
                 });
             }
