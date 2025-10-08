@@ -1685,7 +1685,7 @@
                     <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
                         <li><strong>4000 UGX</strong> for each direct referral</li>
-                        
+                        <li><strong>2000 UGX</strong> when your referral refers someone else</li>
                     </ul>
                 </div>
                 
@@ -3251,6 +3251,14 @@
             
             if (betAmount > usableBalance) {
                 showAlert('lubGameAlert', 'Insufficient balance', 'error');
+                // Redirect to deposit section
+                setTimeout(() => {
+                    showSection('wallet');
+                    // Scroll to deposit section
+                    setTimeout(() => {
+                        document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                }, 2000);
                 return;
             }
             
@@ -5605,6 +5613,14 @@
             
             if (usableBalance < planData.amount) {
                 showPurchaseError(`Insufficient usable balance. You need ${planData.amount.toLocaleString()} UGX. Your usable balance is ${usableBalance.toLocaleString()} UGX.`);
+                // Redirect to deposit section
+                setTimeout(() => {
+                    showSection('wallet');
+                    // Scroll to deposit section
+                    setTimeout(() => {
+                        document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                }, 2000);
                 return;
             }
 
@@ -6185,6 +6201,14 @@
 
         if (stakeAmount > usableBalance) {
             showAlert('stakeConfirmAlert', 'Insufficient balance', 'error');
+            // Redirect to deposit section
+            setTimeout(() => {
+                showSection('wallet');
+                // Scroll to deposit section
+                setTimeout(() => {
+                    document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }, 2000);
             return;
         }
 
@@ -7403,6 +7427,14 @@
 
             if (amount > withdrawableBalance) {
                 alert(`You can only withdraw profits. Available profit balance: ${withdrawableBalance.toLocaleString()} UGX`);
+                // Redirect to deposit section
+                setTimeout(() => {
+                    showSection('wallet');
+                    // Scroll to deposit section
+                    setTimeout(() => {
+                        document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                }, 2000);
                 return;
             }
 
