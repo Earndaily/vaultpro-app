@@ -1983,61 +1983,51 @@
                         </div>
                         <div id="withdrawSection" class="collapsible-content hidden">
                             <div style="padding: 1rem;">
-                                <p style="color: var(--gray); margin-bottom: 1rem;">Available Balance: <strong><span id="withdrawBalance">0</span> UGX</strong></p>
-                                <!-- Withdrawal Rules Information -->
-                                <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                                    <h4 style="color: #0c4a6e; margin: 0 0 0.75rem 0; font-size: 1rem;">📋 Withdrawal Rules</h4>
-                                    <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span style="color: #10b981;">💰</span>
-                                            <span><strong>Referral Earnings:</strong> Can be withdrawn anytime</span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span style="color: #f59e0b;">🎲</span>
-                                            <span><strong>LUB Game Winnings:</strong> Friday and Saturday only</span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span style="color: #8b5cf6;">✅</span>
-                                            <span><strong>Task Earnings:</strong> Friday and Saturday only</span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span style="color: #6366f1;">🏦</span>
-                                            <span><strong>Vault Earnings:</strong> After 30 days from vault purchase</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
                                 <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
                                     <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
-                                        <strong>💡 Note:</strong> Withdrawal fee: 5% | Minimum: 4,000 UGX
+                                        <strong>💡 Note:</strong> A 5% withdrawal fee applies to all withdrawals.
                                     </p>
                                 </div>
                                 
-                                <!-- Fund Category Selection -->
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">Select Fund Categories:</label>
-                                    <select id="withdrawCategories" multiple style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: white;">
-                                        <option value="referral">💰 Referral Earnings (Anytime)</option>
-                                        <option value="lubGame">🎲 LUB Game Winnings (Fri/Sat only)</option>
-                                        <option value="task">✅ Task Earnings (Fri/Sat only)</option>
-                                        <option value="vault">🏦 Vault Earnings (30 days)</option>
-                                    </select>
-                                    <small style="color: var(--gray); margin-top: 0.25rem; display: block;">
-                                        Hold Ctrl/Cmd to select multiple categories. Weekend categories (LUB/Task) only available Fri/Sat.
-                                    </small>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select Withdrawal Category</label>
+                                <select id="withdrawCategory" onchange="updateWithdrawableAmount()">
+                                    <option value="">-- Select Category --</option>
+                                    <option value="total">Total Balance</option>
+                                    <option value="referral">Referral Earnings Only</option>
+                                    <option value="task">Task Earnings Only</option>
+                                    <option value="vault">Vault Profits Only</option>
+                                </select>
+                                
+                                <div id="categoryBalanceInfo" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: none;">
+                                    <p style="margin: 0; color: #0369a1;">
+                                        <strong>Available in this category:</strong> <span id="categoryBalance">0</span> UGX
+                                    </p>
                                 </div>
                                 
-                                <input type="number" id="withdrawAmount" placeholder="Enter Amount" min="4000" />
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Withdrawal Amount (UGX)</label>
+                                <input type="number" id="withdrawAmount" placeholder="Enter Amount" oninput="calculateWithdrawFee()" />
+                                
+                                <div id="feeBreakdown" style="background: #f9fafb; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: none;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--gray);">Amount Requested:</span>
+                                        <strong id="requestedAmount">0</strong> UGX
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--error);">Withdrawal Fee (5%):</span>
+                                        <strong id="withdrawFee" style="color: var(--error);">0</strong> UGX
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 2px solid #e5e7eb;">
+                                        <span style="color: var(--success); font-weight: 600;">You Will Receive:</span>
+                                        <strong id="netWithdraw" style="color: var(--success); font-size: 1.25rem;">0</strong> UGX
+                                    </div>
+                                </div>
+                                
                                 <select id="withdrawMethod">
                                     <option value="">Select Withdrawal Method</option>
                                     <option value="momo">Mobile Money</option>
                                     <option value="bank">Bank Transfer</option>
                                 </select>
                                 <input type="text" id="withdrawAccount" placeholder="Account Number/Phone Number" />
-                                
-                                <p style="margin: 1rem 0; color: var(--gray);">
-                                    Withdrawal Fee: 5% | You will receive: <strong><span id="netWithdraw">0</span> UGX</strong>
-                                </p>
                                 
                                 <button class="btn btn-success btn-block" onclick="withdraw()">
                                     Request Withdrawal
@@ -2441,7 +2431,7 @@
                             <tr>
                                 <th>Date</th>
                                 <th>User</th>
-                                <th>Amount</th>
+                                <th>Requested</th>
                                 <th>Method</th>
                                 <th>Account</th>
                                 <th>Actions</th>
@@ -3467,14 +3457,35 @@
                 return;
             }
             
-            // Find lowest unique bet - if multiple people have same lowest amount, first bet wins
-            uniqueBets.sort((a, b) => {
-                if (a.amount === b.amount) {
-                    // If amounts are equal, sort by timestamp (earlier bet wins)
-                    return new Date(a.bet.placedAt) - new Date(b.bet.placedAt);
+            // Find lowest unique bet
+            uniqueBets.sort((a, b) => a.amount - b.amount);
+
+            // Check if multiple people have the same lowest unique bet
+            if (uniqueBets.length > 1 && uniqueBets[0].amount === uniqueBets[1].amount) {
+                // Multiple people bet the same lowest amount - NOT UNIQUE!
+                // Remove all duplicates at the lowest amount
+                const lowestAmount = uniqueBets[0].amount;
+                uniqueBets = uniqueBets.filter(bet => bet.amount !== lowestAmount);
+                
+                if (uniqueBets.length === 0) {
+                    // No truly unique bets after removing duplicates
+                    await db.collection('lubGameRounds').doc(roundId).update({
+                        status: 'completed',
+                        completedAt: new Date().toISOString(),
+                        winner: null,
+                        winningAmount: null,
+                        result: 'no_winner',
+                        adminEarnings: totalLosses
+                    });
+                    
+                    const updatePromises = betsSnapshot.docs.map(doc => 
+                        db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+                    );
+                    await Promise.all(updatePromises);
+                    return;
                 }
-                return a.amount - b.amount;
-            });
+            }
+
             const winningBet = uniqueBets[0];
             const prize = winningBet.amount * 10;
             
@@ -6218,7 +6229,12 @@
                             <div style="margin-bottom: 1.5rem;">
                                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
                                     ${candidate.picture ? `
-                                        <img src="${candidate.picture}" alt="${candidate.name}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;" />
+                                        <img src="${candidate.picture}" alt="${candidate.name}" 
+                                             style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;" 
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: none; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.2rem;">
+                                            ${candidate.name.charAt(0)}
+                                        </div>
                                     ` : `
                                         <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.2rem;">
                                             ${candidate.name.charAt(0)}
@@ -7669,32 +7685,107 @@
         return { valid: true, reason: '' };
     }
 
+    async function updateWithdrawableAmount() {
+        const category = document.getElementById('withdrawCategory').value;
+        const categoryBalanceInfo = document.getElementById('categoryBalanceInfo');
+        const categoryBalanceSpan = document.getElementById('categoryBalance');
+        
+        if (!category) {
+            categoryBalanceInfo.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
+            let availableAmount = 0;
+            
+            if (category === 'total') {
+                const activationFeePaid = userData.activationFeePaid || 0;
+                availableAmount = (userData.balance || 0) - activationFeePaid;
+            } else if (category === 'referral') {
+                // Get total referral earnings
+                const referralsSnapshot = await db.collection('users')
+                    .doc(currentUser.id)
+                    .collection('referrals')
+                    .get();
+                
+                referralsSnapshot.docs.forEach(doc => {
+                    availableAmount += doc.data().earnings || 0;
+                });
+            } else if (category === 'task') {
+                availableAmount = userData.totalTaskEarnings || 0;
+            } else if (category === 'vault') {
+                // Get vault profits (total withdrawn from vaults)
+                const transactionsSnapshot = await db.collection('transactions')
+                    .where('userId', '==', currentUser.id)
+                    .where('type', '==', 'vault_withdrawal')
+                    .get();
+                
+                transactionsSnapshot.docs.forEach(doc => {
+                    availableAmount += doc.data().amount || 0;
+                });
+            }
+            
+            categoryBalanceSpan.textContent = availableAmount.toLocaleString();
+            categoryBalanceInfo.style.display = 'block';
+            
+            // Store for validation
+            document.getElementById('withdrawAmount').setAttribute('data-max', availableAmount);
+            
+        } catch (error) {
+            console.error('Error calculating category balance:', error);
+        }
+    }
+
+    function calculateWithdrawFee() {
+        const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+        const feeBreakdown = document.getElementById('feeBreakdown');
+        
+        if (amount > 0) {
+            const fee = amount * 0.05;
+            const net = amount - fee;
+            
+            document.getElementById('requestedAmount').textContent = amount.toLocaleString();
+            document.getElementById('withdrawFee').textContent = fee.toLocaleString();
+            document.getElementById('netWithdraw').textContent = net.toLocaleString();
+            
+            feeBreakdown.style.display = 'block';
+        } else {
+            feeBreakdown.style.display = 'none';
+        }
+    }
+
     async function withdraw() {
         try {
+            const category = document.getElementById('withdrawCategory').value;
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const method = document.getElementById('withdrawMethod').value;
             const account = document.getElementById('withdrawAccount').value;
+
+            if (!category) {
+                alert('Please select a withdrawal category');
+                return;
+            }
 
             if (!amount || !method || !account) {
                 alert('Please fill all fields');
                 return;
             }
 
-            if (amount < 4000) {
-                alert('Minimum withdrawal amount is 4,000 UGX');
+            if (amount < 10000) {
+                alert('Minimum withdrawal amount is 10,000 UGX');
+                return;
+            }
+
+            const maxAmount = parseFloat(document.getElementById('withdrawAmount').getAttribute('data-max'));
+            if (amount > maxAmount) {
+                alert(`Insufficient funds in this category. Available: ${maxAmount.toLocaleString()} UGX`);
                 return;
             }
 
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
-            const currentBalance = userData.balance || 0;
-            const activationFeePaid = userData.activationFeePaid || 0;
-            const usableBalance = currentBalance - activationFeePaid;
-
-            if (amount > usableBalance) {
-                alert(`Insufficient usable balance. Available: ${usableBalance.toLocaleString()} UGX`);
-                return;
-            }
 
             // Skip activation checks for admin users
             if (!userData.isAdmin && !userData.isActivated) {
@@ -7702,88 +7793,62 @@
                 return;
             }
 
-            // Get selected categories
-            const selectedCategories = getSelectedCategories();
-            if (selectedCategories.length === 0) {
-                alert('Please select at least one fund category');
+            // Check 30-day waiting period from activation
+            const activationDate = new Date(userData.activationDate || userData.joinedDate);
+            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+            const now = new Date();
+
+            if (now < thirtyDaysLater) {
+                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
+                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
                 return;
             }
 
-            // Validate selected categories
-            const categoryValidation = validateSelectedCategories(selectedCategories);
-            if (!categoryValidation.valid) {
-                alert(categoryValidation.reason);
+            // Check if it's weekend (Saturday or Sunday)
+            const dayOfWeek = now.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                alert('Withdrawals are only allowed on weekends (Saturday and Sunday)');
                 return;
             }
 
-            // Get fund sources and check eligibility
-            const fundSources = await getFundSources(currentUser.id);
-            if (!fundSources) {
-                alert('Error retrieving fund information');
-                return;
-            }
+            // Check if it's the last two weeks of the month
+            const currentDate = now.getDate();
+            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const lastTwoWeeksStart = lastDayOfMonth - 13;
 
-            // Determine which fund sources to use for withdrawal based on selected categories
-            let remainingAmount = amount;
-            const withdrawalSources = [];
-
-            // Process selected categories in priority order
-            const categoryOrder = ['referral', 'lubGame', 'task', 'vault'];
-            
-            for (const category of categoryOrder) {
-                if (selectedCategories.includes(category) && remainingAmount > 0) {
-                    const availableAmount = fundSources.availableForWithdrawal[category] || 0;
-                    if (availableAmount > 0) {
-                        const categoryAmount = Math.min(remainingAmount, availableAmount);
-                        const eligibility = checkWithdrawalEligibility(category, categoryAmount, userData);
-                        
-                        if (eligibility.eligible) {
-                            withdrawalSources.push({ source: category, amount: categoryAmount });
-                            remainingAmount -= categoryAmount;
-                        } else {
-                            alert(eligibility.reason);
-                            return;
-                        }
-                    }
-                }
-            }
-
-            if (remainingAmount > 0) {
-                const availableFromSelected = amount - remainingAmount;
-                alert(`Insufficient funds from selected categories. Available from selected categories: ${availableFromSelected.toLocaleString()} UGX`);
+            if (currentDate < lastTwoWeeksStart) {
+                alert('Withdrawals are only allowed in the last two weeks of the month');
                 return;
             }
 
             const fee = amount * 0.05;
             const netAmount = amount - fee;
 
-            // Create withdrawal request with fund source details
+            // Create withdrawal request (admin will see the net amount)
             await db.collection('withdrawalRequests').add({
                 userId: currentUser.id,
                 userName: currentUser.fullName,
                 userEmail: currentUser.email,
-                amount: amount,
+                category: category,
+                grossAmount: amount,
+                fee: fee,
+                netAmount: netAmount, // This is what admin sends
                 method: method,
                 account: account,
-                fee: fee,
-                netAmount: netAmount,
                 status: 'pending',
-                requestDate: new Date().toISOString(),
-                fundSources: withdrawalSources,
-                withdrawalRules: {
-                    referral: 'Anytime',
-                    lubGame: 'Friday and Saturday only',
-                    task: 'Friday and Saturday only',
-                    vault: 'After 30 days from vault purchase'
-                }
+                requestDate: new Date().toISOString()
             });
 
-            alert('Withdrawal request submitted! Waiting for admin approval.');
+            alert(`Withdrawal request submitted!\n\nRequested: ${amount.toLocaleString()} UGX\nFee: ${fee.toLocaleString()} UGX\nYou will receive: ${netAmount.toLocaleString()} UGX`);
 
+            document.getElementById('withdrawCategory').value = '';
             document.getElementById('withdrawAmount').value = '';
+            document.getElementById('withdrawAmount').removeAttribute('data-max');
             document.getElementById('withdrawMethod').value = '';
             document.getElementById('withdrawAccount').value = '';
-            document.getElementById('withdrawCategories').selectedIndex = -1; // Clear selections
+            document.getElementById('categoryBalanceInfo').style.display = 'none';
+            document.getElementById('feeBreakdown').style.display = 'none';
+            
             updateWithdrawHistory();
 
         } catch (error) {
@@ -8031,6 +8096,8 @@
             }));
 
             const tbody = document.getElementById('withdrawHistoryBody');
+            if (!tbody) return;
+            
             if (withdrawals.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center">No withdrawals yet</td></tr>';
                 return;
@@ -8049,10 +8116,12 @@
 
                 return `
                     <tr>
-                        <td>${new Date(w.requestDate).toLocaleDateString()}</td>
-                        <td>${w.amount.toLocaleString()} UGX</td>
-                        <td>${w.fee.toLocaleString()} UGX</td>
-                        <td>${w.netAmount.toLocaleString()} UGX</td>
+                        <td>${new Date(w.requestDate).toLocaleDateString()}<br>
+                            <small style="color: var(--gray);">${w.category || 'total'}</small>
+                        </td>
+                        <td>${(w.grossAmount || w.amount).toLocaleString()} UGX</td>
+                        <td>${(w.fee || 0).toLocaleString()} UGX</td>
+                        <td style="color: var(--success); font-weight: 600;">${w.netAmount.toLocaleString()} UGX</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;
