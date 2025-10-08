@@ -2541,7 +2541,7 @@
                     <input type="date" id="candidateElectionDate" placeholder="Election Date" />
                     <textarea id="candidateDescription" placeholder="Description (optional)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
                     
-                    <button class="btn btn-success btn-block mt-2" onclick="addCandidate()">
+                    <button class="btn btn-success btn-block mt-2" id="candidateFormBtn" onclick="addCandidate()">
                         Add Candidate
                     </button>
                 </div>
@@ -6713,9 +6713,11 @@
             }
             
             // Change button text and onclick
-            const addBtn = document.querySelector('button[onclick="addCandidate()"]');
-            addBtn.textContent = 'Update Candidate';
-            addBtn.onclick = () => updateCandidate(candidateId);
+            const addBtn = document.getElementById('candidateFormBtn');
+            if (addBtn) {
+                addBtn.textContent = 'Update Candidate';
+                addBtn.onclick = () => updateCandidate(candidateId);
+            }
             
             // Scroll to form
             document.getElementById('candidateName').scrollIntoView({ behavior: 'smooth' });
@@ -6787,9 +6789,11 @@
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
             
-            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
-            addBtn.textContent = 'Add Candidate';
-            addBtn.onclick = () => addCandidate();
+            const addBtn = document.getElementById('candidateFormBtn');
+            if (addBtn) {
+                addBtn.textContent = 'Add Candidate';
+                addBtn.onclick = addCandidate;
+            }
             
             updateAdminCandidates();
         } catch (error) {
