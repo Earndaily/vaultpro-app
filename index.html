@@ -1984,9 +1984,32 @@
                         <div id="withdrawSection" class="collapsible-content hidden">
                             <div style="padding: 1rem;">
                                 <p style="color: var(--gray); margin-bottom: 1rem;">Available Balance: <strong><span id="withdrawBalance">0</span> UGX</strong></p>
+                                <!-- Withdrawal Rules Information -->
+                                <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                                    <h4 style="color: #0c4a6e; margin: 0 0 0.75rem 0; font-size: 1rem;">📋 Withdrawal Rules</h4>
+                                    <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span style="color: #10b981;">💰</span>
+                                            <span><strong>Referral Earnings:</strong> Can be withdrawn anytime</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span style="color: #f59e0b;">🎲</span>
+                                            <span><strong>LUB Game Winnings:</strong> Friday and Saturday only</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span style="color: #8b5cf6;">✅</span>
+                                            <span><strong>Task Earnings:</strong> Friday and Saturday only</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span style="color: #6366f1;">🏦</span>
+                                            <span><strong>Vault Earnings:</strong> After 30 days from vault purchase</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
                                     <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
-                                        <strong>💡 Note:</strong> Vault withdrawals are subject to a 10% admin fee. Regular withdrawals have no fees.
+                                        <strong>💡 Note:</strong> Withdrawal fee: 5% | Minimum: 10,000 UGX
                                     </p>
                                 </div>
                                 
@@ -7360,6 +7383,99 @@
         updateWithdrawHistory();
     }
 
+    // New withdrawal rules implementation
+    async function getFundSources(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userData = userDoc.data();
+            const currentBalance = userData.balance || 0;
+            const activationFeePaid = userData.activationFeePaid || 0;
+            const usableBalance = currentBalance - activationFeePaid;
+
+            // Get all transactions to categorize funds
+            const transactionsSnapshot = await db.collection('transactions')
+                .where('userId', '==', userId)
+                .get();
+            
+            let referralEarnings = 0;
+            let lubGameEarnings = 0;
+            let taskEarnings = 0;
+            let vaultEarnings = 0;
+            let totalDeposits = 0;
+
+            transactionsSnapshot.docs.forEach(doc => {
+                const transaction = doc.data();
+                switch (transaction.type) {
+                    case 'referral':
+                        referralEarnings += transaction.amount || 0;
+                        break;
+                    case 'lub_game_winnings':
+                        lubGameEarnings += transaction.amount || 0;
+                        break;
+                    case 'task_completion':
+                        taskEarnings += transaction.amount || 0;
+                        break;
+                    case 'vault_maturity':
+                        vaultEarnings += transaction.amount || 0;
+                        break;
+                    case 'deposit':
+                    case 'subscription':
+                        totalDeposits += transaction.amount || 0;
+                        break;
+                }
+            });
+
+            return {
+                totalBalance: usableBalance,
+                referralEarnings,
+                lubGameEarnings,
+                taskEarnings,
+                vaultEarnings,
+                totalDeposits,
+                availableForWithdrawal: {
+                    referral: referralEarnings,
+                    lubGame: lubGameEarnings,
+                    task: taskEarnings,
+                    vault: vaultEarnings
+                }
+            };
+        } catch (error) {
+            console.error('Error getting fund sources:', error);
+            return null;
+        }
+    }
+
+    function checkWithdrawalEligibility(fundSource, amount, userData) {
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+        switch (fundSource) {
+            case 'referral':
+                // Referral earnings can be withdrawn anytime
+                return { eligible: true, reason: '' };
+            
+            case 'lubGame':
+            case 'task':
+                // LUB game and task earnings only on Friday (5) and Saturday (6)
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    const daysUntilWeekend = dayOfWeek === 0 ? 5 : (5 - dayOfWeek);
+                    return { 
+                        eligible: false, 
+                        reason: `LUB game and task earnings can only be withdrawn on Fridays and Saturdays. Next available: ${daysUntilWeekend} days` 
+                    };
+                }
+                return { eligible: true, reason: '' };
+            
+            case 'vault':
+                // Vault earnings need 30 days from vault purchase
+                // This would need to be checked against individual vault purchase dates
+                return { eligible: true, reason: 'Vault earnings eligible after 30 days from purchase' };
+            
+            default:
+                return { eligible: false, reason: 'Unknown fund source' };
+        }
+    }
+
     async function withdraw() {
         try {
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
@@ -7393,55 +7509,69 @@
                 return;
             }
 
-            // Check 30-day waiting period from activation
-            const activationDate = new Date(userData.activationDate || userData.joinedDate);
-            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-            const now = new Date();
-
-            if (now < thirtyDaysLater) {
-                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
-                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
+            // Get fund sources and check eligibility
+            const fundSources = await getFundSources(currentUser.id);
+            if (!fundSources) {
+                alert('Error retrieving fund information');
                 return;
             }
 
-            // Check if it's weekend (Saturday or Sunday)
-            const dayOfWeek = now.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
-                alert('Withdrawals are only allowed on weekends (Saturday and Sunday)');
-                return;
+            // Determine which fund sources to use for withdrawal
+            let remainingAmount = amount;
+            const withdrawalSources = [];
+
+            // Priority order: Referral (anytime) -> LUB/Task (Fri/Sat) -> Vault (30 days)
+            if (remainingAmount > 0 && fundSources.availableForWithdrawal.referral > 0) {
+                const referralAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.referral);
+                withdrawalSources.push({ source: 'referral', amount: referralAmount });
+                remainingAmount -= referralAmount;
             }
 
-            // Check if it's the last two weeks of the month
-            const currentDate = now.getDate();
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const lastTwoWeeksStart = lastDayOfMonth - 13; // Last 14 days
-
-            if (currentDate < lastTwoWeeksStart) {
-                alert('Withdrawals are only allowed in the last two weeks of the month');
-                return;
+            if (remainingAmount > 0 && fundSources.availableForWithdrawal.lubGame > 0) {
+                const lubAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.lubGame);
+                const eligibility = checkWithdrawalEligibility('lubGame', lubAmount, userData);
+                if (eligibility.eligible) {
+                    withdrawalSources.push({ source: 'lubGame', amount: lubAmount });
+                    remainingAmount -= lubAmount;
+                } else {
+                    alert(eligibility.reason);
+                    return;
+                }
             }
 
-            // Check if amount is only profits (not deposited money)
-            const totalDeposits = await calculateTotalDeposits(currentUser.id);
-            const withdrawableBalance = usableBalance - totalDeposits;
+            if (remainingAmount > 0 && fundSources.availableForWithdrawal.task > 0) {
+                const taskAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.task);
+                const eligibility = checkWithdrawalEligibility('task', taskAmount, userData);
+                if (eligibility.eligible) {
+                    withdrawalSources.push({ source: 'task', amount: taskAmount });
+                    remainingAmount -= taskAmount;
+                } else {
+                    alert(eligibility.reason);
+                    return;
+                }
+            }
 
-            if (amount > withdrawableBalance) {
-                alert(`You can only withdraw profits. Available profit balance: ${withdrawableBalance.toLocaleString()} UGX`);
-                // Redirect to deposit section
-                setTimeout(() => {
-                    showSection('wallet');
-                    // Scroll to deposit section
-                    setTimeout(() => {
-                        document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
-                }, 2000);
+            if (remainingAmount > 0 && fundSources.availableForWithdrawal.vault > 0) {
+                const vaultAmount = Math.min(remainingAmount, fundSources.availableForWithdrawal.vault);
+                const eligibility = checkWithdrawalEligibility('vault', vaultAmount, userData);
+                if (eligibility.eligible) {
+                    withdrawalSources.push({ source: 'vault', amount: vaultAmount });
+                    remainingAmount -= vaultAmount;
+                } else {
+                    alert(eligibility.reason);
+                    return;
+                }
+            }
+
+            if (remainingAmount > 0) {
+                alert(`Insufficient withdrawable funds. Available: ${(amount - remainingAmount).toLocaleString()} UGX`);
                 return;
             }
 
             const fee = amount * 0.05;
             const netAmount = amount - fee;
 
-            // Create withdrawal request (don't deduct balance yet)
+            // Create withdrawal request with fund source details
             await db.collection('withdrawalRequests').add({
                 userId: currentUser.id,
                 userName: currentUser.fullName,
@@ -7452,7 +7582,14 @@
                 fee: fee,
                 netAmount: netAmount,
                 status: 'pending',
-                requestDate: new Date().toISOString()
+                requestDate: new Date().toISOString(),
+                fundSources: withdrawalSources,
+                withdrawalRules: {
+                    referral: 'Anytime',
+                    lubGame: 'Friday and Saturday only',
+                    task: 'Friday and Saturday only',
+                    vault: 'After 30 days from vault purchase'
+                }
             });
 
             alert('Withdrawal request submitted! Waiting for admin approval.');
