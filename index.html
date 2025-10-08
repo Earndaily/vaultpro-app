@@ -1295,14 +1295,14 @@
                         <div class="stat-label">👥 Referrals</div>
                         <div class="stat-value" id="totalReferrals">0</div>
                     </div>
-                                    <div class="stat-card">
+                                    <div class="stat-card compact">
                          <div class="stat-label">LUB Game Earnings</div>
                          <div class="stat-value" id="adminLUBGameEarnings">0</div>
                          <div class="stat-unit">UGX</div>
                      </div>
                    
                     <div class="stat-card compact">
-                        <div class="stat-label">💵 Earnings</div>
+                        <div class="stat-label">💵 Referral Earnings</div>
                         <div class="stat-value" id="referralEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
@@ -1325,6 +1325,16 @@
                         <div class="stat-label">🎯 Tasks</div>
                         <div class="stat-value" id="taskEarnings">0</div>
                         <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">🎲 LUB Game</div>
+                        <div class="stat-value" id="lubGameEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card compact" id="userLevelCard" style="background: linear-gradient(135deg, #6b7280, #6b7280dd);">
+                        <div class="stat-label" style="color: white;">Your Level</div>
+                        <div class="stat-value" style="font-size: 2rem; color: white;">🌱</div>
+                        <div class="stat-unit" style="color: white; font-weight: 600;">Beginner</div>
                     </div>
                 </div>
             </div>
@@ -1365,6 +1375,160 @@
                 </div>
             </div>
 
+            <!-- Top Referrers Leaderboard -->
+            <div class="card" id="leaderboardCard">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('leaderboardSection')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🏆 Top Referrers This Week
+                        </h3>
+                    </div>
+                    <div id="leaderboardSection" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #92400e; margin-bottom: 0.5rem;">
+                                    💰 Weekly Prize: 50,000 UGX
+                                </div>
+                                <div style="font-size: 0.875rem; color: #92400e;">
+                                    Top referrer wins every Sunday at midnight!
+                                </div>
+                                <div id="weekResetTimer" style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem;">
+                                    Resets in: <span id="timeUntilReset">Loading...</span>
+                                </div>
+                            </div>
+                            
+                            <div id="leaderboardList">
+                                <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading leaderboard...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referral Levels & Benefits -->
+            <div class="card" id="referralLevelsCard">
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('referralLevelsSection')">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="collapsible-icon">▶</span>
+                            🎖️ Referral Levels & Benefits
+                        </h3>
+                    </div>
+                    <div id="referralLevelsSection" class="collapsible-content hidden">
+                        <div style="padding: 1rem 0;">
+                            <!-- Current Level Progress -->
+                            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 2px solid #0ea5e9; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <div style="text-align: center; margin-bottom: 1rem;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: var(--primary);">Your Current Level</h4>
+                                    <div id="currentLevelBadge" style="display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 1.1rem;">
+                                        Loading...
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <span style="font-weight: 600; color: var(--dark);">Progress to Next Level</span>
+                                        <span id="progressPercentage" style="font-weight: 600; color: var(--primary);">0%</span>
+                                    </div>
+                                    <div style="background: #e5e7eb; border-radius: 10px; height: 12px; overflow: hidden;">
+                                        <div id="levelProgressBar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: 0%; transition: width 0.5s ease; border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray);">
+                                        <span id="currentReferralCount">0 referrals</span>
+                                        <span id="nextLevelRequirement">Next level: 100 referrals</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Levels Table -->
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                    <thead style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white;">
+                                        <tr>
+                                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Level</th>
+                                            <th style="padding: 1rem; text-align: left; font-weight: 600;">Title / Role</th>
+                                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Referrals</th>
+                                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Monthly Salary</th>
+                                            <th style="padding: 1rem; text-align: left; font-weight: 600;">Perks / Benefits</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">1️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Admin</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">100</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">50,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Recognition badge in profile</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">2️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Partner</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">500</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">200,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Access to special partner dashboard</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">3️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Manager</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">1,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">500,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Can host and monitor team meetings</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">4️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Chief</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">2,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">1,000,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Priority support, exclusive events</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">5️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Partner King</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">5,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">2,000,000 UGX</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Official brand merchandise (T-shirt, cap, badge)</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 1rem; text-align: center; font-size: 1.5rem;">6️⃣</td>
+                                            <td style="padding: 1rem; font-weight: 600; color: var(--dark);">Shareholder</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--primary);">10,000</td>
+                                            <td style="padding: 1rem; text-align: center; font-weight: 600; color: var(--success);">20% of company funds</td>
+                                            <td style="padding: 1rem; color: var(--gray);">Lifetime membership, company decision-making rights</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Level Descriptions -->
+                            <div style="margin-top: 1.5rem; background: #f8fafc; border-radius: 12px; padding: 1.5rem;">
+                                <h4 style="margin: 0 0 1rem 0; color: var(--dark);">Level Descriptions</h4>
+                                <div style="display: grid; gap: 1rem;">
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary);">
+                                        <strong>1️⃣ Admin:</strong> Entry-level leadership role. Manages user activity and assists support.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                                        <strong>2️⃣ Partner:</strong> Trusted user with a growing community under them.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                                        <strong>3️⃣ Manager:</strong> Mid-level leader managing multiple partners.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning);">
+                                        <strong>4️⃣ Chief:</strong> High-ranking official overseeing major sections of the network.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--error);">
+                                        <strong>5️⃣ Partner King:</strong> Top-tier promoter managing large networks.
+                                    </div>
+                                    <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                                        <strong>6️⃣ Shareholder:</strong> Ultimate recognition—becomes part-owner of the project.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
         </div>
 
@@ -1525,8 +1689,8 @@
                 <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--success);">
                     <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
-                        <li><strong>4000 SHS</strong> for each direct referral</li>
-                        <li><strong>2000 SHS</strong> when your referral refers someone else</li>
+                        <li><strong>4000 UGX</strong> for each direct referral</li>
+                        <li><strong>2000 UGX</strong> when your referral refers someone else</li>
                     </ul>
                 </div>
                 
@@ -1824,24 +1988,52 @@
                         </div>
                         <div id="withdrawSection" class="collapsible-content hidden">
                             <div style="padding: 1rem;">
-                                <p style="color: var(--gray); margin-bottom: 1rem;">Available Balance: <strong><span id="withdrawBalance">0</span> UGX</strong></p>
                                 <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
                                     <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
-                                        <strong>💡 Note:</strong> Vault withdrawals are subject to a 10% admin fee. Regular withdrawals have no fees.
+                                        <strong>💡 Note:</strong> A 5% withdrawal fee applies to all withdrawals.
                                     </p>
                                 </div>
                                 
-                                <input type="number" id="withdrawAmount" placeholder="Enter Amount" />
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select Withdrawal Category</label>
+                                <select id="withdrawCategory" onchange="updateWithdrawableAmount()">
+                                    <option value="">-- Select Category --</option>
+                                    <option value="total">Total Balance</option>
+                                    <option value="referral">Referral Earnings Only</option>
+                                    <option value="lubGame">LUB Game Winnings Only</option>
+                                    <option value="task">Task Earnings Only</option>
+                                    <option value="vault">Vault Profits Only</option>
+                                </select>
+                                
+                                <div id="categoryBalanceInfo" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: none;">
+                                    <p style="margin: 0; color: #0369a1;">
+                                        <strong>Available in this category:</strong> <span id="categoryBalance">0</span> UGX
+                                    </p>
+                                </div>
+                                
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Withdrawal Amount (UGX)</label>
+                                <input type="number" id="withdrawAmount" placeholder="Enter Amount" oninput="calculateWithdrawFee()" />
+                                
+                                <div id="feeBreakdown" style="background: #f9fafb; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: none;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--gray);">Amount Requested:</span>
+                                        <strong id="requestedAmount">0</strong> UGX
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--error);">Withdrawal Fee (5%):</span>
+                                        <strong id="withdrawFee" style="color: var(--error);">0</strong> UGX
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 2px solid #e5e7eb;">
+                                        <span style="color: var(--success); font-weight: 600;">You Will Receive:</span>
+                                        <strong id="netWithdraw" style="color: var(--success); font-size: 1.25rem;">0</strong> UGX
+                                    </div>
+                                </div>
+                                
                                 <select id="withdrawMethod">
                                     <option value="">Select Withdrawal Method</option>
                                     <option value="momo">Mobile Money</option>
                                     <option value="bank">Bank Transfer</option>
                                 </select>
                                 <input type="text" id="withdrawAccount" placeholder="Account Number/Phone Number" />
-                                
-                                <p style="margin: 1rem 0; color: var(--gray);">
-                                    Withdrawal Fee: 5% | You will receive: <strong><span id="netWithdraw">0</span> UGX</strong>
-                                </p>
                                 
                                 <button class="btn btn-success btn-block" onclick="withdraw()">
                                     Request Withdrawal
@@ -2141,18 +2333,18 @@
                 <h3 class="mt-3">Earnings Breakdown</h3>
                 <div class="grid grid-2">
                     <div class="stat-card">
-                        <div class="stat-label">From Deposits (10%)</div>
-                        <div class="stat-value" id="depositEarnings">0</div>
-                        <div class="stat-unit">UGX</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-label">From Withdrawals (5%)</div>
                         <div class="stat-value" id="withdrawEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">From Referrals (2%)</div>
-                        <div class="stat-value" id="referralAdminEarnings">0</div>
+                        <div class="stat-label">From LUB Game</div>
+                        <div class="stat-value" id="lubAdminEarnings">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">From Activations (16,000 UGX each)</div>
+                        <div class="stat-value" id="activationAdminEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
                 </div>
@@ -2240,7 +2432,7 @@
                             <tr>
                                 <th>Date</th>
                                 <th>User</th>
-                                <th>Amount</th>
+                                <th>Requested</th>
                                 <th>Method</th>
                                 <th>Account</th>
                                 <th>Actions</th>
@@ -2326,7 +2518,14 @@
                 <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Add New Candidate</h3>
                     <input type="text" id="candidateName" placeholder="Candidate Name (e.g., Yoweri Museveni)" />
-                    <input type="url" id="candidatePicture" placeholder="Candidate Picture URL (optional)" />
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem;">📸 Candidate Picture (optional)</label>
+                        <input type="file" id="candidatePictureFile" accept="image/*" style="width: 100%; padding: 0.75rem; border: 2px dashed #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;" onchange="validateCandidateFileSize(this)" />
+                        <small style="color: var(--gray); margin-top: 0.25rem; display: block;">Maximum file size: 6MB. Supported formats: JPG, PNG, GIF</small>
+                        <div id="candidatePicturePreview" style="margin-top: 0.5rem; display: none;">
+                            <img id="candidatePreviewImg" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb;" />
+                        </div>
+                    </div>
                     <input type="text" id="candidateTitle" placeholder="Position (e.g., President, MP, Mayor, LC5 Chairman)" />
                     <select id="candidateCategory">
                         <option value="">Select Category</option>
@@ -2342,7 +2541,7 @@
                     <input type="date" id="candidateElectionDate" placeholder="Election Date" />
                     <textarea id="candidateDescription" placeholder="Description (optional)" rows="2" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
                     
-                    <button class="btn btn-success btn-block mt-2" onclick="addCandidate()">
+                    <button class="btn btn-success btn-block mt-2" id="candidateFormBtn" onclick="addCandidate()">
                         Add Candidate
                     </button>
                 </div>
@@ -2463,6 +2662,35 @@
     </div>
 </div>
 
+<!-- WhatsApp Group Join Modal -->
+<div id="whatsappGroupModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🎉 Welcome to VaultPro!</h2>
+            <button class="modal-close" onclick="closeWhatsAppGroupModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📱</div>
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Join Our Community!</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">
+                    Connect with other VaultPro users, get updates, and participate in exclusive discussions.
+                </p>
+                <a href="https://chat.whatsapp.com/KBvY0dutPIcHPLNzjBcJZQ" 
+                   target="_blank" 
+                   class="btn btn-success" 
+                   style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; padding: 1rem 2rem; margin-bottom: 1rem;">
+                    <span>📱</span>
+                    Join WhatsApp Group
+                </a>
+                <p style="color: var(--gray); font-size: 0.9rem;">
+                    Click the button above to join our WhatsApp group and stay connected!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Bottom Navigation (Mobile) -->
 <div class="bottom-nav">
     <div class="bottom-nav-items">
@@ -2522,6 +2750,11 @@
                 <h3 id="profileUserName" style="margin: 0; color: var(--text);">User</h3>
                 <p id="profileUserEmail" style="margin: 0.5rem 0; color: var(--gray);">user@example.com</p>
                 <p id="profileJoinedDate" style="margin: 0; color: var(--gray); font-size: 0.875rem;">Member since N/A</p>
+                
+                <!-- Level Badge -->
+                <div id="profileLevelBadge" style="margin-top: 1rem; display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 1rem;">
+                    🌱 Newcomer
+                </div>
             </div>
 
             <div class="grid grid-2" style="margin-bottom: 2rem;">
@@ -2620,12 +2853,7 @@
                     <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading candidates...</p>
                 </div>
                 
-                <!-- Debug: Add Sample Candidates Button (for testing) -->
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button class="btn btn-secondary" onclick="addSampleCandidates()" style="font-size: 0.8rem;">
-                        🧪 Add Sample Candidates (Testing)
-                    </button>
-                </div>
+
 
                 <!-- My Stakes -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
@@ -2678,6 +2906,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 <!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
@@ -3012,10 +3241,9 @@
             const endTime = new Date(roundData.endTime);
             
             if (now >= endTime && roundData.status === 'active') {
-                // Round ended - process results
+                // Round ended - process results (this will handle starting the next round after 10 minutes)
                 await processLUBRoundResults(roundData.id);
-                // Start new round
-                return await startNewLUBRound();
+                return null; // No active round during the 10-minute break
             }
             
             return roundData;
@@ -3046,9 +3274,19 @@
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
             const balance = userData.balance || 0;
+            const activationFeePaid = userData.activationFeePaid || 0;
+            const usableBalance = balance - activationFeePaid;
             
-            if (betAmount > balance) {
+            if (betAmount > usableBalance) {
                 showAlert('lubGameAlert', 'Insufficient balance', 'error');
+                // Redirect to deposit section
+                setTimeout(() => {
+                    showSection('wallet');
+                    // Scroll to deposit section
+                    setTimeout(() => {
+                        document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                }, 2000);
                 return;
             }
             
@@ -3137,6 +3375,18 @@
                     status: 'completed',
                     completedAt: new Date().toISOString()
                 });
+                
+                // Schedule next round to start after 10 minutes
+                setTimeout(async () => {
+                    try {
+                        console.log('Starting new LUB round after 10-minute delay...');
+                        await startNewLUBRound();
+                        console.log('New LUB round started successfully');
+                    } catch (error) {
+                        console.error('Error starting new LUB round after delay:', error);
+                    }
+                }, 10 * 60 * 1000); // 10 minutes delay
+                
                 return;
             }
             
@@ -3193,11 +3443,50 @@
                 });
                 
                 console.log('No unique bets. Admin earned:', totalLosses);
+                
+                // Schedule next round to start after 10 minutes
+                setTimeout(async () => {
+                    try {
+                        console.log('Starting new LUB round after 10-minute delay...');
+                        await startNewLUBRound();
+                        console.log('New LUB round started successfully');
+                    } catch (error) {
+                        console.error('Error starting new LUB round after delay:', error);
+                    }
+                }, 10 * 60 * 1000); // 10 minutes delay
+                
                 return;
             }
             
             // Find lowest unique bet
             uniqueBets.sort((a, b) => a.amount - b.amount);
+
+            // Check if multiple people have the same lowest unique bet
+            if (uniqueBets.length > 1 && uniqueBets[0].amount === uniqueBets[1].amount) {
+                // Multiple people bet the same lowest amount - NOT UNIQUE!
+                // Remove all duplicates at the lowest amount
+                const lowestAmount = uniqueBets[0].amount;
+                uniqueBets = uniqueBets.filter(bet => bet.amount !== lowestAmount);
+                
+                if (uniqueBets.length === 0) {
+                    // No truly unique bets after removing duplicates
+                    await db.collection('lubGameRounds').doc(roundId).update({
+                        status: 'completed',
+                        completedAt: new Date().toISOString(),
+                        winner: null,
+                        winningAmount: null,
+                        result: 'no_winner',
+                        adminEarnings: totalLosses
+                    });
+                    
+                    const updatePromises = betsSnapshot.docs.map(doc => 
+                        db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+                    );
+                    await Promise.all(updatePromises);
+                    return;
+                }
+            }
+
             const winningBet = uniqueBets[0];
             const prize = winningBet.amount * 10;
             
@@ -3264,6 +3553,17 @@
             console.log('LUB round results processed.');
             console.log('Winner:', winningBet.bet.userName, '- Prize:', prize);
             console.log('Admin earned from losing bets:', adminEarnings);
+            
+            // Schedule next round to start after 10 minutes
+            setTimeout(async () => {
+                try {
+                    console.log('Starting new LUB round after 10-minute delay...');
+                    await startNewLUBRound();
+                    console.log('New LUB round started successfully');
+                } catch (error) {
+                    console.error('Error starting new LUB round after delay:', error);
+                }
+            }, 10 * 60 * 1000); // 10 minutes delay
             
         } catch (error) {
             console.error('Error processing LUB round results:', error);
@@ -3414,6 +3714,181 @@
             clearInterval(lubUpdateInterval);
             lubUpdateInterval = null;
         }
+    }
+
+    // Leaderboard Functions
+    async function updateLeaderboard() {
+        try {
+            // Get current week's start (Monday)
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - daysUntilMonday);
+            weekStart.setHours(0, 0, 0, 0);
+            
+            // Get all users (exclude admin)
+            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+            
+            // Calculate weekly referrals for each user
+            const leaderboardData = await Promise.all(usersSnapshot.docs.map(async (doc) => {
+                const userData = doc.data();
+                const userId = doc.id;
+                
+                // Count referrals made this week
+                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
+                const weeklyReferrals = referralsSnapshot.docs.filter(refDoc => {
+                    const refData = refDoc.data();
+                    const refDate = new Date(refData.date);
+                    return refDate >= weekStart;
+                }).length;
+                
+                return {
+                    userId: userId,
+                    userName: userData.fullName,
+                    weeklyReferrals: weeklyReferrals,
+                    totalReferrals: referralsSnapshot.size
+                };
+            }));
+            
+            // Sort by weekly referrals
+            leaderboardData.sort((a, b) => b.weeklyReferrals - a.weeklyReferrals);
+            
+            // Take top 10
+            const top10 = leaderboardData.slice(0, 10);
+            
+            // Display leaderboard
+            const leaderboardList = document.getElementById('leaderboardList');
+            if (top10.length === 0 || top10[0].weeklyReferrals === 0) {
+                leaderboardList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No referrals this week yet. Be the first!</p>';
+            } else {
+                const trophies = ['🥇', '🥈', '🥉'];
+                leaderboardList.innerHTML = top10.map((user, index) => {
+                    const trophy = index < 3 ? trophies[index] : `${index + 1}.`;
+                    const isWinner = index === 0;
+                    
+                    return `
+                        <div style="background: ${isWinner ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f9fafb'}; 
+                                    border: 2px solid ${isWinner ? '#f59e0b' : '#e5e7eb'}; 
+                                    border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; 
+                                    display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">${trophy}</div>
+                                <div>
+                                    <div style="font-weight: 700; color: var(--dark);">${user.userName}</div>
+                                    <div style="font-size: 0.875rem; color: var(--gray);">Total: ${user.totalReferrals} referrals</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: ${isWinner ? '#f59e0b' : 'var(--primary)'};">
+                                    ${user.weeklyReferrals}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray);">this week</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Update countdown timer
+            updateWeekResetTimer();
+            
+        } catch (error) {
+            console.error('Error updating leaderboard:', error);
+        }
+    }
+
+    function updateWeekResetTimer() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        
+        // Calculate days until Sunday
+        const daysUntilSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
+        const nextSunday = new Date(now);
+        nextSunday.setDate(now.getDate() + daysUntilSunday);
+        nextSunday.setHours(23, 59, 59, 999);
+        
+        const timeRemaining = nextSunday - now;
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        
+        const timerEl = document.getElementById('timeUntilReset');
+        if (timerEl) {
+            timerEl.textContent = `${days}d ${hours}h ${minutes}m`;
+        }
+    }
+
+    // Award weekly winner (admin function)
+    async function awardWeeklyWinner() {
+        try {
+            // Get current week's start
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - daysUntilMonday);
+            weekStart.setHours(0, 0, 0, 0);
+            
+            // Find top referrer
+            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+            
+            let topReferrer = null;
+            let maxReferrals = 0;
+            
+            for (const doc of usersSnapshot.docs) {
+                const userData = doc.data();
+                const userId = doc.id;
+                
+                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
+                const weeklyReferrals = referralsSnapshot.docs.filter(refDoc => {
+                    const refData = refDoc.data();
+                    const refDate = new Date(refData.date);
+                    return refDate >= weekStart;
+                }).length;
+                
+                if (weeklyReferrals > maxReferrals) {
+                    maxReferrals = weeklyReferrals;
+                    topReferrer = { userId, userData, weeklyReferrals };
+                }
+            }
+            
+            if (topReferrer && topReferrer.weeklyReferrals > 0) {
+                // Award 50,000 UGX
+                const currentBalance = topReferrer.userData.balance || 0;
+                await db.collection('users').doc(topReferrer.userId).update({
+                    balance: currentBalance + 50000
+                });
+                
+                // Record transaction
+                await db.collection('transactions').add({
+                    userId: topReferrer.userId,
+                    userName: topReferrer.userData.fullName,
+                    type: 'weekly_referral_prize',
+                    amount: 50000,
+                    description: `Weekly Top Referrer Prize (${topReferrer.weeklyReferrals} referrals)`,
+                    date: new Date().toISOString()
+                });
+                
+                console.log(`Weekly winner: ${topReferrer.userData.fullName} with ${topReferrer.weeklyReferrals} referrals`);
+                return topReferrer;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error awarding weekly winner:', error);
+            return null;
+        }
+    }
+
+    // Check and award winner every Sunday at midnight (admin automation)
+    function scheduleWeeklyAward() {
+        setInterval(async () => {
+            const now = new Date();
+            if (now.getDay() === 0 && now.getHours() === 0 && now.getMinutes() === 0) {
+                await awardWeeklyWinner();
+            }
+        }, 60000); // Check every minute
     }
 
     // Initialize app
@@ -3629,7 +4104,7 @@
         try {
             console.log('Processing referral rewards for:', referrerId, 'new user:', newUserId);
             
-            // 1. Give 4000 SHS to direct referrer
+            // 1. Give 4000 UGX to direct referrer
             const directReferrerDoc = await db.collection('users').doc(referrerId).get();
             if (directReferrerDoc.exists) {
                 const directReferrerData = directReferrerDoc.data();
@@ -3658,7 +4133,12 @@
                     date: new Date().toISOString()
                 });
                 
-                console.log('Direct referral reward: 4000 SHS given to', directReferrerData.fullName);
+                console.log('Direct referral reward: 4000 UGX given to', directReferrerData.fullName);
+                
+                // Update referrer's level progress
+                if (currentUser && currentUser.id === referrerId) {
+                    updateReferralLevelProgress();
+                }
             }
             
             // 2. Check for second-level referrer (the person who referred the direct referrer)
@@ -3686,7 +4166,7 @@
                         date: new Date().toISOString()
                     });
                     
-                    console.log('Second-level referral reward: 2000 SHS given to', secondLevelReferrerData.fullName);
+                    console.log('Second-level referral reward: 2000 UGX given to', secondLevelReferrerData.fullName);
                 }
             }
             
@@ -3852,10 +4332,16 @@
                 earnings: 0
             });
 
-            // Handle referral rewards
-            await processReferralRewards(referrerId, userId, fullName);
+            // Referral rewards will be processed when activation fee is approved
+            // await processReferralRewards(referrerId, userId, fullName); // DISABLED - rewards given on activation
+            console.log('Referral rewards will be processed upon activation fee approval');
 
             showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
+            
+            // Show WhatsApp group join button
+            setTimeout(() => {
+                showWhatsAppGroupModal();
+            }, 2000);
             
             // Clear referral code after successful registration
             clearStoredReferralCode();
@@ -4186,19 +4672,43 @@
             item.style.cursor = '';
         });
         
-        // Show home section immediately
-        showSection('home');
+        // Ensure home section is visible immediately
+        const homeSection = document.getElementById('homeSection');
+        if (homeSection) {
+            homeSection.classList.remove('hidden');
+            homeSection.style.display = 'block';
+        }
+        
+        // Show home section immediately with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            showSection('home');
+        }, 50);
+        
+        // Force update feature access to ensure proper display
+        setTimeout(() => {
+            updateFeatureAccess();
+        }, 100);
         
         // Rest of your existing code...
         updateUserStats();
         updateFeatureAccess();
         
+        // Update leaderboard and schedule weekly awards
+        updateLeaderboard();
+        scheduleWeeklyAward();
+        
         if (currentUser) {
             updateProfileSection();
+            updateReferralLevelProgress();
         }
         
         ensureAllSectionsHidden();
         handleReferralLink();
+        
+        // Update timers every minute
+        setInterval(() => {
+            updateWeekResetTimer();
+        }, 60000);
     }
 
     function updateFeatureAccess() {
@@ -4244,12 +4754,12 @@
             }
         }
         
-        // Hide activation card in home section (do not show for unactivated users)
+        // Hide activation card - user doesn't want it displayed
         if (activationCard) {
             activationCard.style.display = 'none';
         }
 
-        // Hide Home dashboard and My Active Vaults for unactivated users
+        // Show/hide Home dashboard and My Active Vaults based on activation status
         const homeDashboardCard = document.getElementById('homeDashboardCard');
         const myActiveVaultsCard = document.getElementById('myActiveVaultsCard');
         if (homeDashboardCard) {
@@ -4335,20 +4845,39 @@
         document.getElementById('activationModal').classList.remove('show');
     }
 
+    // WhatsApp Group Modal Functions
+    function showWhatsAppGroupModal() {
+        document.getElementById('whatsappGroupModal').classList.remove('hidden');
+        document.getElementById('whatsappGroupModal').classList.add('show');
+    }
+
+    function closeWhatsAppGroupModal() {
+        document.getElementById('whatsappGroupModal').classList.add('hidden');
+        document.getElementById('whatsappGroupModal').classList.remove('show');
+    }
+
     // Close modal when clicking outside
     document.addEventListener('click', function(event) {
-        const modal = document.getElementById('activationModal');
-        if (event.target === modal) {
+        const activationModal = document.getElementById('activationModal');
+        const whatsappModal = document.getElementById('whatsappGroupModal');
+        if (event.target === activationModal) {
             closeActivationModal();
+        }
+        if (event.target === whatsappModal) {
+            closeWhatsAppGroupModal();
         }
     });
 
     // Close modal with ESC key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            const modal = document.getElementById('activationModal');
-            if (modal && modal.classList.contains('show')) {
+            const activationModal = document.getElementById('activationModal');
+            const whatsappModal = document.getElementById('whatsappGroupModal');
+            if (activationModal && activationModal.classList.contains('show')) {
                 closeActivationModal();
+            }
+            if (whatsappModal && whatsappModal.classList.contains('show')) {
+                closeWhatsAppGroupModal();
             }
         }
     });
@@ -4520,6 +5049,10 @@
         const sectionEl = document.getElementById(section + 'Section');
         if (sectionEl) {
             sectionEl.classList.remove('hidden');
+            // Force display to ensure visibility
+            sectionEl.style.display = 'block';
+        } else {
+            console.warn(`Section element not found: ${section}Section`);
         }
 
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
@@ -4631,6 +5164,9 @@
                 }
             }
             
+            // Load transaction history
+            await loadWalletTransactionHistory();
+            
             // Wallet section updated successfully
             console.log('Wallet section updated');
         } catch (error) {
@@ -4643,7 +5179,12 @@
             const el = document.getElementById('admin' + s + 'Section');
             if (el) el.classList.add('hidden');
         });
-        const sectionEl = document.getElementById('admin' + section.charAt(0).toUpperCase() + section.slice(1) + 'Section');
+        // Handle special case for LUB Game section
+        let sectionId = 'admin' + section.charAt(0).toUpperCase() + section.slice(1) + 'Section';
+        if (section === 'lubGame') {
+            sectionId = 'adminLUBGameSection';
+        }
+        const sectionEl = document.getElementById(sectionId);
         if (sectionEl) sectionEl.classList.remove('hidden');
 
         if (section === 'users') updateAdminUsers();
@@ -4653,6 +5194,99 @@
         if (section === 'withdrawals') updateAdminWithdrawals();
         if (section === 'candidates') updateAdminCandidates();
         if (section === 'lubGame') updateAdminLUBGame();
+    }
+
+    // Load wallet transaction history
+    async function loadWalletTransactionHistory() {
+        if (!currentUser) return;
+
+        try {
+            const transactionsSnapshot = await db.collection('transactions')
+                .where('userId', '==', currentUser.id)
+                .orderBy('date', 'desc')
+                .limit(20)
+                .get();
+
+            const transactions = transactionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const transactionHistoryEl = document.getElementById('walletTransactionHistory');
+            if (!transactionHistoryEl) return;
+
+            if (transactions.length === 0) {
+                transactionHistoryEl.innerHTML = '<tr><td colspan="4" class="text-center">No transactions yet</td></tr>';
+                return;
+            }
+
+            transactionHistoryEl.innerHTML = transactions.map(transaction => {
+                const date = new Date(transaction.date).toLocaleDateString();
+                const type = getTransactionTypeDisplay(transaction.type);
+                let amount = transaction.amount || 0;
+                
+                // For withdrawals, show the net amount (after fee)
+                if (transaction.type === 'withdrawal' && transaction.netAmount) {
+                    amount = transaction.netAmount;
+                }
+                
+                const status = getTransactionStatus(transaction);
+                const statusClass = getTransactionStatusClass(transaction);
+
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${type}</td>
+                        <td style="color: ${amount >= 0 ? 'var(--success)' : 'var(--error)'}; font-weight: 600;">
+                            ${transaction.type === 'withdrawal' ? '-' : '+'}${Math.abs(amount).toLocaleString()} UGX
+                            ${transaction.type === 'withdrawal' && transaction.adminFee ? `<br><small style="color: var(--gray);">Fee: ${transaction.adminFee.toLocaleString()} UGX</small>` : ''}
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (error) {
+            console.error('Error loading wallet transaction history:', error);
+            const transactionHistoryEl = document.getElementById('walletTransactionHistory');
+            if (transactionHistoryEl) {
+                transactionHistoryEl.innerHTML = '<tr><td colspan="4" class="text-center">Error loading transactions</td></tr>';
+            }
+        }
+    }
+
+    function getTransactionTypeDisplay(type) {
+        const typeMap = {
+            'deposit': '💰 Deposit',
+            'withdrawal': '💸 Withdrawal',
+            'referral': '👥 Referral Reward',
+            'lub_game_winnings': '🎲 LUB Game Win',
+            'task_completion': '✅ Task Reward',
+            'vault_maturity': '🏦 Vault Maturity',
+            'subscription': '💳 Subscription',
+            'points_conversion': '🔄 Points Conversion'
+        };
+        return typeMap[type] || type;
+    }
+
+    function getTransactionStatus(transaction) {
+        if (transaction.type === 'withdrawal') {
+            return 'Completed';
+        }
+        if (transaction.type === 'deposit') {
+            return 'Completed';
+        }
+        return 'Completed';
+    }
+
+    function getTransactionStatusClass(transaction) {
+        if (transaction.type === 'withdrawal') {
+            return 'success';
+        }
+        if (transaction.type === 'deposit') {
+            return 'success';
+        }
+        return 'success';
     }
 
     // User stats
@@ -4667,6 +5301,14 @@
    
            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
            const referrals = referralsSnapshot.docs.map(doc => doc.data());
+
+           // Calculate referral earnings from transactions instead
+           const referralTransactions = await db.collection('transactions')
+               .where('userId', '==', currentUser.id)
+               .where('type', '==', 'referral')
+               .get();
+
+           const referralEarnings = referralTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
    
            const depositsSnapshot = await db.collection('depositRequests')
                .where('userId', '==', currentUser.id)
@@ -4678,7 +5320,6 @@
            const totalBalance = currentUser.balance || 0;
            const activeVaults = vaults.length;
            const totalReferrals = referrals.length;
-           const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
    
            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
            document.getElementById('activeVaults').textContent = activeVaults;
@@ -4694,6 +5335,22 @@
            if (taskEarningsEl) {
                taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
            }
+
+           // Calculate LUB Game earnings
+           const lubTransactionsSnapshot = await db.collection('transactions')
+               .where('userId', '==', currentUser.id)
+               .where('type', '==', 'lub_game_winnings')
+               .get();
+
+           const lubGameEarnings = lubTransactionsSnapshot.docs.reduce((sum, doc) => {
+               return sum + (doc.data().amount || 0);
+           }, 0);
+
+           // Update the display
+           const lubEarningsEl = document.getElementById('lubGameEarnings');
+           if (lubEarningsEl) {
+               lubEarningsEl.textContent = lubGameEarnings.toLocaleString();
+           }
            
            // Update user name and activation status in navbar
            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
@@ -4706,11 +5363,56 @@
            const baseUrl = window.location.href.split('?')[0];
            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
    
+           // Calculate user level based on vault subscriptions
+           function calculateUserLevel(vaults) {
+               if (vaults.length === 0) return { level: 'Beginner', icon: '🌱', color: '#6b7280' };
+               
+               const totalInvested = vaults.reduce((sum, v) => sum + v.amount, 0);
+               
+               if (totalInvested >= 90000000) return { level: 'Legendary', icon: '🕊️', color: '#9333ea' };
+               if (totalInvested >= 60000000) return { level: 'Supreme', icon: '🔱', color: '#7c3aed' };
+               if (totalInvested >= 35000000) return { level: 'Icon', icon: '💫', color: '#6366f1' };
+               if (totalInvested >= 20000000) return { level: 'Emperor', icon: '🦅', color: '#8b5cf6' };
+               if (totalInvested >= 10000000) return { level: 'King', icon: '👑', color: '#a855f7' };
+               if (totalInvested >= 5000000) return { level: 'Titan', icon: '💪', color: '#c026d3' };
+               if (totalInvested >= 1800000) return { level: 'Mastermind', icon: '🧠', color: '#d946ef' };
+               if (totalInvested >= 600000) return { level: 'Nova', icon: '💡', color: '#e879f9' };
+               if (totalInvested >= 180000) return { level: 'Rising', icon: '🌅', color: '#f0abfc' };
+               if (totalInvested >= 45000) return { level: 'Seed', icon: '🌱', color: '#10b981' };
+               
+               return { level: 'Beginner', icon: '🌱', color: '#6b7280' };
+           }
+
+           const userLevel = calculateUserLevel(vaults);
+           
+           // Update user level card
+           const userLevelCard = document.getElementById('userLevelCard');
+           if (userLevelCard) {
+               userLevelCard.style.background = `linear-gradient(135deg, ${userLevel.color}, ${userLevel.color}dd)`;
+               userLevelCard.querySelector('.stat-value').textContent = userLevel.icon;
+               userLevelCard.querySelector('.stat-unit').textContent = userLevel.level;
+           }
+   
+           // Update leaderboard
+           updateLeaderboard();
+   
            updateVaultTable(vaults);
            
            if (!document.getElementById('vaultSection').classList.contains('hidden')) {
                updateVaultSection();
            }
+           
+           // Auto-refresh vault countdown every minute
+           if (window.vaultCountdownInterval) clearInterval(window.vaultCountdownInterval);
+           window.vaultCountdownInterval = setInterval(() => {
+               if (!document.getElementById('homeSection').classList.contains('hidden')) {
+                   const vaultsSnapshot = db.collection('users').doc(currentUser.id).collection('vaults').get();
+                   vaultsSnapshot.then(snapshot => {
+                       const vaults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                       updateVaultTable(vaults);
+                   });
+               }
+           }, 60000); // Update every minute
        } catch (error) {
            console.error("Error updating user stats:", error);
        }
@@ -4727,16 +5429,22 @@
             const now = new Date();
             const maturityDate = new Date(v.maturityDate);
             const isMatured = now >= maturityDate;
-            const daysRemaining = Math.ceil((maturityDate - now) / (1000 * 60 * 60 * 24));
+            const timeRemaining = maturityDate - now;
+            
+            // Calculate days, hours, minutes
+            const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+            const hoursRemaining = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
             
             let statusBadge = '';
+            let countdownDisplay = '';
             let actionButtons = '';
             
             if (isMatured) {
                 if (v.withdrawalOption) {
                     statusBadge = '<span class="status-badge status-completed">Matured & Withdrawn</span>';
                 } else {
-                    statusBadge = '<span class="status-badge status-matured">Matured</span>';
+                    statusBadge = '<span class="status-badge status-matured">Matured - Ready to Withdraw!</span>';
                     actionButtons = `
                         <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                             <button class="btn" style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
@@ -4755,7 +5463,18 @@
                     `;
                 }
             } else {
-                statusBadge = `<span class="status-badge status-active">Active (${daysRemaining} days left)</span>`;
+                statusBadge = `<span class="status-badge status-active">Active</span>`;
+                countdownDisplay = `
+                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); 
+                                padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                            ${daysRemaining}d ${hoursRemaining}h ${minutesRemaining}m
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--gray); margin-top: 0.25rem;">
+                            Time until maturity
+                        </div>
+                    </div>
+                `;
             }
             
             return `
@@ -4764,7 +5483,7 @@
                     <td>${v.amount.toLocaleString()} UGX</td>
                     <td>${v.duration} days</td>
                     <td>${v.expectedProfit.toLocaleString()} UGX</td>
-                    <td>${statusBadge}</td>
+                    <td>${statusBadge}${countdownDisplay}</td>
                     <td>${actionButtons}</td>
                 </tr>
             `;
@@ -5062,6 +5781,14 @@
             
             if (usableBalance < planData.amount) {
                 showPurchaseError(`Insufficient usable balance. You need ${planData.amount.toLocaleString()} UGX. Your usable balance is ${usableBalance.toLocaleString()} UGX.`);
+                // Redirect to deposit section
+                setTimeout(() => {
+                    showSection('wallet');
+                    // Scroll to deposit section
+                    setTimeout(() => {
+                        document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                }, 2000);
                 return;
             }
 
@@ -5304,6 +6031,14 @@
             
             // Update referral code
             document.getElementById('profileReferralCode').textContent = currentUser.referralCode || 'N/A';
+            
+            // Update level badge
+            const levelBadge = document.getElementById('profileLevelBadge');
+            if (levelBadge) {
+                const currentLevel = getUserReferralLevel(currentUser.totalReferrals || 0);
+                levelBadge.innerHTML = `${currentLevel.icon} ${currentLevel.title}`;
+                levelBadge.style.background = `linear-gradient(135deg, ${currentLevel.color}, ${currentLevel.color}dd)`;
+            }
             
             // Update account information
             const infoValues = document.querySelectorAll('#profileSection .info-value');
@@ -5630,8 +6365,23 @@
         }
 
 
-        if (stakeAmount > currentUser.balance) {
+        // Check balance with activation fee consideration
+        const userDoc = await db.collection('users').doc(currentUser.id).get();
+        const userData = userDoc.data();
+        const currentBalance = userData.balance || 0;
+        const activationFeePaid = userData.activationFeePaid || 0;
+        const usableBalance = currentBalance - activationFeePaid;
+
+        if (stakeAmount > usableBalance) {
             showAlert('stakeConfirmAlert', 'Insufficient balance', 'error');
+            // Redirect to deposit section
+            setTimeout(() => {
+                showSection('wallet');
+                // Scroll to deposit section
+                setTimeout(() => {
+                    document.getElementById('depositSection').scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }, 2000);
             return;
         }
 
@@ -5785,7 +6535,7 @@
     async function addCandidate() {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const picture = document.getElementById('candidatePicture').value.trim();
+            const pictureFile = document.getElementById('candidatePictureFile').files[0];
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -5805,9 +6555,15 @@
                 return;
             }
 
+            let pictureUrl = null;
+            if (pictureFile) {
+                // Use local file path instead of uploading to storage
+                pictureUrl = `./images/candidates/${pictureFile.name}`;
+            }
+
             await db.collection('electionCandidates').add({
                 name: name,
-                picture: picture || null,
+                picture: pictureUrl,
                 title: title,
                 category: category,
                 district: district,
@@ -5826,7 +6582,8 @@
             
             // Reset form
             document.getElementById('candidateName').value = '';
-            document.getElementById('candidatePicture').value = '';
+            document.getElementById('candidatePictureFile').value = '';
+            document.getElementById('candidatePicturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -5938,7 +6695,6 @@
             
             // Populate form with existing data
             document.getElementById('candidateName').value = candidate.name;
-            document.getElementById('candidatePicture').value = candidate.picture || '';
             document.getElementById('candidateTitle').value = candidate.title;
             document.getElementById('candidateCategory').value = candidate.category;
             document.getElementById('candidateDistrict').value = candidate.district;
@@ -5948,10 +6704,20 @@
             document.getElementById('candidateElectionDate').value = candidate.electionDate || '';
             document.getElementById('candidateDescription').value = candidate.description || '';
             
+            // Show existing picture if available
+            if (candidate.picture) {
+                document.getElementById('candidatePreviewImg').src = candidate.picture;
+                document.getElementById('candidatePicturePreview').style.display = 'block';
+            } else {
+                document.getElementById('candidatePicturePreview').style.display = 'none';
+            }
+            
             // Change button text and onclick
-            const addBtn = document.querySelector('button[onclick="addCandidate()"]');
-            addBtn.textContent = 'Update Candidate';
-            addBtn.onclick = () => updateCandidate(candidateId);
+            const addBtn = document.getElementById('candidateFormBtn');
+            if (addBtn) {
+                addBtn.textContent = 'Update Candidate';
+                addBtn.onclick = () => updateCandidate(candidateId);
+            }
             
             // Scroll to form
             document.getElementById('candidateName').scrollIntoView({ behavior: 'smooth' });
@@ -5965,7 +6731,7 @@
     async function updateCandidate(candidateId) {
         try {
             const name = document.getElementById('candidateName').value.trim();
-            const picture = document.getElementById('candidatePicture').value.trim();
+            const pictureFile = document.getElementById('candidatePictureFile').files[0];
             const title = document.getElementById('candidateTitle').value.trim();
             const category = document.getElementById('candidateCategory').value;
             const district = document.getElementById('candidateDistrict').value.trim();
@@ -5985,9 +6751,19 @@
                 return;
             }
 
+            let pictureUrl = null;
+            if (pictureFile) {
+                // Use local file path instead of uploading to storage
+                pictureUrl = `./images/candidates/${pictureFile.name}`;
+            } else {
+                // Keep existing picture if no new file is uploaded
+                const existingCandidate = await db.collection('electionCandidates').doc(candidateId).get();
+                pictureUrl = existingCandidate.data().picture;
+            }
+
             await db.collection('electionCandidates').doc(candidateId).update({
                 name: name,
-                picture: picture || null,
+                picture: pictureUrl,
                 title: title,
                 category: category,
                 district: district,
@@ -6002,7 +6778,8 @@
             
             // Reset form and button
             document.getElementById('candidateName').value = '';
-            document.getElementById('candidatePicture').value = '';
+            document.getElementById('candidatePictureFile').value = '';
+            document.getElementById('candidatePicturePreview').style.display = 'none';
             document.getElementById('candidateTitle').value = '';
             document.getElementById('candidateCategory').value = '';
             document.getElementById('candidateDistrict').value = '';
@@ -6012,9 +6789,11 @@
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
             
-            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
-            addBtn.textContent = 'Add Candidate';
-            addBtn.onclick = () => addCandidate();
+            const addBtn = document.getElementById('candidateFormBtn');
+            if (addBtn) {
+                addBtn.textContent = 'Add Candidate';
+                addBtn.onclick = addCandidate;
+            }
             
             updateAdminCandidates();
         } catch (error) {
@@ -6713,7 +7492,6 @@
             const activationFeePaid = userData.activationFeePaid || 0;
             const usableBalance = balance - activationFeePaid;
             
-            // Update elements if they exist
             const withdrawBalanceEl = document.getElementById('withdrawBalance');
             const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
             
@@ -6724,16 +7502,47 @@
                 withdrawPointsBalanceEl.textContent = pointsBalance.toLocaleString();
             }
             
-            // Set up event listeners if elements exist
+            await updateWithdrawalFundsDisplay();
+            
+            const categorySelect = document.getElementById('withdrawCategories');
+            if (categorySelect && !categorySelect.hasAttribute('data-listener-added')) {
+                categorySelect.addEventListener('change', updateSelectedCategoriesBalance);
+                categorySelect.setAttribute('data-listener-added', 'true');
+            }
+            
             const withdrawAmountEl = document.getElementById('withdrawAmount');
             if (withdrawAmountEl && !withdrawAmountEl.hasAttribute('data-listener-added')) {
-                withdrawAmountEl.addEventListener('input', (e) => {
+                withdrawAmountEl.addEventListener('input', async (e) => {
                     const amount = parseFloat(e.target.value) || 0;
                     const fee = amount * 0.05;
                     const net = amount - fee;
+                    
                     const netWithdrawEl = document.getElementById('netWithdraw');
                     if (netWithdrawEl) {
                         netWithdrawEl.textContent = net.toLocaleString();
+                    }
+                    
+                    // Also update gross amount display
+                    const selectedCategories = getSelectedCategories();
+                    if (selectedCategories.length > 0) {
+                        const fundSources = await getFundSources(currentUser.id);
+                        let totalAvailable = 0;
+                        selectedCategories.forEach(category => {
+                            totalAvailable += fundSources.availableForWithdrawal[category] || 0;
+                        });
+                        
+                        // Validate amount against available
+                        if (amount > totalAvailable) {
+                            withdrawAmountEl.style.borderColor = 'var(--error)';
+                            if (netWithdrawEl) {
+                                netWithdrawEl.parentElement.style.color = 'var(--error)';
+                            }
+                        } else {
+                            withdrawAmountEl.style.borderColor = '';
+                            if (netWithdrawEl) {
+                                netWithdrawEl.parentElement.style.color = '';
+                            }
+                        }
                     }
                 });
                 withdrawAmountEl.setAttribute('data-listener-added', 'true');
@@ -6758,11 +7567,237 @@
         updateWithdrawHistory();
     }
 
+    // New withdrawal rules implementation
+    async function getFundSources(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userData = userDoc.data();
+            const currentBalance = userData.balance || 0;
+            const activationFeePaid = userData.activationFeePaid || 0;
+            const usableBalance = currentBalance - activationFeePaid;
+
+            // Get all transactions to categorize funds
+            const transactionsSnapshot = await db.collection('transactions')
+                .where('userId', '==', userId)
+                .get();
+            
+            let referralEarnings = 0;
+            let lubGameEarnings = 0;
+            let taskEarnings = 0;
+            let vaultEarnings = 0;
+            let totalDeposits = 0;
+            let withdrawnFunds = 0;
+
+            transactionsSnapshot.docs.forEach(doc => {
+                const transaction = doc.data();
+                switch (transaction.type) {
+                    case 'referral':
+                        referralEarnings += transaction.amount || 0;
+                        break;
+                    case 'lub_game_win':
+                    case 'lub_game_winnings':
+                        lubGameEarnings += transaction.amount || 0;
+                        break;
+                    case 'task_reward':
+                    case 'task_completion':
+                        taskEarnings += transaction.amount || 0;
+                        break;
+                    case 'vault_withdrawal':
+                    case 'vault_maturity':
+                        vaultEarnings += transaction.amount || 0;
+                        break;
+                    case 'deposit':
+                    case 'subscription':
+                        totalDeposits += transaction.amount || 0;
+                        break;
+                    case 'withdrawal':
+                        withdrawnFunds += transaction.amount || 0;
+                        break;
+                }
+            });
+
+            return {
+                totalBalance: usableBalance,
+                referralEarnings,
+                lubGameEarnings,
+                taskEarnings,
+                vaultEarnings,
+                totalDeposits,
+                availableForWithdrawal: {
+                    referral: referralEarnings,
+                    lubGame: lubGameEarnings,
+                    task: taskEarnings,
+                    vault: vaultEarnings
+                }
+            };
+        } catch (error) {
+            console.error('Error getting fund sources:', error);
+            return null;
+        }
+    }
+
+    function checkWithdrawalEligibility(fundSource, amount, userData) {
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+        switch (fundSource) {
+            case 'referral':
+                // Referral earnings can be withdrawn anytime
+                return { eligible: true, reason: '' };
+            
+            case 'lubGame':
+            case 'task':
+                // LUB game and task earnings only on Friday (5) and Saturday (6)
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    let daysUntilWeekend;
+                    if (dayOfWeek === 0) { // Sunday
+                        daysUntilWeekend = 5; // 5 days until Friday
+                    } else if (dayOfWeek < 5) { // Monday to Thursday
+                        daysUntilWeekend = 5 - dayOfWeek;
+                    }
+                    
+                    return { 
+                        eligible: false, 
+                        reason: `${fundSource === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}. Next available: Friday (${daysUntilWeekend} days)` 
+                    };
+                }
+                return { eligible: true, reason: '' };
+            
+            case 'vault':
+                // Vault earnings need 30 days from vault purchase
+                // This would need to be checked against individual vault purchase dates
+                return { eligible: true, reason: 'Vault earnings eligible after 30 days from purchase' };
+            
+            default:
+                return { eligible: false, reason: 'Unknown fund source' };
+        }
+    }
+
+    function getSelectedCategories() {
+        const select = document.getElementById('withdrawCategories');
+        const selectedOptions = Array.from(select.selectedOptions);
+        return selectedOptions.map(option => option.value);
+    }
+
+    function validateSelectedCategories(selectedCategories) {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        // Check if weekend categories are selected on non-weekend days
+        const weekendCategories = ['lubGame', 'task'];
+        const hasWeekendCategories = selectedCategories.some(cat => weekendCategories.includes(cat));
+        
+        if (hasWeekendCategories && dayOfWeek !== 5 && dayOfWeek !== 6) {
+            let daysUntilWeekend;
+            if (dayOfWeek === 0) { // Sunday
+                daysUntilWeekend = 5; // 5 days until Friday
+            } else if (dayOfWeek < 5) { // Monday to Thursday
+                daysUntilWeekend = 5 - dayOfWeek;
+            }
+            
+            return {
+                valid: false,
+                reason: `LUB Game and Task earnings can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}. Next available: Friday (${daysUntilWeekend} days)`
+            };
+        }
+        
+        return { valid: true, reason: '' };
+    }
+
+    async function updateWithdrawableAmount() {
+        const category = document.getElementById('withdrawCategory').value;
+        const categoryBalanceInfo = document.getElementById('categoryBalanceInfo');
+        const categoryBalanceSpan = document.getElementById('categoryBalance');
+        
+        if (!category) {
+            categoryBalanceInfo.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
+            let availableAmount = 0;
+            
+            if (category === 'total') {
+                const activationFeePaid = userData.activationFeePaid || 0;
+                availableAmount = (userData.balance || 0) - activationFeePaid;
+            } else if (category === 'referral') {
+                // Get total referral earnings
+                const referralsSnapshot = await db.collection('users')
+                    .doc(currentUser.id)
+                    .collection('referrals')
+                    .get();
+                
+                referralsSnapshot.docs.forEach(doc => {
+                    availableAmount += doc.data().earnings || 0;
+                });
+            } else if (category === 'lubGame') {
+                // Get LUB game winnings from transactions
+                const lubTransactionsSnapshot = await db.collection('transactions')
+                    .where('userId', '==', currentUser.id)
+                    .where('type', '==', 'lub_game_winnings')
+                    .get();
+                
+                lubTransactionsSnapshot.docs.forEach(doc => {
+                    availableAmount += doc.data().amount || 0;
+                });
+            } else if (category === 'task') {
+                availableAmount = userData.totalTaskEarnings || 0;
+            } else if (category === 'vault') {
+                // Get vault profits (total withdrawn from vaults)
+                const transactionsSnapshot = await db.collection('transactions')
+                    .where('userId', '==', currentUser.id)
+                    .where('type', '==', 'vault_withdrawal')
+                    .get();
+                
+                transactionsSnapshot.docs.forEach(doc => {
+                    availableAmount += doc.data().amount || 0;
+                });
+            }
+            
+            categoryBalanceSpan.textContent = availableAmount.toLocaleString();
+            categoryBalanceInfo.style.display = 'block';
+            
+            // Store for validation
+            document.getElementById('withdrawAmount').setAttribute('data-max', availableAmount);
+            
+        } catch (error) {
+            console.error('Error calculating category balance:', error);
+        }
+    }
+
+    function calculateWithdrawFee() {
+        const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+        const feeBreakdown = document.getElementById('feeBreakdown');
+        
+        if (amount > 0) {
+            const fee = amount * 0.05;
+            const net = amount - fee;
+            
+            document.getElementById('requestedAmount').textContent = amount.toLocaleString();
+            document.getElementById('withdrawFee').textContent = fee.toLocaleString();
+            document.getElementById('netWithdraw').textContent = net.toLocaleString();
+            
+            feeBreakdown.style.display = 'block';
+        } else {
+            feeBreakdown.style.display = 'none';
+        }
+    }
+
     async function withdraw() {
         try {
+            const category = document.getElementById('withdrawCategory').value;
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const method = document.getElementById('withdrawMethod').value;
             const account = document.getElementById('withdrawAccount').value;
+
+            if (!category) {
+                alert('Please select a withdrawal category');
+                return;
+            }
 
             if (!amount || !method || !account) {
                 alert('Please fill all fields');
@@ -6774,16 +7809,14 @@
                 return;
             }
 
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            const currentBalance = userData.balance || 0;
-            const activationFeePaid = userData.activationFeePaid || 0;
-            const usableBalance = currentBalance - activationFeePaid;
-
-            if (amount > usableBalance) {
-                alert(`Insufficient usable balance. Available: ${usableBalance.toLocaleString()} UGX`);
+            const maxAmount = parseFloat(document.getElementById('withdrawAmount').getAttribute('data-max'));
+            if (amount > maxAmount) {
+                alert(`Insufficient funds in this category. Available: ${maxAmount.toLocaleString()} UGX`);
                 return;
             }
+
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const userData = userDoc.data();
 
             // Skip activation checks for admin users
             if (!userData.isAdmin && !userData.isActivated) {
@@ -6791,70 +7824,232 @@
                 return;
             }
 
-            // Check 30-day waiting period from activation
-            const activationDate = new Date(userData.activationDate || userData.joinedDate);
-            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
             const now = new Date();
-
-            if (now < thirtyDaysLater) {
-                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
-                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
-                return;
-            }
-
-            // Check if it's weekend (Saturday or Sunday)
             const dayOfWeek = now.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
-                alert('Withdrawals are only allowed on weekends (Saturday and Sunday)');
-                return;
+
+            // Apply category-specific withdrawal rules
+            if (category === 'vault') {
+                // Vault profits: 30-day waiting period + weekend + last two weeks
+                const activationDate = new Date(userData.activationDate || userData.joinedDate);
+                const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+
+                if (now < thirtyDaysLater) {
+                    const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
+                    alert(`Vault profits can only be withdrawn after 30 days. You must wait ${daysLeft} more days.`);
+                    return;
+                }
+
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    alert('Vault profits can only be withdrawn on weekends (Saturday and Sunday)');
+                    return;
+                }
+
+                const currentDate = now.getDate();
+                const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                const lastTwoWeeksStart = lastDayOfMonth - 13;
+
+                if (currentDate < lastTwoWeeksStart) {
+                    alert('Vault profits can only be withdrawn in the last two weeks of the month');
+                    return;
+                }
+            } else if (category === 'lubGame' || category === 'task') {
+                // LUB Game and Task earnings: Weekend only
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    alert(`${category === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on weekends (Saturday and Sunday)`);
+                    return;
+                }
             }
-
-            // Check if it's the last two weeks of the month
-            const currentDate = now.getDate();
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const lastTwoWeeksStart = lastDayOfMonth - 13; // Last 14 days
-
-            if (currentDate < lastTwoWeeksStart) {
-                alert('Withdrawals are only allowed in the last two weeks of the month');
-                return;
-            }
-
-            // Check if amount is only profits (not deposited money)
-            const totalDeposits = await calculateTotalDeposits(currentUser.id);
-            const withdrawableBalance = usableBalance - totalDeposits;
-
-            if (amount > withdrawableBalance) {
-                alert(`You can only withdraw profits. Available profit balance: ${withdrawableBalance.toLocaleString()} UGX`);
-                return;
-            }
+            // Referral earnings and total balance: No time restrictions
 
             const fee = amount * 0.05;
             const netAmount = amount - fee;
 
-            // Create withdrawal request (don't deduct balance yet)
+            // Create withdrawal request (admin will see the net amount)
             await db.collection('withdrawalRequests').add({
                 userId: currentUser.id,
                 userName: currentUser.fullName,
                 userEmail: currentUser.email,
-                amount: amount,
+                category: category,
+                grossAmount: amount,
+                fee: fee,
+                netAmount: netAmount, // This is what admin sends
                 method: method,
                 account: account,
-                fee: fee,
-                netAmount: netAmount,
                 status: 'pending',
                 requestDate: new Date().toISOString()
             });
 
-            alert('Withdrawal request submitted! Waiting for admin approval.');
+            alert(`Withdrawal request submitted!\n\nRequested: ${amount.toLocaleString()} UGX\nFee: ${fee.toLocaleString()} UGX\nYou will receive: ${netAmount.toLocaleString()} UGX`);
 
+            document.getElementById('withdrawCategory').value = '';
             document.getElementById('withdrawAmount').value = '';
+            document.getElementById('withdrawAmount').removeAttribute('data-max');
             document.getElementById('withdrawMethod').value = '';
             document.getElementById('withdrawAccount').value = '';
+            document.getElementById('categoryBalanceInfo').style.display = 'none';
+            document.getElementById('feeBreakdown').style.display = 'none';
+            
             updateWithdrawHistory();
 
         } catch (error) {
             console.error("Withdrawal error:", error);
             alert('Withdrawal failed: ' + error.message);
+        }
+    }
+
+    // Function to display available funds for each category
+    async function updateWithdrawalFundsDisplay() {
+        if (!currentUser) return;
+
+        try {
+            const fundSources = await getFundSources(currentUser.id);
+            if (!fundSources) return;
+
+            // Create or update the funds display
+            let fundsDisplay = document.getElementById('withdrawalFundsDisplay');
+            if (!fundsDisplay) {
+                fundsDisplay = document.createElement('div');
+                fundsDisplay.id = 'withdrawalFundsDisplay';
+                fundsDisplay.style.cssText = `
+                    background: #f8fafc; 
+                    border: 1px solid #e2e8f0; 
+                    border-radius: 8px; 
+                    padding: 1rem; 
+                    margin-bottom: 1rem;
+                `;
+                
+                // Insert after the category selection
+                const categoryDiv = document.querySelector('#withdrawCategories').parentElement;
+                categoryDiv.parentNode.insertBefore(fundsDisplay, categoryDiv.nextSibling);
+            }
+
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
+            fundsDisplay.innerHTML = `
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--dark); font-size: 1rem;">💰 Available Funds</h4>
+                <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #10b981;">💰 Referral Earnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.referral.toLocaleString()} UGX</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #f59e0b;">🎲 LUB Game Winnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.lubGame.toLocaleString()} UGX</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #8b5cf6;">✅ Task Earnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.task.toLocaleString()} UGX</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                        <span style="color: #6366f1;">🏦 Vault Earnings:</span>
+                        <span style="font-weight: 600;">${fundSources.availableForWithdrawal.vault.toLocaleString()} UGX</span>
+                    </div>
+                </div>
+                ${!isWeekend ? `
+                    <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 0.75rem; margin-top: 0.75rem;">
+                        <p style="margin: 0; color: #92400e; font-size: 0.875rem;">
+                            <strong>📅 Weekend Notice:</strong> LUB Game and Task earnings can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}.
+                        </p>
+                    </div>
+                ` : ''}
+            `;
+        } catch (error) {
+            console.error('Error updating withdrawal funds display:', error);
+        }
+    }
+
+    // Function to update balance display when categories are selected
+    async function updateSelectedCategoriesBalance() {
+        if (!currentUser) return;
+
+        try {
+            const selectedCategories = getSelectedCategories();
+            const fundSources = await getFundSources(currentUser.id);
+            
+            if (!fundSources || selectedCategories.length === 0) {
+                const balanceDisplay = document.getElementById('selectedCategoriesBalance');
+                if (balanceDisplay) {
+                    balanceDisplay.style.display = 'none';
+                }
+                // Reset withdraw balance display
+                const withdrawBalanceEl = document.getElementById('withdrawBalance');
+                if (withdrawBalanceEl) {
+                    const userDoc = await db.collection('users').doc(currentUser.id).get();
+                    const userData = userDoc.data();
+                    const balance = userData.balance || 0;
+                    const activationFeePaid = userData.activationFeePaid || 0;
+                    const usableBalance = balance - activationFeePaid;
+                    withdrawBalanceEl.textContent = usableBalance.toLocaleString();
+                }
+                return;
+            }
+
+            // Calculate total available balance for selected categories
+            let totalAvailable = 0;
+            const categoryDetails = [];
+
+            selectedCategories.forEach(category => {
+                const available = fundSources.availableForWithdrawal[category] || 0;
+                totalAvailable += available;
+                
+                const categoryNames = {
+                    'referral': 'Referral Earnings',
+                    'lubGame': 'LUB Game Winnings', 
+                    'task': 'Task Earnings',
+                    'vault': 'Vault Earnings'
+                };
+                
+                categoryDetails.push({
+                    name: categoryNames[category],
+                    amount: available
+                });
+            });
+
+            // Update the withdraw balance display to show available from selected categories
+            const withdrawBalanceEl = document.getElementById('withdrawBalance');
+            if (withdrawBalanceEl) {
+                withdrawBalanceEl.textContent = totalAvailable.toLocaleString();
+            }
+
+            // Create or update balance display
+            let balanceDisplay = document.getElementById('selectedCategoriesBalance');
+            if (!balanceDisplay) {
+                balanceDisplay = document.createElement('div');
+                balanceDisplay.id = 'selectedCategoriesBalance';
+                balanceDisplay.style.cssText = `
+                    background: linear-gradient(135deg, #f0f9ff, #e0f2fe); 
+                    border: 2px solid #0ea5e9; 
+                    border-radius: 8px; 
+                    padding: 1rem; 
+                    margin-bottom: 1rem;
+                `;
+                
+                const categoryDiv = document.querySelector('#withdrawCategories').parentElement;
+                categoryDiv.parentNode.insertBefore(balanceDisplay, categoryDiv.nextSibling);
+            }
+
+            balanceDisplay.innerHTML = `
+                <h4 style="margin: 0 0 0.75rem 0; color: #0c4a6e; font-size: 1rem;">💳 Selected Categories Balance</h4>
+                <div style="display: grid; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.75rem;">
+                    ${categoryDetails.map(cat => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <span>${cat.name}:</span>
+                            <span style="font-weight: 600;">${cat.amount.toLocaleString()} UGX</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="background: white; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                    <strong style="color: #0c4a6e; font-size: 1.1rem;">Total Available: ${totalAvailable.toLocaleString()} UGX</strong>
+                </div>
+            `;
+            
+            balanceDisplay.style.display = 'block';
+
+        } catch (error) {
+            console.error('Error updating selected categories balance:', error);
         }
     }
 
@@ -6941,6 +8136,8 @@
             }));
 
             const tbody = document.getElementById('withdrawHistoryBody');
+            if (!tbody) return;
+            
             if (withdrawals.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center">No withdrawals yet</td></tr>';
                 return;
@@ -6959,10 +8156,12 @@
 
                 return `
                     <tr>
-                        <td>${new Date(w.requestDate).toLocaleDateString()}</td>
-                        <td>${w.amount.toLocaleString()} UGX</td>
-                        <td>${w.fee.toLocaleString()} UGX</td>
-                        <td>${w.netAmount.toLocaleString()} UGX</td>
+                        <td>${new Date(w.requestDate).toLocaleDateString()}<br>
+                            <small style="color: var(--gray);">${w.category || 'total'}</small>
+                        </td>
+                        <td>${(w.grossAmount || w.amount).toLocaleString()} UGX</td>
+                        <td>${(w.fee || 0).toLocaleString()} UGX</td>
+                        <td style="color: var(--success); font-weight: 600;">${w.netAmount.toLocaleString()} UGX</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;
@@ -7011,6 +8210,39 @@
             alert('Invalid file type! Please upload JPG, PNG, or GIF images only.');
             input.value = ''; // Clear the input
             return false;
+        }
+        
+        return true;
+    }
+
+    function validateCandidateFileSize(input) {
+        const maxSize = 6 * 1024 * 1024; // 6MB in bytes
+        const file = input.files[0];
+        
+        if (file && file.size > maxSize) {
+            alert('File size too large! Maximum size is 6MB.');
+            input.value = ''; // Clear the input
+            document.getElementById('candidatePicturePreview').style.display = 'none';
+            return false;
+        }
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (file && !allowedTypes.includes(file.type)) {
+            alert('Invalid file type! Please upload JPG, PNG, or GIF images only.');
+            input.value = ''; // Clear the input
+            document.getElementById('candidatePicturePreview').style.display = 'none';
+            return false;
+        }
+        
+        // Show preview if file is valid
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('candidatePreviewImg').src = e.target.result;
+                document.getElementById('candidatePicturePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
         
         return true;
@@ -7189,6 +8421,107 @@
         }
     }
 
+    // Referral Level System
+    const referralLevels = [
+        { level: 1, title: 'Admin', referrals: 100, salary: 50000, icon: '1️⃣', color: '#6366f1', description: 'Entry-level leadership role. Manages user activity and assists support.' },
+        { level: 2, title: 'Partner', referrals: 500, salary: 200000, icon: '2️⃣', color: '#ec4899', description: 'Trusted user with a growing community under them.' },
+        { level: 3, title: 'Manager', referrals: 1000, salary: 500000, icon: '3️⃣', color: '#10b981', description: 'Mid-level leader managing multiple partners.' },
+        { level: 4, title: 'Chief', referrals: 2000, salary: 1000000, icon: '4️⃣', color: '#f59e0b', description: 'High-ranking official overseeing major sections of the network.' },
+        { level: 5, title: 'Partner King', referrals: 5000, salary: 2000000, icon: '5️⃣', color: '#ef4444', description: 'Top-tier promoter managing large networks.' },
+        { level: 6, title: 'Shareholder', referrals: 10000, salary: '20% of company funds', icon: '6️⃣', color: '#8b5cf6', description: 'Ultimate recognition—becomes part-owner of the project.' }
+    ];
+
+    function getUserReferralLevel(referralCount) {
+        for (let i = referralLevels.length - 1; i >= 0; i--) {
+            if (referralCount >= referralLevels[i].referrals) {
+                return referralLevels[i];
+            }
+        }
+        return { level: 0, title: 'Newcomer', referrals: 0, salary: 0, icon: '🌱', color: '#6b7280', description: 'Just getting started!' };
+    }
+
+    function getNextLevel(currentLevel) {
+        const currentIndex = referralLevels.findIndex(level => level.level === currentLevel.level);
+        return currentIndex < referralLevels.length - 1 ? referralLevels[currentIndex + 1] : null;
+    }
+
+    async function updateReferralLevelProgress() {
+        if (!currentUser) return;
+
+        try {
+            // Get user's total referrals
+            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+            const totalReferrals = referralsSnapshot.size;
+
+            // Get current level
+            const currentLevel = getUserReferralLevel(totalReferrals);
+            const nextLevel = getNextLevel(currentLevel);
+
+            // Update current level badge
+            const levelBadge = document.getElementById('currentLevelBadge');
+            if (levelBadge) {
+                levelBadge.innerHTML = `${currentLevel.icon} ${currentLevel.title}`;
+                levelBadge.style.background = `linear-gradient(135deg, ${currentLevel.color}, ${currentLevel.color}dd)`;
+            }
+
+            // Update progress bar
+            const progressBar = document.getElementById('levelProgressBar');
+            const progressPercentage = document.getElementById('progressPercentage');
+            const currentReferralCount = document.getElementById('currentReferralCount');
+            const nextLevelRequirement = document.getElementById('nextLevelRequirement');
+
+            if (nextLevel) {
+                const progress = ((totalReferrals - currentLevel.referrals) / (nextLevel.referrals - currentLevel.referrals)) * 100;
+                const progressPercent = Math.min(Math.max(progress, 0), 100);
+
+                if (progressBar) {
+                    progressBar.style.width = `${progressPercent}%`;
+                    progressBar.style.background = `linear-gradient(90deg, ${currentLevel.color}, ${nextLevel.color})`;
+                }
+
+                if (progressPercentage) {
+                    progressPercentage.textContent = `${Math.round(progressPercent)}%`;
+                }
+
+                if (currentReferralCount) {
+                    currentReferralCount.textContent = `${totalReferrals} referrals`;
+                }
+
+                if (nextLevelRequirement) {
+                    nextLevelRequirement.textContent = `Next level: ${nextLevel.referrals} referrals`;
+                }
+            } else {
+                // User is at max level
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    progressBar.style.background = `linear-gradient(90deg, ${currentLevel.color}, ${currentLevel.color})`;
+                }
+
+                if (progressPercentage) {
+                    progressPercentage.textContent = '100%';
+                }
+
+                if (currentReferralCount) {
+                    currentReferralCount.textContent = `${totalReferrals} referrals`;
+                }
+
+                if (nextLevelRequirement) {
+                    nextLevelRequirement.textContent = 'Max level reached! 🎉';
+                }
+            }
+
+            // Update user's level in their profile
+            await db.collection('users').doc(currentUser.id).update({
+                referralLevel: currentLevel.level,
+                referralTitle: currentLevel.title,
+                totalReferrals: totalReferrals
+            });
+
+        } catch (error) {
+            console.error('Error updating referral level progress:', error);
+        }
+    }
+
     // Admin functions
     async function updateAdminStats() {
         try {
@@ -7205,28 +8538,46 @@
             const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
             const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
 
-            const depositEarnings = deposits.reduce((sum, t) => sum + t.adminFee, 0);
-            const withdrawEarnings = withdrawals.reduce((sum, t) => sum + t.adminFee, 0);
-            const referralEarnings = referrals.reduce((sum, t) => sum + t.adminFee, 0);
+            // No earnings from deposits anymore
+            const depositEarnings = 0;
+            const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+            
+            // Referrals don't generate admin fees anymore
+            const referralEarnings = 0;
 
-            const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings;
+            // Get activation fee admin earnings from admin_commission transactions
+            const adminCommissions = transactions.filter(t => 
+                t.type === 'admin_commission' && 
+                t.description && 
+                t.description.includes('Activation fee')
+            );
+            const activationAdminEarnings = adminCommissions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
-            // Update the display
-            const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
-            if (lubGameEarningsEl) {
-                lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
-            }
-              
+            // Admin only earns from withdrawals and LUB game
+            const totalAdminEarnings = withdrawEarnings + lubGameEarnings + activationAdminEarnings;
+            
             document.getElementById('adminTotalUsers').textContent = totalUsers;
             document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
             document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
 
-            document.getElementById('depositEarnings').textContent = depositEarnings.toLocaleString();
+            // Update displays
+            document.getElementById('depositEarnings').textContent = '0'; // No longer earning from deposits
             document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
-            document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
+            document.getElementById('referralAdminEarnings').textContent = '0'; // No longer earning from referrals
+            
+            const activationEarningsEl = document.getElementById('activationAdminEarnings');
+            if (activationEarningsEl) {
+                activationEarningsEl.textContent = activationAdminEarnings.toLocaleString();
+            }
+            
+            const lubGameEarningsEl = document.getElementById('lubAdminEarnings');
+            if (lubGameEarningsEl) {
+                lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
+            }
         } catch (error) {
             console.error("Error updating admin stats:", error);
         }
@@ -7632,7 +8983,7 @@
             const isActivationFee = depositRequest.data().type === 'activation_fee';
             
             if (isActivationFee) {
-                // For activation fees: Admin gets 16,000 UGX, Referrer gets 4,000 UGX
+                // For activation fees: Admin gets 16,000 UGX, Direct Referrer gets 4,000 UGX (Total = 20,000)
                 const adminAmount = 16000;
                 const referrerAmount = 4000;
                 
@@ -7640,7 +8991,7 @@
                 updateData.activationFeePaid = amount; // Track the 20,000 UGX activation fee
                 await db.collection('users').doc(userId).update(updateData);
                 
-                // Give referrer their share if they exist
+                // Give referrer their share if they exist (ONLY DIRECT REFERRER)
                 if (userData.referredBy) {
                     const referrerDoc = await db.collection('users').doc(userData.referredBy).get();
                     if (referrerDoc.exists) {
@@ -7685,16 +9036,15 @@
                 console.log('Activation fee admin commission: 16000 UGX');
                 
             } else {
-                // Regular deposit - user gets the full amount
+                // Regular deposit - user gets the full amount, NO ADMIN FEE
                 await db.collection('users').doc(userId).update(updateData);
                 
-                const adminFee = amount * 0.10;
                 await db.collection('transactions').add({
                     userId: userId,
                     userName: userDoc.data().fullName,
                     type: 'deposit',
                     amount: amount,
-                    adminFee: adminFee,
+                    adminFee: 0, // No admin fee on deposits
                     date: new Date().toISOString()
                 });
             }
@@ -7958,8 +9308,13 @@
             
             // Change button text and onclick
             const createBtn = document.querySelector('button[onclick="createTask()"]');
-            createBtn.textContent = 'Update Task';
-            createBtn.onclick = () => updateTask(taskId);
+            if (createBtn) {
+                createBtn.textContent = 'Update Task';
+                createBtn.onclick = () => updateTask(taskId);
+            } else {
+                console.error('Create task button not found');
+                alert('Error: Could not find the create task button');
+            }
             
             // Scroll to form
             document.getElementById('adminTaskTitle').scrollIntoView({ behavior: 'smooth' });
@@ -8007,9 +9362,11 @@
             document.getElementById('adminTaskDay').value = '';
             document.getElementById('adminTaskRequiresProof').checked = true;
             
-            const createBtn = document.querySelector('button[onclick="updateTask(\'' + taskId + '\')"]');
-            createBtn.textContent = '📝 Create Task';
-            createBtn.onclick = () => createTask();
+            const createBtn = document.querySelector('button[onclick*="updateTask"]');
+            if (createBtn) {
+                createBtn.textContent = '📝 Create Task';
+                createBtn.onclick = () => createTask();
+            }
             
             updateAdminTasks();
         } catch (error) {
@@ -8160,6 +9517,11 @@
             alert('Withdrawal approved successfully!');
             updateAdminWithdrawals();
             updateAdminStats();
+            
+            // Update user stats if the withdrawal is for the current user
+            if (currentUser && currentUser.id === userId) {
+                updateUserStats();
+            }
         } catch (error) {
             console.error("Error approving withdrawal:", error);
             alert('Failed to approve withdrawal: ' + error.message);
