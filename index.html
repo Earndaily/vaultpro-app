@@ -1302,7 +1302,7 @@
                      </div>
                    
                     <div class="stat-card compact">
-                        <div class="stat-label">💵 Earnings</div>
+                        <div class="stat-label">💵 Referral Earnings</div>
                         <div class="stat-value" id="referralEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
@@ -5152,6 +5152,9 @@
                 }
             }
             
+            // Load transaction history
+            await loadWalletTransactionHistory();
+            
             // Wallet section updated successfully
             console.log('Wallet section updated');
         } catch (error) {
@@ -5179,6 +5182,92 @@
         if (section === 'withdrawals') updateAdminWithdrawals();
         if (section === 'candidates') updateAdminCandidates();
         if (section === 'lubGame') updateAdminLUBGame();
+    }
+
+    // Load wallet transaction history
+    async function loadWalletTransactionHistory() {
+        if (!currentUser) return;
+
+        try {
+            const transactionsSnapshot = await db.collection('transactions')
+                .where('userId', '==', currentUser.id)
+                .orderBy('date', 'desc')
+                .limit(20)
+                .get();
+
+            const transactions = transactionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const transactionHistoryEl = document.getElementById('walletTransactionHistory');
+            if (!transactionHistoryEl) return;
+
+            if (transactions.length === 0) {
+                transactionHistoryEl.innerHTML = '<tr><td colspan="4" class="text-center">No transactions yet</td></tr>';
+                return;
+            }
+
+            transactionHistoryEl.innerHTML = transactions.map(transaction => {
+                const date = new Date(transaction.date).toLocaleDateString();
+                const type = getTransactionTypeDisplay(transaction.type);
+                const amount = transaction.amount || 0;
+                const status = getTransactionStatus(transaction);
+                const statusClass = getTransactionStatusClass(transaction);
+
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${type}</td>
+                        <td style="color: ${amount >= 0 ? 'var(--success)' : 'var(--error)'}; font-weight: 600;">
+                            ${amount >= 0 ? '+' : ''}${amount.toLocaleString()} UGX
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (error) {
+            console.error('Error loading wallet transaction history:', error);
+            const transactionHistoryEl = document.getElementById('walletTransactionHistory');
+            if (transactionHistoryEl) {
+                transactionHistoryEl.innerHTML = '<tr><td colspan="4" class="text-center">Error loading transactions</td></tr>';
+            }
+        }
+    }
+
+    function getTransactionTypeDisplay(type) {
+        const typeMap = {
+            'deposit': '💰 Deposit',
+            'withdrawal': '💸 Withdrawal',
+            'referral': '👥 Referral Reward',
+            'lub_game_winnings': '🎲 LUB Game Win',
+            'task_completion': '✅ Task Reward',
+            'vault_maturity': '🏦 Vault Maturity',
+            'subscription': '💳 Subscription',
+            'points_conversion': '🔄 Points Conversion'
+        };
+        return typeMap[type] || type;
+    }
+
+    function getTransactionStatus(transaction) {
+        if (transaction.type === 'withdrawal') {
+            return 'Completed';
+        }
+        if (transaction.type === 'deposit') {
+            return 'Completed';
+        }
+        return 'Completed';
+    }
+
+    function getTransactionStatusClass(transaction) {
+        if (transaction.type === 'withdrawal') {
+            return 'success';
+        }
+        if (transaction.type === 'deposit') {
+            return 'success';
+        }
+        return 'success';
     }
 
     // User stats
@@ -7366,6 +7455,13 @@
             // Update withdrawal funds display
             await updateWithdrawalFundsDisplay();
             
+            // Add event listener for category selection
+            const categorySelect = document.getElementById('withdrawCategories');
+            if (categorySelect && !categorySelect.hasAttribute('data-listener-added')) {
+                categorySelect.addEventListener('change', updateSelectedCategoriesBalance);
+                categorySelect.setAttribute('data-listener-added', 'true');
+            }
+            
             // Set up event listeners if elements exist
             const withdrawAmountEl = document.getElementById('withdrawAmount');
             if (withdrawAmountEl && !withdrawAmountEl.hasAttribute('data-listener-added')) {
@@ -7716,6 +7812,84 @@
             `;
         } catch (error) {
             console.error('Error updating withdrawal funds display:', error);
+        }
+    }
+
+    // Function to update balance display when categories are selected
+    async function updateSelectedCategoriesBalance() {
+        if (!currentUser) return;
+
+        try {
+            const selectedCategories = getSelectedCategories();
+            const fundSources = await getFundSources(currentUser.id);
+            
+            if (!fundSources || selectedCategories.length === 0) {
+                // Hide balance display if no categories selected
+                const balanceDisplay = document.getElementById('selectedCategoriesBalance');
+                if (balanceDisplay) {
+                    balanceDisplay.style.display = 'none';
+                }
+                return;
+            }
+
+            // Calculate total available balance for selected categories
+            let totalAvailable = 0;
+            const categoryDetails = [];
+
+            selectedCategories.forEach(category => {
+                const available = fundSources.availableForWithdrawal[category] || 0;
+                totalAvailable += available;
+                
+                const categoryNames = {
+                    'referral': 'Referral Earnings',
+                    'lubGame': 'LUB Game Winnings', 
+                    'task': 'Task Earnings',
+                    'vault': 'Vault Earnings'
+                };
+                
+                categoryDetails.push({
+                    name: categoryNames[category],
+                    amount: available
+                });
+            });
+
+            // Create or update balance display
+            let balanceDisplay = document.getElementById('selectedCategoriesBalance');
+            if (!balanceDisplay) {
+                balanceDisplay = document.createElement('div');
+                balanceDisplay.id = 'selectedCategoriesBalance';
+                balanceDisplay.style.cssText = `
+                    background: linear-gradient(135deg, #f0f9ff, #e0f2fe); 
+                    border: 2px solid #0ea5e9; 
+                    border-radius: 8px; 
+                    padding: 1rem; 
+                    margin-bottom: 1rem;
+                `;
+                
+                // Insert after the category selection
+                const categoryDiv = document.querySelector('#withdrawCategories').parentElement;
+                categoryDiv.parentNode.insertBefore(balanceDisplay, categoryDiv.nextSibling);
+            }
+
+            balanceDisplay.innerHTML = `
+                <h4 style="margin: 0 0 0.75rem 0; color: #0c4a6e; font-size: 1rem;">💳 Selected Categories Balance</h4>
+                <div style="display: grid; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.75rem;">
+                    ${categoryDetails.map(cat => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <span>${cat.name}:</span>
+                            <span style="font-weight: 600;">${cat.amount.toLocaleString()} UGX</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="background: white; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                    <strong style="color: #0c4a6e; font-size: 1.1rem;">Total Available: ${totalAvailable.toLocaleString()} UGX</strong>
+                </div>
+            `;
+            
+            balanceDisplay.style.display = 'block';
+
+        } catch (error) {
+            console.error('Error updating selected categories balance:', error);
         }
     }
 
@@ -9173,6 +9347,11 @@
             alert('Withdrawal approved successfully!');
             updateAdminWithdrawals();
             updateAdminStats();
+            
+            // Update user stats if the withdrawal is for the current user
+            if (currentUser && currentUser.id === userId) {
+                updateUserStats();
+            }
         } catch (error) {
             console.error("Error approving withdrawal:", error);
             alert('Failed to approve withdrawal: ' + error.message);
