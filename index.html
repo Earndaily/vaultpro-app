@@ -5211,7 +5211,13 @@
             transactionHistoryEl.innerHTML = transactions.map(transaction => {
                 const date = new Date(transaction.date).toLocaleDateString();
                 const type = getTransactionTypeDisplay(transaction.type);
-                const amount = transaction.amount || 0;
+                let amount = transaction.amount || 0;
+                
+                // For withdrawals, show the net amount (after fee)
+                if (transaction.type === 'withdrawal' && transaction.netAmount) {
+                    amount = transaction.netAmount;
+                }
+                
                 const status = getTransactionStatus(transaction);
                 const statusClass = getTransactionStatusClass(transaction);
 
@@ -5220,7 +5226,8 @@
                         <td>${date}</td>
                         <td>${type}</td>
                         <td style="color: ${amount >= 0 ? 'var(--success)' : 'var(--error)'}; font-weight: 600;">
-                            ${amount >= 0 ? '+' : ''}${amount.toLocaleString()} UGX
+                            ${transaction.type === 'withdrawal' ? '-' : '+'}${Math.abs(amount).toLocaleString()} UGX
+                            ${transaction.type === 'withdrawal' && transaction.adminFee ? `<br><small style="color: var(--gray);">Fee: ${transaction.adminFee.toLocaleString()} UGX</small>` : ''}
                         </td>
                         <td><span class="status-badge ${statusClass}">${status}</span></td>
                     </tr>
@@ -5282,6 +5289,14 @@
    
            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
            const referrals = referralsSnapshot.docs.map(doc => doc.data());
+
+           // Calculate referral earnings from transactions instead
+           const referralTransactions = await db.collection('transactions')
+               .where('userId', '==', currentUser.id)
+               .where('type', '==', 'referral')
+               .get();
+
+           const referralEarnings = referralTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
    
            const depositsSnapshot = await db.collection('depositRequests')
                .where('userId', '==', currentUser.id)
@@ -5293,7 +5308,6 @@
            const totalBalance = currentUser.balance || 0;
            const activeVaults = vaults.length;
            const totalReferrals = referrals.length;
-           const referralEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
    
            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
            document.getElementById('activeVaults').textContent = activeVaults;
@@ -7441,7 +7455,6 @@
             const activationFeePaid = userData.activationFeePaid || 0;
             const usableBalance = balance - activationFeePaid;
             
-            // Update elements if they exist
             const withdrawBalanceEl = document.getElementById('withdrawBalance');
             const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
             
@@ -7452,26 +7465,47 @@
                 withdrawPointsBalanceEl.textContent = pointsBalance.toLocaleString();
             }
             
-            // Update withdrawal funds display
             await updateWithdrawalFundsDisplay();
             
-            // Add event listener for category selection
             const categorySelect = document.getElementById('withdrawCategories');
             if (categorySelect && !categorySelect.hasAttribute('data-listener-added')) {
                 categorySelect.addEventListener('change', updateSelectedCategoriesBalance);
                 categorySelect.setAttribute('data-listener-added', 'true');
             }
             
-            // Set up event listeners if elements exist
             const withdrawAmountEl = document.getElementById('withdrawAmount');
             if (withdrawAmountEl && !withdrawAmountEl.hasAttribute('data-listener-added')) {
-                withdrawAmountEl.addEventListener('input', (e) => {
+                withdrawAmountEl.addEventListener('input', async (e) => {
                     const amount = parseFloat(e.target.value) || 0;
                     const fee = amount * 0.05;
                     const net = amount - fee;
+                    
                     const netWithdrawEl = document.getElementById('netWithdraw');
                     if (netWithdrawEl) {
                         netWithdrawEl.textContent = net.toLocaleString();
+                    }
+                    
+                    // Also update gross amount display
+                    const selectedCategories = getSelectedCategories();
+                    if (selectedCategories.length > 0) {
+                        const fundSources = await getFundSources(currentUser.id);
+                        let totalAvailable = 0;
+                        selectedCategories.forEach(category => {
+                            totalAvailable += fundSources.availableForWithdrawal[category] || 0;
+                        });
+                        
+                        // Validate amount against available
+                        if (amount > totalAvailable) {
+                            withdrawAmountEl.style.borderColor = 'var(--error)';
+                            if (netWithdrawEl) {
+                                netWithdrawEl.parentElement.style.color = 'var(--error)';
+                            }
+                        } else {
+                            withdrawAmountEl.style.borderColor = '';
+                            if (netWithdrawEl) {
+                                netWithdrawEl.parentElement.style.color = '';
+                            }
+                        }
                     }
                 });
                 withdrawAmountEl.setAttribute('data-listener-added', 'true');
@@ -7515,6 +7549,7 @@
             let taskEarnings = 0;
             let vaultEarnings = 0;
             let totalDeposits = 0;
+            let withdrawnFunds = 0;
 
             transactionsSnapshot.docs.forEach(doc => {
                 const transaction = doc.data();
@@ -7522,18 +7557,24 @@
                     case 'referral':
                         referralEarnings += transaction.amount || 0;
                         break;
+                    case 'lub_game_win':
                     case 'lub_game_winnings':
                         lubGameEarnings += transaction.amount || 0;
                         break;
+                    case 'task_reward':
                     case 'task_completion':
                         taskEarnings += transaction.amount || 0;
                         break;
+                    case 'vault_withdrawal':
                     case 'vault_maturity':
                         vaultEarnings += transaction.amount || 0;
                         break;
                     case 'deposit':
                     case 'subscription':
                         totalDeposits += transaction.amount || 0;
+                        break;
+                    case 'withdrawal':
+                        withdrawnFunds += transaction.amount || 0;
                         break;
                 }
             });
@@ -7824,10 +7865,19 @@
             const fundSources = await getFundSources(currentUser.id);
             
             if (!fundSources || selectedCategories.length === 0) {
-                // Hide balance display if no categories selected
                 const balanceDisplay = document.getElementById('selectedCategoriesBalance');
                 if (balanceDisplay) {
                     balanceDisplay.style.display = 'none';
+                }
+                // Reset withdraw balance display
+                const withdrawBalanceEl = document.getElementById('withdrawBalance');
+                if (withdrawBalanceEl) {
+                    const userDoc = await db.collection('users').doc(currentUser.id).get();
+                    const userData = userDoc.data();
+                    const balance = userData.balance || 0;
+                    const activationFeePaid = userData.activationFeePaid || 0;
+                    const usableBalance = balance - activationFeePaid;
+                    withdrawBalanceEl.textContent = usableBalance.toLocaleString();
                 }
                 return;
             }
@@ -7853,6 +7903,12 @@
                 });
             });
 
+            // Update the withdraw balance display to show available from selected categories
+            const withdrawBalanceEl = document.getElementById('withdrawBalance');
+            if (withdrawBalanceEl) {
+                withdrawBalanceEl.textContent = totalAvailable.toLocaleString();
+            }
+
             // Create or update balance display
             let balanceDisplay = document.getElementById('selectedCategoriesBalance');
             if (!balanceDisplay) {
@@ -7866,7 +7922,6 @@
                     margin-bottom: 1rem;
                 `;
                 
-                // Insert after the category selection
                 const categoryDiv = document.querySelector('#withdrawCategories').parentElement;
                 categoryDiv.parentNode.insertBefore(balanceDisplay, categoryDiv.nextSibling);
             }
@@ -8376,23 +8431,23 @@
 
             const depositEarnings = deposits.reduce((sum, t) => sum + (t.adminFee || 0), 0);
             const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
-            const referralEarnings = referrals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
+            
+            // Calculate referral admin earnings (2% of each referral reward)
+            const referralEarnings = referrals.reduce((sum, t) => sum + ((t.amount || 0) * 0.02), 0);
 
-            // Include activation fee admin earnings (16,000 UGX per activation)
-            const activationFees = transactions.filter(t => t.type === 'activation_fee');
-            const activationAdminEarnings = activationFees.length * 16000;
+            // Get activation fee admin earnings from admin_commission transactions
+            const adminCommissions = transactions.filter(t => 
+                t.type === 'admin_commission' && 
+                t.description && 
+                t.description.includes('Activation fee')
+            );
+            const activationAdminEarnings = adminCommissions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
             const totalAdminEarnings = depositEarnings + withdrawEarnings + referralEarnings + activationAdminEarnings + lubGameEarnings;
             
-            // Update the display
-            const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
-            if (lubGameEarningsEl) {
-                lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
-            }
-              
             document.getElementById('adminTotalUsers').textContent = totalUsers;
             document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
@@ -8402,10 +8457,14 @@
             document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
             document.getElementById('referralAdminEarnings').textContent = referralEarnings.toLocaleString();
             
-            // Update activation fee earnings display
             const activationEarningsEl = document.getElementById('activationAdminEarnings');
             if (activationEarningsEl) {
                 activationEarningsEl.textContent = activationAdminEarnings.toLocaleString();
+            }
+            
+            const lubGameEarningsEl = document.getElementById('adminLUBGameEarnings');
+            if (lubGameEarningsEl) {
+                lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
             }
         } catch (error) {
             console.error("Error updating admin stats:", error);
