@@ -1994,6 +1994,7 @@
                                     <option value="">-- Select Category --</option>
                                     <option value="total">Total Balance</option>
                                     <option value="referral">Referral Earnings Only</option>
+                                    <option value="lubGame">LUB Game Winnings Only</option>
                                     <option value="task">Task Earnings Only</option>
                                     <option value="vault">Vault Profits Only</option>
                                 </select>
@@ -7713,6 +7714,16 @@
                 referralsSnapshot.docs.forEach(doc => {
                     availableAmount += doc.data().earnings || 0;
                 });
+            } else if (category === 'lubGame') {
+                // Get LUB game winnings from transactions
+                const lubTransactionsSnapshot = await db.collection('transactions')
+                    .where('userId', '==', currentUser.id)
+                    .where('type', '==', 'lub_game_winnings')
+                    .get();
+                
+                lubTransactionsSnapshot.docs.forEach(doc => {
+                    availableAmount += doc.data().amount || 0;
+                });
             } else if (category === 'task') {
                 availableAmount = userData.totalTaskEarnings || 0;
             } else if (category === 'vault') {
@@ -7793,33 +7804,42 @@
                 return;
             }
 
-            // Check 30-day waiting period from activation
-            const activationDate = new Date(userData.activationDate || userData.joinedDate);
-            const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
             const now = new Date();
-
-            if (now < thirtyDaysLater) {
-                const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
-                alert(`You must wait ${daysLeft} more days after your first deposit before you can withdraw`);
-                return;
-            }
-
-            // Check if it's weekend (Saturday or Sunday)
             const dayOfWeek = now.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                alert('Withdrawals are only allowed on weekends (Saturday and Sunday)');
-                return;
-            }
 
-            // Check if it's the last two weeks of the month
-            const currentDate = now.getDate();
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const lastTwoWeeksStart = lastDayOfMonth - 13;
+            // Apply category-specific withdrawal rules
+            if (category === 'vault') {
+                // Vault profits: 30-day waiting period + weekend + last two weeks
+                const activationDate = new Date(userData.activationDate || userData.joinedDate);
+                const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
 
-            if (currentDate < lastTwoWeeksStart) {
-                alert('Withdrawals are only allowed in the last two weeks of the month');
-                return;
+                if (now < thirtyDaysLater) {
+                    const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
+                    alert(`Vault profits can only be withdrawn after 30 days. You must wait ${daysLeft} more days.`);
+                    return;
+                }
+
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    alert('Vault profits can only be withdrawn on weekends (Saturday and Sunday)');
+                    return;
+                }
+
+                const currentDate = now.getDate();
+                const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                const lastTwoWeeksStart = lastDayOfMonth - 13;
+
+                if (currentDate < lastTwoWeeksStart) {
+                    alert('Vault profits can only be withdrawn in the last two weeks of the month');
+                    return;
+                }
+            } else if (category === 'lubGame' || category === 'task') {
+                // LUB Game and Task earnings: Weekend only
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    alert(`${category === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on weekends (Saturday and Sunday)`);
+                    return;
+                }
             }
+            // Referral earnings and total balance: No time restrictions
 
             const fee = amount * 0.05;
             const netAmount = amount - fee;
