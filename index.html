@@ -3198,7 +3198,7 @@
         depositEarnings: 'Deposit Earnings'
     };
 
-    // Get user's category balances
+    // Get user's category balances (earnings only, excluding deposits)
     async function getUserCategoryBalances(userId) {
         try {
             const userDoc = await db.collection('users').doc(userId).get();
@@ -3214,7 +3214,7 @@
                 referralEarnings: 0,
                 lubGameEarnings: 0,
                 vaultEarnings: 0,
-                depositEarnings: 0
+                depositEarnings: 0 // Keep for reference but not included in total
             };
             
             // Calculate balances from transactions
@@ -3263,6 +3263,11 @@
                             balances[transaction.sourceCategory] -= amount;
                         }
                         break;
+                    case 'withdrawal_approved':
+                        if (transaction.sourceCategory) {
+                            balances[transaction.sourceCategory] -= amount;
+                        }
+                        break;
                 }
             });
             
@@ -3281,6 +3286,19 @@
                 vaultEarnings: 0,
                 depositEarnings: 0
             };
+        }
+    }
+
+    // Get total available balance (including deposits)
+    async function getTotalAvailableBalance(userId) {
+        try {
+            const categoryBalances = await getUserCategoryBalances(userId);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            return totalEarnings + categoryBalances.depositEarnings;
+        } catch (error) {
+            console.error('Error getting total available balance:', error);
+            return 0;
         }
     }
 
@@ -3930,10 +3948,12 @@
             
             currentLUBRound = round;
             
-            // Update wallet balance
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const balance = userDoc.data().balance || 0;
-            document.getElementById('lubWalletBalance').textContent = balance.toLocaleString();
+            // Update wallet balance using category-based calculation
+            const categoryBalances = await getUserCategoryBalances(currentUser.id);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            document.getElementById('lubWalletBalance').textContent = totalAvailable.toLocaleString();
             
             // Calculate time remaining
             const now = new Date();
@@ -5451,12 +5471,17 @@
         try {
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
-            const balance = userData.balance || 0;
             const pointsBalance = userData.pointsBalance || 0;
             const activationFeePaid = userData.activationFeePaid || 0;
-            const usableBalance = balance - activationFeePaid;
             
-            document.getElementById('walletBalance').textContent = balance.toLocaleString();
+            // Use category-based balance calculation for consistency
+            const categoryBalances = await getUserCategoryBalances(currentUser.id);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            const usableBalance = totalAvailable - activationFeePaid;
+            
+            document.getElementById('walletBalance').textContent = totalAvailable.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
             
             // Show activation fee info if it exists
@@ -5536,7 +5561,7 @@
                 let amount = transaction.amount || 0;
                 
                 // For withdrawals, show the net amount (after fee)
-                if (transaction.type === 'withdrawal' && transaction.netAmount) {
+                if ((transaction.type === 'withdrawal' || transaction.type === 'withdrawal_approved') && transaction.netAmount) {
                     amount = transaction.netAmount;
                 }
                 
@@ -5548,8 +5573,8 @@
                         <td>${date}</td>
                         <td>${type}</td>
                         <td style="color: ${amount >= 0 ? 'var(--success)' : 'var(--error)'}; font-weight: 600;">
-                            ${transaction.type === 'withdrawal' ? '-' : '+'}${Math.abs(amount).toLocaleString()} UGX
-                            ${transaction.type === 'withdrawal' && transaction.adminFee ? `<br><small style="color: var(--gray);">Fee: ${transaction.adminFee.toLocaleString()} UGX</small>` : ''}
+                            ${(transaction.type === 'withdrawal' || transaction.type === 'withdrawal_approved') ? '-' : '+'}${Math.abs(amount).toLocaleString()} UGX
+                            ${(transaction.type === 'withdrawal' || transaction.type === 'withdrawal_approved') && transaction.adminFee ? `<br><small style="color: var(--gray);">Fee: ${transaction.adminFee.toLocaleString()} UGX</small>` : ''}
                         </td>
                         <td><span class="status-badge ${statusClass}">${status}</span></td>
                     </tr>
@@ -5569,6 +5594,7 @@
         const typeMap = {
             'deposit': '💰 Deposit',
             'withdrawal': '💸 Withdrawal',
+            'withdrawal_approved': '💸 Withdrawal Approved',
             'referral': '👥 Referral Reward',
             'lub_game_win': '🎲 LUB Game Win',
             'task_completion': '✅ Task Reward',
@@ -5580,7 +5606,7 @@
     }
 
     function getTransactionStatus(transaction) {
-        if (transaction.type === 'withdrawal') {
+        if (transaction.type === 'withdrawal' || transaction.type === 'withdrawal_approved') {
             return 'Completed';
         }
         if (transaction.type === 'deposit') {
@@ -5590,7 +5616,7 @@
     }
 
     function getTransactionStatusClass(transaction) {
-        if (transaction.type === 'withdrawal') {
+        if (transaction.type === 'withdrawal' || transaction.type === 'withdrawal_approved') {
             return 'success';
         }
         if (transaction.type === 'deposit') {
@@ -5629,7 +5655,9 @@
    
            // Get category-based balances
            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-           const totalBalance = Object.values(categoryBalances).reduce((sum, balance) => sum + balance, 0);
+           // Calculate total balance excluding deposits (deposits are not earnings)
+           const totalBalance = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                               categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
            const activeVaults = vaults.length;
            const totalReferrals = referrals.length;
    
@@ -5953,11 +5981,16 @@
             
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
-            const currentBalance = userData ? userData.balance || 0 : 0;
             const activationFeePaid = userData ? userData.activationFeePaid || 0 : 0;
-            const usableBalance = currentBalance - activationFeePaid;
             
-            document.getElementById('vaultBalance').textContent = currentBalance.toLocaleString();
+            // Use category-based balance calculation for consistency
+            const categoryBalances = await getUserCategoryBalances(currentUser.id);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            const usableBalance = totalAvailable - activationFeePaid;
+            
+            document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
             
             const planCards = document.querySelectorAll('.plan-card');
             planCards.forEach(card => {
@@ -6349,7 +6382,13 @@
             if (infoValues.length >= 4) {
                 infoValues[0].textContent = currentUser.fullName || 'N/A';
                 infoValues[1].textContent = currentUser.email || 'N/A';
-                infoValues[2].textContent = `${(currentUser.balance || 0).toLocaleString()} UGX`;
+                
+                // Use category-based balance calculation for consistency
+                const categoryBalances = await getUserCategoryBalances(currentUser.id);
+                const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                    categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+                const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+                infoValues[2].textContent = `${totalAvailable.toLocaleString()} UGX`;
                 infoValues[3].textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
             }
 
@@ -7818,10 +7857,15 @@
         try {
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
-            const balance = userData.balance || 0;
             const pointsBalance = userData.pointsBalance || 0;
             const activationFeePaid = userData.activationFeePaid || 0;
-            const usableBalance = balance - activationFeePaid;
+            
+            // Use category-based balance calculation for consistency
+            const categoryBalances = await getUserCategoryBalances(currentUser.id);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            const usableBalance = totalAvailable - activationFeePaid;
             
             const withdrawBalanceEl = document.getElementById('withdrawBalance');
             const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
@@ -8287,9 +8331,14 @@
                 if (withdrawBalanceEl) {
                     const userDoc = await db.collection('users').doc(currentUser.id).get();
                     const userData = userDoc.data();
-                    const balance = userData.balance || 0;
                     const activationFeePaid = userData.activationFeePaid || 0;
-                    const usableBalance = balance - activationFeePaid;
+                    
+                    // Use category-based balance calculation for consistency
+                    const categoryBalances = await getUserCategoryBalances(currentUser.id);
+                    const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                        categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+                    const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+                    const usableBalance = totalAvailable - activationFeePaid;
                     withdrawBalanceEl.textContent = usableBalance.toLocaleString();
                 }
                 return;
@@ -8843,7 +8892,7 @@
             const transactions = transactionsSnapshot.docs.map(doc => doc.data());
 
             const deposits = transactions.filter(t => t.type === 'deposit' || t.type === 'subscription');
-            const withdrawals = transactions.filter(t => t.type === 'withdrawal');
+            const withdrawals = transactions.filter(t => t.type === 'withdrawal' || t.type === 'withdrawal_approved');
             const referrals = transactions.filter(t => t.type === 'referral');
 
             const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
@@ -9822,7 +9871,12 @@
             const userData = userDoc.data();
             const currentBalance = userData.balance || 0;
 
-            // Deduct the withdrawal amount from user balance
+            // Get withdrawal details
+            const withdrawal = (await db.collection('withdrawalRequests').doc(withdrawalId).get()).data();
+            const adminFee = withdrawal.fee;
+            const category = withdrawal.category;
+
+            // Deduct the withdrawal amount from user balance (legacy)
             await db.collection('users').doc(userId).update({
                 balance: currentBalance - amount
             });
@@ -9833,15 +9887,14 @@
                 approvedDate: new Date().toISOString()
             });
 
-            // Record transaction
-            const withdrawal = (await db.collection('withdrawalRequests').doc(withdrawalId).get()).data();
-            const adminFee = withdrawal.fee;
-            
+            // Record withdrawal transaction with category deduction
             await db.collection('transactions').add({
                 userId: userId,
                 userName: userData.fullName,
-                type: 'withdrawal',
+                type: 'withdrawal_approved',
                 amount: amount,
+                sourceCategory: category,
+                categoryName: FUND_CATEGORIES[category] || category,
                 adminFee: adminFee,
                 netAmount: withdrawal.netAmount,
                 method: withdrawal.method,
