@@ -1324,6 +1324,11 @@
                         <div class="stat-value" id="lubGameEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
+                    <div class="stat-card compact" id="withdrawalSuccessCard" style="background: linear-gradient(135deg, #10b981, #059669); display: none;">
+                        <div class="stat-label" style="color: white;">💸 Recent Withdrawal</div>
+                        <div class="stat-value" style="font-size: 1.5rem; color: white;" id="withdrawnAmount">0</div>
+                        <div class="stat-unit" style="color: white;">UGX</div>
+                    </div>
                     <div class="stat-card compact" id="userLevelCard" style="background: linear-gradient(135deg, #6b7280, #6b7280dd);">
                         <div class="stat-label" style="color: white;">Your Level</div>
                         <div class="stat-value" style="font-size: 2rem; color: white;">🌱</div>
@@ -1856,14 +1861,19 @@
                 
                 <!-- Game Info Banner -->
                 <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-                    <h3 style="margin: 0 0 1rem 0; color: #92400e;">🎯 How to Win</h3>
-                    <ul style="color: #92400e; margin: 0; padding-left: 1.5rem;">
-                        <li><strong>Minimum bet:</strong> 500 UGX</li>
-                        <li><strong>Your bet must be unique</strong> (no other player bets the same amount)</li>
-                        <li><strong>The LOWEST unique bet wins</strong></li>
-                        <li><strong>Winner gets:</strong> Their bet × 10</li>
-                        <li><strong>Stake locked for:</strong> 1 hours</li>
-                    </ul>
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleCollapsible('howToWinContent')">
+                        <h3 style="margin: 0; color: #92400e;">🎯 How to Win</h3>
+                        <span id="howToWinToggle" style="font-size: 1.2rem; transition: transform 0.3s ease; color: #92400e;">▼</span>
+                    </div>
+                    <div id="howToWinContent" style="display: none;">
+                        <ul style="color: #92400e; margin: 0; padding-left: 1.5rem;">
+                            <li><strong>Minimum bet:</strong> 500 UGX</li>
+                            <li><strong>Your bet must be unique</strong> (no other player bets the same amount)</li>
+                            <li><strong>The LOWEST unique bet wins</strong></li>
+                            <li><strong>Winner gets:</strong> Their bet × 10</li>
+                            <li><strong>Stake locked for:</strong> 1 hours</li>
+                        </ul>
+                    </div>
                 </div>
                 
                 <!-- Current Round Status -->
@@ -1923,12 +1933,16 @@
                 
                 <!-- Game History -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
-                    <h3>🏆 Previous Winners</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Round</th>
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleCollapsible('previousWinnersContent')">
+                        <h3 style="margin: 0;">🏆 Previous Winners</h3>
+                        <span id="previousWinnersToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
+                    </div>
+                    <div id="previousWinnersContent" style="display: none;">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Round</th>
                                     <th>Winner</th>
                                     <th>Winning Bet</th>
                                     <th>Prize</th>
@@ -1940,6 +1954,7 @@
                                 <tr><td colspan="6" class="text-center">No history yet</td></tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3977,28 +3992,56 @@
                         <div style="text-align: center;">
                             <div style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
                                 <h2 style="margin: 0 0 0.5rem 0; color: white;">⏰ Game Schedule</h2>
-                                <div style="font-size: 1.5rem; font-weight: 600; margin: 0.5rem 0;">Current Time: ${currentTime}</div>
-                                <div style="font-size: 1.2rem; font-weight: 600; margin: 0.5rem 0;">Time Decimal: ${currentTimeDecimal.toFixed(2)}</div>
                                 <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0;">Next Round in ${hours}h ${minutes}m</div>
                                 <p style="margin: 0; opacity: 0.9;">Starts at ${nextRoundTime.toLocaleTimeString()}</p>
                             </div>
                             <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                                <h3 style="margin: 0 0 1rem 0; color: var(--primary);">Daily Schedule</h3>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 11 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                        <strong>Morning Round</strong><br>
-                                        <small>8:00 AM - 11:00 AM</small>
-                                        ${currentTimeDecimal >= 8 && currentTimeDecimal < 11 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                    </div>
-                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 12 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                        <strong>Afternoon Round</strong><br>
-                                        <small>12:00 PM - 3:00 PM</small>
-                                        ${currentTimeDecimal >= 12 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                    </div>
-                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 16 && currentTimeDecimal < 19 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                        <strong>Evening Round</strong><br>
-                                        <small>4:00 PM - 7:00 PM</small>
-                                        ${currentTimeDecimal >= 16 && currentTimeDecimal < 19 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleCollapsible('dailyScheduleContent')">
+                                    <h3 style="margin: 0; color: var(--primary);">📅 Daily Schedule</h3>
+                                    <span id="dailyScheduleToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
+                                </div>
+                                <div id="dailyScheduleContent" style="display: none;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Morning Round</strong><br>
+                                            <small>8:00 AM - 9:00 AM</small>
+                                            ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Late Morning Round</strong><br>
+                                            <small>10:00 AM - 11:00 AM</small>
+                                            ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Afternoon Round</strong><br>
+                                            <small>12:00 PM - 1:00 PM</small>
+                                            ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Mid Afternoon Round</strong><br>
+                                            <small>2:00 PM - 3:00 PM</small>
+                                            ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Evening Round</strong><br>
+                                            <small>4:00 PM - 5:00 PM</small>
+                                            ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Late Evening Round</strong><br>
+                                            <small>6:00 PM - 7:00 PM</small>
+                                            ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Night Round</strong><br>
+                                            <small>8:00 PM - 9:00 PM</small>
+                                            ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Final Round</strong><br>
+                                            <small>9:00 PM - 10:00 PM</small>
+                                            ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -5098,6 +5141,11 @@
         updateUserStats();
         updateFeatureAccess();
         
+        // Check for recent withdrawals with a delay
+        setTimeout(() => {
+            checkRecentWithdrawal();
+        }, 500);
+        
         // Update leaderboard and schedule weekly awards
         updateLeaderboard();
         scheduleWeeklyAward();
@@ -5806,10 +5854,93 @@
                    });
                }
            }, 60000); // Update every minute
+           
+           // Check for recent withdrawals
+           await checkRecentWithdrawal();
+           
        } catch (error) {
            console.error("Error updating user stats:", error);
        }
    }
+
+    // Check and display recent withdrawals
+    async function checkRecentWithdrawal() {
+        if (!currentUser) return;
+        
+        try {
+            // Check for recently approved withdrawals (last 7 days)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            const recentWithdrawal = await db.collection('withdrawalRequests')
+                .where('userId', '==', currentUser.id)
+                .where('status', '==', 'approved')
+                .where('approvedDate', '>=', sevenDaysAgo.toISOString())
+                .orderBy('approvedDate', 'desc')
+                .limit(1)
+                .get();
+            
+            if (!recentWithdrawal.empty) {
+                const withdrawal = recentWithdrawal.docs[0].data();
+                const netAmount = withdrawal.approvedNetAmount || withdrawal.netAmount || 0;
+                const fee = withdrawal.approvedFee || withdrawal.fee || 0;
+                const category = withdrawal.approvedCategory || withdrawal.category || 'total';
+                const approvedDate = new Date(withdrawal.approvedDate);
+                
+                // Get remaining balance in that category
+                const categoryBalances = await getUserCategoryBalances(currentUser.id);
+                let remainingBalance = 0;
+                
+                if (category === 'referral') {
+                    remainingBalance = categoryBalances.referralEarnings || 0;
+                } else if (category === 'lubGame') {
+                    remainingBalance = categoryBalances.lubGameEarnings || 0;
+                } else if (category === 'task') {
+                    remainingBalance = categoryBalances.taskEarnings || 0;
+                } else if (category === 'vault') {
+                    remainingBalance = categoryBalances.vaultEarnings || 0;
+                }
+                
+                // Display the withdrawal success card
+                const withdrawalCard = document.getElementById('withdrawalSuccessCard');
+                const withdrawnAmountEl = document.getElementById('withdrawnAmount');
+                
+                if (withdrawalCard && withdrawnAmountEl) {
+                    withdrawalCard.style.display = 'block';
+                    withdrawnAmountEl.textContent = netAmount.toLocaleString();
+                    
+                    // Update the card with detailed message on click
+                    withdrawalCard.style.cursor = 'pointer';
+                    withdrawalCard.onclick = () => {
+                        const categoryNames = {
+                            'referral': 'Referral Earnings',
+                            'lubGame': 'LUB Game Winnings',
+                            'task': 'Task Earnings',
+                            'vault': 'Vault Earnings',
+                            'total': 'Total Balance'
+                        };
+                        
+                        showAlert('referralAlert', `
+                            <div style="text-align: left;">
+                                <h3 style="margin: 0 0 1rem 0; color: var(--success);">💸 Withdrawal Received</h3>
+                                <p style="margin: 0.5rem 0;"><strong>Dear ${currentUser.fullName},</strong></p>
+                                <p style="margin: 0.5rem 0;">You have received <strong style="color: var(--success);">${netAmount.toLocaleString()} UGX</strong> from VaultPro</p>
+                                <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                                    <p style="margin: 0.25rem 0;"><strong>Date & Time:</strong> ${approvedDate.toLocaleString()}</p>
+                                    <p style="margin: 0.25rem 0;"><strong>Fee:</strong> ${fee.toLocaleString()} UGX</p>
+                                    <p style="margin: 0.25rem 0;"><strong>Source:</strong> ${categoryNames[category]}</p>
+                                    <p style="margin: 0.25rem 0;"><strong>Remaining Balance:</strong> ${remainingBalance.toLocaleString()} UGX</p>
+                                </div>
+                                <p style="margin: 1rem 0 0 0; font-style: italic;">Thank you for using VaultPro! 🙏</p>
+                            </div>
+                        `, 'success');
+                    };
+                }
+            }
+        } catch (error) {
+            console.error('Error checking recent withdrawal:', error);
+        }
+    }
 
     function updateVaultTable(vaults) {
         const tbody = document.getElementById('vaultTableBody');
@@ -6456,18 +6587,9 @@
                     if (joinedDateSpan) joinedDateSpan.textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
                 }
                 
-                // Balance (fourth row)
+                // Account Status (fourth row)
                 if (infoRows[3]) {
-                    const balanceSpan = infoRows[3].querySelector('span:last-child');
-                    if (balanceSpan) {
-                        const balance = currentUser.balance || 0;
-                        balanceSpan.textContent = `${balance.toLocaleString()} UGX`;
-                    }
-                }
-                
-                // Account Status (fifth row)
-                if (infoRows[4]) {
-                    const statusSpan = infoRows[4].querySelector('span:last-child');
+                    const statusSpan = infoRows[3].querySelector('span:last-child');
                     if (statusSpan) {
                         statusSpan.textContent = currentUser.isActivated ? 'Activated' : 'Pending';
                         statusSpan.style.color = currentUser.isActivated ? '#10b981' : '#ef4444';
@@ -9987,16 +10109,21 @@
             const withdrawal = (await db.collection('withdrawalRequests').doc(withdrawalId).get()).data();
             const adminFee = withdrawal.fee;
             const category = withdrawal.category;
+            const netAmount = withdrawal.netAmount;
+            const grossAmount = withdrawal.grossAmount || withdrawal.amount;
 
             // Deduct the withdrawal amount from user balance (legacy)
             await db.collection('users').doc(userId).update({
-                balance: currentBalance - amount
+                balance: currentBalance - grossAmount
             });
 
-            // Update withdrawal request status
+            // Update withdrawal request status with approval details
             await db.collection('withdrawalRequests').doc(withdrawalId).update({
                 status: 'approved',
-                approvedDate: new Date().toISOString()
+                approvedDate: new Date().toISOString(),
+                approvedNetAmount: netAmount,
+                approvedFee: adminFee,
+                approvedCategory: category
             });
 
             // Record withdrawal transaction with category deduction
@@ -10004,11 +10131,11 @@
                 userId: userId,
                 userName: userData.fullName,
                 type: 'withdrawal_approved',
-                amount: amount,
+                amount: grossAmount,
                 sourceCategory: category,
                 categoryName: FUND_CATEGORIES[category] || category,
                 adminFee: adminFee,
-                netAmount: withdrawal.netAmount,
+                netAmount: netAmount,
                 method: withdrawal.method,
                 account: withdrawal.account,
                 date: new Date().toISOString()
