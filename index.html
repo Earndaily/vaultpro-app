@@ -5778,21 +5778,14 @@
 
            const referralEarnings = referralTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
    
-           const depositsSnapshot = await db.collection('depositRequests')
-               .where('userId', '==', currentUser.id)
-               .where('status', '==', 'approved')
-               .get();
-           const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
-           // Exclude activation fees from total deposits display
-           const totalDeposits = approvedDeposits
-               .filter(d => d.type !== 'activation_fee')
-               .reduce((sum, d) => sum + (d.amount || 0), 0);
-
            // Replace the totalBalance calculation with category-based system:
            const categoryBalances = await getUserCategoryBalances(currentUser.id);
            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+           
+           // Use remaining deposit balance instead of total deposits
+           const totalDeposits = categoryBalances.depositEarnings;
 
            const activeVaults = vaults.length;
            const totalReferrals = referrals.length;
