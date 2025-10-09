@@ -2747,21 +2747,24 @@
                 </div>
             </div>
 
-            <div class="grid grid-2" style="margin-bottom: 2rem;">
+
+            <!-- Account Statistics -->
+            <div class="grid grid-3" style="margin-bottom: 2rem;">
                 <div class="stat-card">
-                    <div class="stat-label">Account Status</div>
-                    <div id="profileAccountStatus" class="stat-value">
-                        🔒 Pending
-                    </div>
+                    <div class="stat-label">Total Referrals</div>
+                    <div id="profileTotalReferrals" class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Referral Code</div>
-                    <div id="profileReferralCode" class="stat-value" style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">
-                        N/A
-                    </div>
+                    <div class="stat-label">Active Vaults</div>
+                    <div id="profileActiveVaults" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Streak</div>
+                    <div id="profileCurrentStreak" class="stat-value">0 days</div>
                 </div>
             </div>
 
+            <!-- Account Information -->
             <div style="background: #f9fafb; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
                 <h3 style="margin: 0 0 1rem 0; color: var(--text);">Account Information</h3>
                 <div class="account-info" style="display: grid; gap: 1rem;">
@@ -2774,12 +2777,28 @@
                         <span class="info-value" style="color: var(--gray);">N/A</span>
                     </div>
                     <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
-                        <span class="info-label" style="font-weight: 600; color: var(--text);">Balance:</span>
-                        <span class="info-value" style="color: var(--success); font-weight: 700;">0 UGX</span>
-                    </div>
-                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
                         <span class="info-label" style="font-weight: 600; color: var(--text);">Joined Date:</span>
                         <span class="info-value" style="color: var(--gray);">N/A</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span class="info-label" style="font-weight: 600; color: var(--text);">Account Status:</span>
+                        <span id="profileAccountStatusValue" class="info-value" style="color: var(--error); font-weight: 600;">Pending</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referral Information -->
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #0ea5e9;">
+                <h3 style="margin: 0 0 1rem 0; color: var(--text);">🎯 Referral Program</h3>
+                <div style="display: grid; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span style="font-weight: 600; color: var(--text);">Your Referral Code:</span>
+                        <span id="profileReferralCodeValue" style="color: var(--primary); font-weight: 700; font-size: 1.1rem;">N/A</span>
+                    </div>
+                    <div style="padding: 0.75rem; background: rgba(14, 165, 233, 0.1); border-radius: 8px; border: 1px solid #0ea5e9;">
+                        <p style="margin: 0; color: #0369a1; font-size: 0.875rem;">
+                            <strong>💡 How it works:</strong> Share your referral code with friends. When they join and activate their account, you both earn rewards!
+                        </p>
                     </div>
                 </div>
             </div>
@@ -5479,25 +5498,11 @@
             const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
                                 categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
             const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-            const usableBalance = totalAvailable - activationFeePaid;
             
             document.getElementById('walletBalance').textContent = totalAvailable.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
             
-            // Show activation fee info if it exists
-            const activationInfo = document.getElementById('activationFeeInfo');
-            if (activationInfo) {
-                if (activationFeePaid > 0) {
-                    activationInfo.innerHTML = `
-                        <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 0.75rem; margin-top: 0.5rem;">
-                            <div style="font-size: 0.875rem; color: #0369a1; font-weight: 600;">💰 Activation Fee Paid: ${activationFeePaid.toLocaleString()} UGX</div>
-                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Usable Balance: ${usableBalance.toLocaleString()} UGX</div>
-                        </div>
-                    `;
-                } else {
-                    activationInfo.innerHTML = '';
-                }
-            }
+            // Remove activation fee display - no longer needed
             
             // Load transaction history
             await loadWalletTransactionHistory();
@@ -5651,7 +5656,10 @@
                .where('status', '==', 'approved')
                .get();
            const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
-           const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
+           // Exclude activation fees from total deposits display
+           const totalDeposits = approvedDeposits
+               .filter(d => d.type !== 'activation_fee')
+               .reduce((sum, d) => sum + (d.amount || 0), 0);
    
            // Get category-based balances
            const categoryBalances = await getUserCategoryBalances(currentUser.id);
@@ -5988,7 +5996,6 @@
             const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
                                 categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
             const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-            const usableBalance = totalAvailable - activationFeePaid;
             
             document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
             
@@ -6361,13 +6368,6 @@
             document.getElementById('profileUserEmail').textContent = currentUser.email || 'user@example.com';
             document.getElementById('profileJoinedDate').textContent = `Member since ${currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A'}`;
             
-            // Update account status
-            const statusElement = document.getElementById('profileAccountStatus');
-            statusElement.textContent = currentUser.isActivated ? '✅ Activated' : '🔒 Pending';
-            statusElement.style.color = currentUser.isActivated ? 'var(--success)' : 'var(--error)';
-            
-            // Update referral code
-            document.getElementById('profileReferralCode').textContent = currentUser.referralCode || 'N/A';
             
             // Update level badge
             const levelBadge = document.getElementById('profileLevelBadge');
@@ -6379,17 +6379,45 @@
             
             // Update account information
             const infoValues = document.querySelectorAll('#profileSection .info-value');
-            if (infoValues.length >= 4) {
+            if (infoValues.length >= 3) {
                 infoValues[0].textContent = currentUser.fullName || 'N/A';
                 infoValues[1].textContent = currentUser.email || 'N/A';
+                infoValues[2].textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
+            }
+            
+            // Update account status value
+            const accountStatusValue = document.getElementById('profileAccountStatusValue');
+            if (accountStatusValue) {
+                accountStatusValue.textContent = currentUser.isActivated ? 'Activated' : 'Pending';
+                accountStatusValue.style.color = currentUser.isActivated ? 'var(--success)' : 'var(--error)';
+            }
+            
+            // Update referral code value
+            const referralCodeValue = document.getElementById('profileReferralCodeValue');
+            if (referralCodeValue) {
+                referralCodeValue.textContent = currentUser.referralCode || 'N/A';
+            }
+            
+            // Update profile statistics
+            try {
+                // Get vaults count
+                const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
+                const vaultsCount = vaultsSnapshot.docs.length;
                 
-                // Use category-based balance calculation for consistency
-                const categoryBalances = await getUserCategoryBalances(currentUser.id);
-                const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                    categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-                const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-                infoValues[2].textContent = `${totalAvailable.toLocaleString()} UGX`;
-                infoValues[3].textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
+                // Get referrals count
+                const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
+                const referralsCount = referralsSnapshot.docs.length;
+                
+                // Update statistics
+                const totalReferralsEl = document.getElementById('profileTotalReferrals');
+                const activeVaultsEl = document.getElementById('profileActiveVaults');
+                const currentStreakEl = document.getElementById('profileCurrentStreak');
+                
+                if (totalReferralsEl) totalReferralsEl.textContent = referralsCount;
+                if (activeVaultsEl) activeVaultsEl.textContent = vaultsCount;
+                if (currentStreakEl) currentStreakEl.textContent = `${currentUser.currentStreak || 0} days`;
+            } catch (error) {
+                console.error('Error loading profile statistics:', error);
             }
 
         } catch (error) {
@@ -7865,13 +7893,12 @@
             const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
                                 categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
             const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-            const usableBalance = totalAvailable - activationFeePaid;
             
             const withdrawBalanceEl = document.getElementById('withdrawBalance');
             const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
             
             if (withdrawBalanceEl) {
-                withdrawBalanceEl.textContent = usableBalance.toLocaleString();
+                withdrawBalanceEl.textContent = totalAvailable.toLocaleString();
             }
             if (withdrawPointsBalanceEl) {
                 withdrawPointsBalanceEl.textContent = pointsBalance.toLocaleString();
@@ -8338,8 +8365,7 @@
                     const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
                                         categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
                     const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-                    const usableBalance = totalAvailable - activationFeePaid;
-                    withdrawBalanceEl.textContent = usableBalance.toLocaleString();
+                    withdrawBalanceEl.textContent = totalAvailable.toLocaleString();
                 }
                 return;
             }
@@ -8891,7 +8917,7 @@
             const transactionsSnapshot = await db.collection('transactions').get();
             const transactions = transactionsSnapshot.docs.map(doc => doc.data());
 
-            const deposits = transactions.filter(t => t.type === 'deposit' || t.type === 'subscription');
+            const deposits = transactions.filter(t => (t.type === 'deposit' || t.type === 'subscription') && t.description !== 'Activation fee commission');
             const withdrawals = transactions.filter(t => t.type === 'withdrawal' || t.type === 'withdrawal_approved');
             const referrals = transactions.filter(t => t.type === 'referral');
 
@@ -9341,15 +9367,6 @@
             const userData = userDoc.data();
             const currentBalance = userData.balance || 0;
             
-            const updateData = {
-                balance: currentBalance + amount
-            };
-            
-            if (!userData.isActivated) {
-                updateData.isActivated = true;
-                updateData.activationDate = new Date().toISOString();
-            }
-            
             // Check if this is an activation fee payment
             const depositRequest = await db.collection('depositRequests').doc(depositId).get();
             const isActivationFee = depositRequest.data().type === 'activation_fee';
@@ -9359,8 +9376,13 @@
                 const adminAmount = 16000;
                 const referrerAmount = 4000;
                 
-                // Update user balance and track activation fee separately
-                updateData.activationFeePaid = amount; // Track the 20,000 UGX activation fee
+                // Track activation fee separately (don't add to user balance)
+                const updateData = {
+                    activationFeePaid: amount, // Track the 20,000 UGX activation fee
+                    isActivated: true,
+                    activationDate: new Date().toISOString()
+                };
+                // Don't add activation fee to user balance - it's distributed to admin and referrer
                 await db.collection('users').doc(userId).update(updateData);
                 
                 // Give referrer their share if they exist (ONLY DIRECT REFERRER)
@@ -9409,6 +9431,15 @@
                 
             } else {
                 // Regular deposit - user gets the full amount, NO ADMIN FEE
+                const updateData = {
+                    balance: currentBalance + amount
+                };
+                
+                if (!userData.isActivated) {
+                    updateData.isActivated = true;
+                    updateData.activationDate = new Date().toISOString();
+                }
+                
                 await db.collection('users').doc(userId).update(updateData);
                 
                 await db.collection('transactions').add({
