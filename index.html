@@ -3204,9 +3204,14 @@
     // LUB Game Schedule Configuration
     const LUB_SCHEDULE = {
         rounds: [
-            { start: 8, end: 11, name: 'Morning Round' },    // 8:00 AM - 11:00 AM
-            { start: 12, end: 15, name: 'Afternoon Round' }, // 12:00 PM - 3:00 PM  
-            { start: 16, end: 19, name: 'Evening Round' }    // 4:00 PM - 7:00 PM
+            { start: 8, end: 9, name: 'Morning Round' },     // 8:00 AM - 9:00 AM
+            { start: 10, end: 11, name: 'Late Morning Round' }, // 10:00 AM - 11:00 AM
+            { start: 12, end: 13, name: 'Afternoon Round' }, // 12:00 PM - 1:00 PM
+            { start: 14, end: 15, name: 'Mid Afternoon Round' }, // 2:00 PM - 3:00 PM
+            { start: 16, end: 17, name: 'Evening Round' },   // 4:00 PM - 5:00 PM
+            { start: 18, end: 19, name: 'Late Evening Round' }, // 6:00 PM - 7:00 PM
+            { start: 20, end: 21, name: 'Night Round' },     // 8:00 PM - 9:00 PM
+            { start: 21, end: 22, name: 'Final Round' }      // 9:00 PM - 10:00 PM
         ]
     };
 
@@ -6464,13 +6469,14 @@
                 levelBadge.style.background = `linear-gradient(135deg, ${currentLevel.color}, ${currentLevel.color}dd)`;
             }
             
-            // Update account information
-            const infoValues = document.querySelectorAll('#profileSection .info-value');
-            if (infoValues.length >= 3) {
-                infoValues[0].textContent = currentUser.fullName || 'N/A';
-                infoValues[1].textContent = currentUser.email || 'N/A';
-                infoValues[2].textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
-            }
+            // Update account information - using the new structure
+            const fullNameValue = document.querySelector('#profileSection .info-row:nth-child(1) span:last-child');
+            const emailValue = document.querySelector('#profileSection .info-row:nth-child(2) span:last-child');
+            const joinedDateValue = document.querySelector('#profileSection .info-row:nth-child(3) span:last-child');
+            
+            if (fullNameValue) fullNameValue.textContent = currentUser.fullName || 'N/A';
+            if (emailValue) emailValue.textContent = currentUser.email || 'N/A';
+            if (joinedDateValue) joinedDateValue.textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
             
             // Update account status value
             const accountStatusValue = document.getElementById('profileAccountStatusValue');
@@ -9013,7 +9019,7 @@
             const adminCommissions = transactions.filter(t => 
                 t.type === 'admin_commission' && 
                 t.description && 
-                t.description.includes('Activation fee')
+                t.description.includes('Activation fee commission')
             );
             const activationAdminEarnings = adminCommissions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
