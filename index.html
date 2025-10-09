@@ -1861,9 +1861,9 @@
                 
                 <!-- Game Info Banner -->
                 <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleCollapsible('howToWinContent')">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleLUBCollapsible('howToWinContent')">
                         <h3 style="margin: 0; color: #92400e;">🎯 How to Win</h3>
-                        <span id="howToWinToggle" style="font-size: 1.2rem; transition: transform 0.3s ease; color: #92400e;">▼</span>
+                        <span id="howToWinContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease; color: #92400e;">▼</span>
                     </div>
                     <div id="howToWinContent" style="display: none;">
                         <ul style="color: #92400e; margin: 0; padding-left: 1.5rem;">
@@ -1933,9 +1933,9 @@
                 
                 <!-- Game History -->
                 <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleCollapsible('previousWinnersContent')">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleLUBCollapsible('previousWinnersContent')">
                         <h3 style="margin: 0;">🏆 Previous Winners</h3>
-                        <span id="previousWinnersToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
+                        <span id="previousWinnersContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
                     </div>
                     <div id="previousWinnersContent" style="display: none;">
                         <div class="table-responsive">
@@ -1943,17 +1943,17 @@
                                 <thead>
                                     <tr>
                                         <th>Round</th>
-                                    <th>Winner</th>
-                                    <th>Winning Bet</th>
-                                    <th>Prize</th>
-                                    <th>Players</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lubHistoryBody">
-                                <tr><td colspan="6" class="text-center">No history yet</td></tr>
-                            </tbody>
-                        </table>
+                                        <th>Winner</th>
+                                        <th>Winning Bet</th>
+                                        <th>Prize</th>
+                                        <th>Players</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lubHistoryBody">
+                                    <tr><td colspan="6" class="text-center">No history yet</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -3996,9 +3996,9 @@
                                 <p style="margin: 0; opacity: 0.9;">Starts at ${nextRoundTime.toLocaleTimeString()}</p>
                             </div>
                             <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleCollapsible('dailyScheduleContent')">
+                                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleLUBCollapsible('dailyScheduleContent')">
                                     <h3 style="margin: 0; color: var(--primary);">📅 Daily Schedule</h3>
-                                    <span id="dailyScheduleToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
+                                    <span id="dailyScheduleContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
                                 </div>
                                 <div id="dailyScheduleContent" style="display: none;">
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
@@ -4152,11 +4152,14 @@
             const historySnapshot = await db.collection('lubGameRounds')
                 .where('status', '==', 'completed')
                 .orderBy('completedAt', 'desc')
-                .limit(10)
+                .limit(50) // Increased from 10 to 50
                 .get();
             
+            const historyContainer = document.getElementById('lubHistoryBody');
+            if (!historyContainer) return;
+            
             if (historySnapshot.empty) {
-                document.getElementById('lubHistoryBody').innerHTML = '<tr><td colspan="6" class="text-center">No history yet</td></tr>';
+                historyContainer.innerHTML = '<tr><td colspan="6" class="text-center">No history yet</td></tr>';
                 return;
             }
             
@@ -4169,15 +4172,19 @@
                         <td>${round.winningAmount ? round.winningAmount.toLocaleString() + ' UGX' : '-'}</td>
                         <td>${round.prize ? round.prize.toLocaleString() + ' UGX' : '-'}</td>
                         <td>${round.totalPlayers || 0}</td>
-                        <td>${new Date(round.completedAt).toLocaleDateString()}</td>
+                        <td>${new Date(round.completedAt).toLocaleString()}</td>
                     </tr>
                 `;
             }).join('');
             
-            document.getElementById('lubHistoryBody').innerHTML = historyHTML;
+            historyContainer.innerHTML = historyHTML;
             
         } catch (error) {
             console.error('Error loading LUB game history:', error);
+            const historyContainer = document.getElementById('lubHistoryBody');
+            if (historyContainer) {
+                historyContainer.innerHTML = '<tr><td colspan="6" class="text-center" style="color: var(--error);">Error loading history</td></tr>';
+            }
         }
     }
 
@@ -5566,6 +5573,22 @@
         }
     }
 
+    // Add this function near the top with other utility functions
+    function toggleLUBCollapsible(elementId) {
+        const content = document.getElementById(elementId);
+        const toggle = document.getElementById(elementId + 'Toggle');
+        
+        if (content && toggle) {
+            if (content.style.display === 'none' || content.style.display === '') {
+                content.style.display = 'block';
+                toggle.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▼';
+            }
+        }
+    }
+
     async function refreshUserData() {
         if (!currentUser || !currentUser.id) return;
         
@@ -5764,16 +5787,17 @@
            const totalDeposits = approvedDeposits
                .filter(d => d.type !== 'activation_fee')
                .reduce((sum, d) => sum + (d.amount || 0), 0);
-   
-           // Get category-based balances
+
+           // Replace the totalBalance calculation with category-based system:
            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-           // Calculate total balance excluding deposits (deposits are not earnings)
-           const totalBalance = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+           const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+           const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+
            const activeVaults = vaults.length;
            const totalReferrals = referrals.length;
    
-           document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
+           document.getElementById('totalBalance').textContent = totalAvailable.toLocaleString();
            document.getElementById('activeVaults').textContent = activeVaults;
            document.getElementById('totalReferrals').textContent = totalReferrals;
            document.getElementById('referralEarnings').textContent = categoryBalances.referralEarnings.toLocaleString();
@@ -9121,52 +9145,57 @@
             const transactions = transactionsSnapshot.docs.map(doc => doc.data());
 
             const deposits = transactions.filter(t => (t.type === 'deposit' || t.type === 'subscription') && t.description !== 'Activation fee commission');
-            const withdrawals = transactions.filter(t => t.type === 'withdrawal' || t.type === 'withdrawal_approved');
-            const referrals = transactions.filter(t => t.type === 'referral');
+            const withdrawals = transactions.filter(t => t.type === 'withdrawal_approved');
 
-            const totalDeposits = deposits.reduce((sum, t) => sum + t.amount, 0);
-            const totalWithdrawals = withdrawals.reduce((sum, t) => sum + t.amount, 0);
+            const totalDeposits = deposits.reduce((sum, t) => sum + (t.amount || 0), 0);
+            const totalWithdrawals = withdrawals.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-            // No earnings from deposits anymore
-            const depositEarnings = 0;
+            // Calculate withdrawal earnings (5% fees)
             const withdrawEarnings = withdrawals.reduce((sum, t) => sum + (t.adminFee || 0), 0);
             
-            // Referrals don't generate admin fees anymore
-            const referralEarnings = 0;
-
-            // Get activation fee admin earnings from admin_commission transactions
-            const adminCommissions = transactions.filter(t => 
+            // Get activation fee admin earnings
+            const activationCommissions = transactions.filter(t => 
                 t.type === 'admin_commission' && 
                 t.description && 
-                t.description.includes('Activation fee commission')
+                (t.description.includes('Activation fee commission') || t.description.includes('activation fee'))
             );
-            const activationAdminEarnings = adminCommissions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            const activationAdminEarnings = activationCommissions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
+            // Get LUB game admin earnings
             const lubTransactions = transactions.filter(t => t.type === 'lub_game_admin_earnings');
             const lubGameEarnings = lubTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
-            // Admin only earns from withdrawals and LUB game
+            // Total admin earnings
             const totalAdminEarnings = withdrawEarnings + lubGameEarnings + activationAdminEarnings;
             
+            // Update main stats
             document.getElementById('adminTotalUsers').textContent = totalUsers;
             document.getElementById('adminTotalDeposits').textContent = totalDeposits.toLocaleString();
             document.getElementById('adminTotalWithdrawals').textContent = totalWithdrawals.toLocaleString();
             document.getElementById('adminEarnings').textContent = totalAdminEarnings.toLocaleString();
 
-            // Update displays
-            document.getElementById('depositEarnings').textContent = '0'; // No longer earning from deposits
-            document.getElementById('withdrawEarnings').textContent = withdrawEarnings.toLocaleString();
-            document.getElementById('referralAdminEarnings').textContent = '0'; // No longer earning from referrals
+            // Update earnings breakdown
+            const withdrawEarningsEl = document.getElementById('withdrawEarnings');
+            if (withdrawEarningsEl) {
+                withdrawEarningsEl.textContent = withdrawEarnings.toLocaleString();
+            }
             
             const activationEarningsEl = document.getElementById('activationAdminEarnings');
             if (activationEarningsEl) {
                 activationEarningsEl.textContent = activationAdminEarnings.toLocaleString();
             }
             
-            const lubGameEarningsEl = document.getElementById('lubAdminEarnings');
-            if (lubGameEarningsEl) {
-                lubGameEarningsEl.textContent = lubGameEarnings.toLocaleString();
+            const lubAdminEarningsEl = document.getElementById('lubAdminEarnings');
+            if (lubAdminEarningsEl) {
+                lubAdminEarningsEl.textContent = lubGameEarnings.toLocaleString();
             }
+
+            console.log('Admin Stats Updated:', {
+                withdrawEarnings,
+                activationAdminEarnings,
+                lubGameEarnings,
+                totalAdminEarnings
+            });
         } catch (error) {
             console.error("Error updating admin stats:", error);
         }
