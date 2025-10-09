@@ -3226,6 +3226,7 @@
                     case 'task_completion':
                         balances.taskEarnings += amount;
                         break;
+                    case 'referral':
                     case 'referral_bonus':
                         balances.referralEarnings += amount;
                         break;
@@ -3872,6 +3873,9 @@
                 const currentMinute = now.getMinutes();
                 const currentTimeDecimal = currentHour + (currentMinute / 60);
                 
+                // Check if we're in a valid round time but no round exists
+                const isInValidTime = isInValidRoundTime();
+                
                 if (timeUntilNext > 0) {
                     const hours = Math.floor(timeUntilNext / (1000 * 60 * 60));
                     const minutes = Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60));
@@ -3911,9 +3915,16 @@
                     document.getElementById('gameStatus').innerHTML = '<p class="text-center" style="color: var(--error);">No active round</p>';
                 }
                 
-                // Hide bet section when no active round
-                document.getElementById('placeBetSection').classList.add('hidden');
-                document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active round - check schedule above</p>';
+                // If we're in a valid time but no round exists, show betting interface
+                if (isInValidTime) {
+                    // Show bet section when in valid time but no round
+                    document.getElementById('placeBetSection').classList.remove('hidden');
+                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Round starting soon - place your bet!</p>';
+                } else {
+                    // Hide bet section when no active round and not in valid time
+                    document.getElementById('placeBetSection').classList.add('hidden');
+                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active round - check schedule above</p>';
+                }
                 return;
             }
             
@@ -5604,7 +5615,7 @@
            // Calculate referral earnings from transactions instead
            const referralTransactions = await db.collection('transactions')
                .where('userId', '==', currentUser.id)
-               .where('type', '==', 'referral')
+               .where('type', 'in', ['referral', 'referral_bonus'])
                .get();
 
            const referralEarnings = referralTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
@@ -7541,15 +7552,15 @@
                approvedDate: new Date().toISOString()
            });
    
-           // Record transaction
-           await db.collection('transactions').add({
-               userId: currentUser.id,
-               userName: currentUser.fullName,
-               type: 'task_reward',
-               amount: reward,
-               taskTitle: taskTitle,
-               date: new Date().toISOString()
-           });
+            // Record transaction
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'task_completion',
+                amount: reward,
+                taskTitle: taskTitle,
+                date: new Date().toISOString()
+            });
    
            // Update local cache
            currentUser.balance = currentBalance + reward;
