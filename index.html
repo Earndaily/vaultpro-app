@@ -1681,7 +1681,7 @@
                     <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
                         <li><strong>4000 UGX</strong> for each direct referral</li>
-                        <li><strong>2000 UGX</strong> when your referral refers someone else</li>
+                        
                     </ul>
                 </div>
                 
@@ -2795,6 +2795,13 @@
                             <span style="font-weight: 600; color: #374151; font-size: 1rem;">Joined Date</span>
                         </div>
                         <span style="color: #6b7280; font-weight: 500; background: #f9fafb; padding: 0.5rem 1rem; border-radius: 8px;">N/A</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: white; border-radius: 16px; border: 2px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.3s ease;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem;">💰</div>
+                            <span style="font-weight: 600; color: #374151; font-size: 1rem;">Balance</span>
+                        </div>
+                        <span style="color: #10b981; font-weight: 700; background: #f0fdf4; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #bbf7d0;">0 UGX</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: white; border-radius: 16px; border: 2px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.3s ease;">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -6469,14 +6476,47 @@
                 levelBadge.style.background = `linear-gradient(135deg, ${currentLevel.color}, ${currentLevel.color}dd)`;
             }
             
-            // Update account information - using the new structure
-            const fullNameValue = document.querySelector('#profileSection .info-row:nth-child(1) span:last-child');
-            const emailValue = document.querySelector('#profileSection .info-row:nth-child(2) span:last-child');
-            const joinedDateValue = document.querySelector('#profileSection .info-row:nth-child(3) span:last-child');
-            
-            if (fullNameValue) fullNameValue.textContent = currentUser.fullName || 'N/A';
-            if (emailValue) emailValue.textContent = currentUser.email || 'N/A';
-            if (joinedDateValue) joinedDateValue.textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
+            // Update account information - using the correct selectors for the actual HTML structure
+            const accountInfoDiv = document.querySelector('#profileSection div[style*="display: grid; gap: 1rem"]');
+            if (accountInfoDiv) {
+                const infoRows = accountInfoDiv.querySelectorAll('div[style*="display: flex; justify-content: space-between"]');
+                
+                // Full Name (first row)
+                if (infoRows[0]) {
+                    const fullNameSpan = infoRows[0].querySelector('span:last-child');
+                    if (fullNameSpan) fullNameSpan.textContent = currentUser.fullName || 'N/A';
+                }
+                
+                // Email (second row)
+                if (infoRows[1]) {
+                    const emailSpan = infoRows[1].querySelector('span:last-child');
+                    if (emailSpan) emailSpan.textContent = currentUser.email || 'N/A';
+                }
+                
+                // Joined Date (third row)
+                if (infoRows[2]) {
+                    const joinedDateSpan = infoRows[2].querySelector('span:last-child');
+                    if (joinedDateSpan) joinedDateSpan.textContent = currentUser.joinedDate ? new Date(currentUser.joinedDate).toLocaleDateString() : 'N/A';
+                }
+                
+                // Balance (fourth row)
+                if (infoRows[3]) {
+                    const balanceSpan = infoRows[3].querySelector('span:last-child');
+                    if (balanceSpan) {
+                        const balance = currentUser.balance || 0;
+                        balanceSpan.textContent = `${balance.toLocaleString()} UGX`;
+                    }
+                }
+                
+                // Account Status (fifth row)
+                if (infoRows[4]) {
+                    const statusSpan = infoRows[4].querySelector('span:last-child');
+                    if (statusSpan) {
+                        statusSpan.textContent = currentUser.isActivated ? 'Activated' : 'Pending';
+                        statusSpan.style.color = currentUser.isActivated ? '#10b981' : '#ef4444';
+                    }
+                }
+            }
             
             // Update account status value
             const accountStatusValue = document.getElementById('profileAccountStatusValue');
