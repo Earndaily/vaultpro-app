@@ -1295,11 +1295,6 @@
                         <div class="stat-label">👥 Referrals</div>
                         <div class="stat-value" id="totalReferrals">0</div>
                     </div>
-                                    <div class="stat-card compact">
-                         <div class="stat-label">LUB Game Earnings</div>
-                         <div class="stat-value" id="adminLUBGameEarnings">0</div>
-                         <div class="stat-unit">UGX</div>
-                     </div>
                    
                     <div class="stat-card compact">
                         <div class="stat-label">💵 Referral Earnings</div>
@@ -1348,11 +1343,7 @@
                     Complete your account activation by paying the 20,000 UGX registration fee to unlock all features.
                 </p>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
-                        <h4 style="color: #374151; margin: 0 0 0.5rem 0;">💰 Activation Fee</h4>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">20,000 UGX</div>
-                    </div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                     <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #d1d5db;">
                         <h4 style="color: #374151; margin: 0 0 0.5rem 0;">🎁 What You Get</h4>
                         <ul style="color: #6b7280; margin: 0; padding-left: 1rem; font-size: 0.875rem; text-align: left;">
@@ -1997,7 +1988,6 @@
                                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select Withdrawal Category</label>
                                 <select id="withdrawCategory" onchange="updateWithdrawableAmount()">
                                     <option value="">-- Select Category --</option>
-                                    <option value="total">Total Balance</option>
                                     <option value="referral">Referral Earnings Only</option>
                                     <option value="lubGame">LUB Game Winnings Only</option>
                                     <option value="task">Task Earnings Only</option>
@@ -3375,9 +3365,15 @@
     function getCurrentScheduledRound() {
         const now = new Date();
         const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTime = currentHour + (currentMinute / 60);
+        
+        console.log('Current time:', now.toLocaleString(), 'Hour:', currentHour, 'Minute:', currentMinute, 'Decimal:', currentTime);
         
         for (let round of LUB_SCHEDULE.rounds) {
-            if (currentHour >= round.start && currentHour < round.end) {
+            console.log('Checking round:', round.name, 'Start:', round.start, 'End:', round.end);
+            if (currentTime >= round.start && currentTime < round.end) {
+                console.log('Found active round:', round.name);
                 return {
                     ...round,
                     startTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), round.start, 0, 0),
@@ -3386,12 +3382,15 @@
             }
         }
         
+        console.log('No active round found');
         return null; // No active round at current time
     }
 
     // Check if we're in a valid round time
     function isInValidRoundTime() {
-        return getCurrentScheduledRound() !== null;
+        const result = getCurrentScheduledRound() !== null;
+        console.log('isInValidRoundTime:', result);
+        return result;
     }
 
     // Get next round start time
@@ -3868,6 +3867,10 @@
                 const nextRoundTime = getNextRoundStartTime();
                 const now = new Date();
                 const timeUntilNext = nextRoundTime - now;
+                const currentTime = now.toLocaleTimeString();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                const currentTimeDecimal = currentHour + (currentMinute / 60);
                 
                 if (timeUntilNext > 0) {
                     const hours = Math.floor(timeUntilNext / (1000 * 60 * 60));
@@ -3877,23 +3880,28 @@
                         <div style="text-align: center;">
                             <div style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
                                 <h2 style="margin: 0 0 0.5rem 0; color: white;">⏰ Game Schedule</h2>
+                                <div style="font-size: 1.5rem; font-weight: 600; margin: 0.5rem 0;">Current Time: ${currentTime}</div>
+                                <div style="font-size: 1.2rem; font-weight: 600; margin: 0.5rem 0;">Time Decimal: ${currentTimeDecimal.toFixed(2)}</div>
                                 <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0;">Next Round in ${hours}h ${minutes}m</div>
                                 <p style="margin: 0; opacity: 0.9;">Starts at ${nextRoundTime.toLocaleTimeString()}</p>
                             </div>
                             <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                                 <h3 style="margin: 0 0 1rem 0; color: var(--primary);">Daily Schedule</h3>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 11 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                         <strong>Morning Round</strong><br>
                                         <small>8:00 AM - 11:00 AM</small>
+                                        ${currentTimeDecimal >= 8 && currentTimeDecimal < 11 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                     </div>
-                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 12 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                         <strong>Afternoon Round</strong><br>
                                         <small>12:00 PM - 3:00 PM</small>
+                                        ${currentTimeDecimal >= 12 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                     </div>
-                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                                    <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 16 && currentTimeDecimal < 19 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                         <strong>Evening Round</strong><br>
                                         <small>4:00 PM - 7:00 PM</small>
+                                        ${currentTimeDecimal >= 16 && currentTimeDecimal < 19 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                     </div>
                                 </div>
                             </div>
@@ -5608,39 +5616,30 @@
            const approvedDeposits = depositsSnapshot.docs.map(doc => doc.data());
            const totalDeposits = approvedDeposits.reduce((sum, d) => sum + (d.amount || 0), 0);
    
-           const totalBalance = currentUser.balance || 0;
+           // Get category-based balances
+           const categoryBalances = await getUserCategoryBalances(currentUser.id);
+           const totalBalance = Object.values(categoryBalances).reduce((sum, balance) => sum + balance, 0);
            const activeVaults = vaults.length;
            const totalReferrals = referrals.length;
    
            document.getElementById('totalBalance').textContent = totalBalance.toLocaleString();
            document.getElementById('activeVaults').textContent = activeVaults;
            document.getElementById('totalReferrals').textContent = totalReferrals;
-           document.getElementById('referralEarnings').textContent = referralEarnings.toLocaleString();
+           document.getElementById('referralEarnings').textContent = categoryBalances.referralEarnings.toLocaleString();
            document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Fix for task earnings display
-           const totalTaskEarningsVal = Number(currentUser.totalTaskEarnings || 0);
+           // Update task earnings display using category balances
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
-               taskEarningsEl.textContent = totalTaskEarningsVal.toLocaleString();
+               taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
            }
 
-           // Calculate LUB Game earnings
-           const lubTransactionsSnapshot = await db.collection('transactions')
-               .where('userId', '==', currentUser.id)
-               .where('type', '==', 'lub_game_win')
-               .get();
-
-           const lubGameEarnings = lubTransactionsSnapshot.docs.reduce((sum, doc) => {
-               return sum + (doc.data().amount || 0);
-           }, 0);
-
-           // Update the display
+           // Update LUB Game earnings display using category balances
            const lubEarningsEl = document.getElementById('lubGameEarnings');
            if (lubEarningsEl) {
-               lubEarningsEl.textContent = lubGameEarnings.toLocaleString();
+               lubEarningsEl.textContent = categoryBalances.lubGameEarnings.toLocaleString();
            }
            
            // Update user name and activation status in navbar
