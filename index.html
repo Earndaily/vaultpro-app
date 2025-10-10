@@ -3282,7 +3282,18 @@
                     case 'withdrawal_approved':
                         // Add the amount (which is negative for deductions)
                         if (transaction.sourceCategory) {
-                            balances[transaction.sourceCategory] += amount;
+                            // Map category names to balance keys
+                            let balanceKey = transaction.sourceCategory;
+                            if (transaction.sourceCategory === 'lubGame') {
+                                balanceKey = 'lubGameEarnings';
+                            } else if (transaction.sourceCategory === 'referral') {
+                                balanceKey = 'referralEarnings';
+                            } else if (transaction.sourceCategory === 'task') {
+                                balanceKey = 'taskEarnings';
+                            } else if (transaction.sourceCategory === 'vault') {
+                                balanceKey = 'vaultEarnings';
+                            }
+                            balances[balanceKey] += amount;
                         }
                         break;
                 }
@@ -8367,16 +8378,16 @@
                         // Add the amount (which is negative for withdrawal_approved deductions)
                         if (transaction.type === 'withdrawal_approved' && transaction.sourceCategory) {
                             switch (transaction.sourceCategory) {
-                                case 'referralEarnings':
+                                case 'referral':
                                     referralEarnings += transaction.amount || 0;
                                     break;
-                                case 'lubGameEarnings':
+                                case 'lubGame':
                                     lubGameEarnings += transaction.amount || 0;
                                     break;
-                                case 'taskEarnings':
+                                case 'task':
                                     taskEarnings += transaction.amount || 0;
                                     break;
-                                case 'vaultEarnings':
+                                case 'vault':
                                     vaultEarnings += transaction.amount || 0;
                                     break;
                             }
