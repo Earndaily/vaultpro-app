@@ -7158,14 +7158,20 @@
             }
 
             let pictureUrl = null;
+            
+            // Convert image to base64 if file is uploaded
             if (pictureFile) {
-                // Convert image to base64 for storage
-                pictureUrl = await convertToBase64(pictureFile);
+                pictureUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(pictureFile);
+                });
             }
 
             await db.collection('electionCandidates').add({
                 name: name,
-                picture: pictureUrl,
+                picture: pictureUrl, // Now stores base64 data instead of file path
                 title: title,
                 category: category,
                 district: district,
@@ -7370,9 +7376,15 @@
             }
 
             let pictureUrl = null;
+            
             if (pictureFile) {
-                // Convert image to base64 for storage
-                pictureUrl = await convertToBase64(pictureFile);
+                // Convert new image to base64
+                pictureUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(pictureFile);
+                });
             } else {
                 // Keep existing picture if no new file is uploaded
                 const existingCandidate = await db.collection('electionCandidates').doc(candidateId).get();
@@ -7407,10 +7419,10 @@
             document.getElementById('candidateElectionDate').value = '';
             document.getElementById('candidateDescription').value = '';
             
-            const addBtn = document.getElementById('candidateFormBtn');
+            const addBtn = document.querySelector('button[onclick="updateCandidate(\'' + candidateId + '\')"]');
             if (addBtn) {
                 addBtn.textContent = 'Add Candidate';
-                addBtn.onclick = addCandidate;
+                addBtn.onclick = () => addCandidate();
             }
             
             updateAdminCandidates();
