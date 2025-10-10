@@ -8362,7 +8362,25 @@
                         totalDeposits += transaction.amount || 0;
                         break;
                     case 'withdrawal':
+                    case 'withdrawal_approved':
                         withdrawnFunds += transaction.amount || 0;
+                        // Deduct from the specific category for withdrawal_approved
+                        if (transaction.type === 'withdrawal_approved' && transaction.sourceCategory) {
+                            switch (transaction.sourceCategory) {
+                                case 'referralEarnings':
+                                    referralEarnings -= transaction.amount || 0;
+                                    break;
+                                case 'lubGameEarnings':
+                                    lubGameEarnings -= transaction.amount || 0;
+                                    break;
+                                case 'taskEarnings':
+                                    taskEarnings -= transaction.amount || 0;
+                                    break;
+                                case 'vaultEarnings':
+                                    vaultEarnings -= transaction.amount || 0;
+                                    break;
+                            }
+                        }
                         break;
                 }
             });
