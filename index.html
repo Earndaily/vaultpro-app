@@ -3280,9 +3280,9 @@
                         }
                         break;
                     case 'withdrawal_approved':
-                        // Deduct from the source category
+                        // Add the amount (which is negative for deductions)
                         if (transaction.sourceCategory) {
-                            balances[transaction.sourceCategory] -= amount;
+                            balances[transaction.sourceCategory] += amount;
                         }
                         break;
                 }
@@ -8363,21 +8363,21 @@
                         break;
                     case 'withdrawal':
                     case 'withdrawal_approved':
-                        withdrawnFunds += transaction.amount || 0;
-                        // Deduct from the specific category for withdrawal_approved
+                        withdrawnFunds += Math.abs(transaction.amount || 0);
+                        // Add the amount (which is negative for withdrawal_approved deductions)
                         if (transaction.type === 'withdrawal_approved' && transaction.sourceCategory) {
                             switch (transaction.sourceCategory) {
                                 case 'referralEarnings':
-                                    referralEarnings -= transaction.amount || 0;
+                                    referralEarnings += transaction.amount || 0;
                                     break;
                                 case 'lubGameEarnings':
-                                    lubGameEarnings -= transaction.amount || 0;
+                                    lubGameEarnings += transaction.amount || 0;
                                     break;
                                 case 'taskEarnings':
-                                    taskEarnings -= transaction.amount || 0;
+                                    taskEarnings += transaction.amount || 0;
                                     break;
                                 case 'vaultEarnings':
-                                    vaultEarnings -= transaction.amount || 0;
+                                    vaultEarnings += transaction.amount || 0;
                                     break;
                             }
                         }
@@ -10292,26 +10292,13 @@
             const netAmount = withdrawal.netAmount;
             const grossAmount = withdrawal.grossAmount || withdrawal.amount;
 
-            // Deduct the GROSS amount from user balance (since fee was already calculated)
-            await db.collection('users').doc(userId).update({
-                balance: currentBalance - grossAmount
-            });
-
-            // Update withdrawal request status with approval details
-            await db.collection('withdrawalRequests').doc(withdrawalId).update({
-                status: 'approved',
-                approvedDate: new Date().toISOString(),
-                approvedNetAmount: netAmount,
-                approvedFee: adminFee,
-                approvedCategory: category
-            });
-
-            // Record withdrawal transaction with category deduction
+            // ⚠️ CRITICAL FIX: Record the DEDUCTION transaction FIRST
+            // This ensures category balance tracking works correctly
             await db.collection('transactions').add({
                 userId: userId,
                 userName: userData.fullName,
                 type: 'withdrawal_approved',
-                amount: grossAmount, // Store gross amount
+                amount: -grossAmount, // ⚠️ NEGATIVE to indicate deduction
                 sourceCategory: category,
                 categoryName: FUND_CATEGORIES[category] || category,
                 adminFee: adminFee,
@@ -10321,44 +10308,32 @@
                 date: new Date().toISOString()
             });
 
+            // Deduct from total balance
+            await db.collection('users').doc(userId).update({
+                balance: currentBalance - grossAmount
+            });
+
+            // Update withdrawal request status
+            await db.collection('withdrawalRequests').doc(withdrawalId).update({
+                status: 'approved',
+                approvedDate: new Date().toISOString(),
+                approvedNetAmount: netAmount,
+                approvedFee: adminFee,
+                approvedCategory: category
+            });
+
             alert(`Withdrawal approved successfully!\nUser will receive: ${netAmount.toLocaleString()} UGX\nAdmin fee: ${adminFee.toLocaleString()} UGX`);
             updateAdminWithdrawals();
             updateAdminStats();
             
-            // Update user's dashboard stats in real-time
+            // Update user's dashboard if they're logged in
             try {
-                // Force refresh user data from database
                 const updatedUserDoc = await db.collection('users').doc(userId).get();
                 if (updatedUserDoc.exists) {
-                    // Update the current user object if it's the same user
                     if (currentUser && currentUser.id === userId) {
                         currentUser = { id: currentUser.id, ...updatedUserDoc.data() };
-                        
-                        // Update user stats and dashboard
                         await updateUserStats();
-                        
-                        // Update specific sections that might be visible
-                        if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
-                            // Dashboard is already updated by updateUserStats() above
-                        }
-                        
-                        // Check for recent withdrawals to show success card
                         await checkRecentWithdrawal();
-                        
-                        // Update profile section if visible
-                        if (document.getElementById('profileSection') && !document.getElementById('profileSection').classList.contains('hidden')) {
-                            await updateProfileSection();
-                        }
-                        
-                        // Update wallet section if visible
-                        if (document.getElementById('walletPage') && !document.getElementById('walletPage').classList.contains('hidden')) {
-                            await updateWalletSection();
-                        }
-                        
-                        // Update withdraw section if visible
-                        if (document.getElementById('withdrawSection') && !document.getElementById('withdrawSection').classList.contains('hidden')) {
-                            await updateWithdrawSection();
-                        }
                     }
                 }
             } catch (dashboardError) {
