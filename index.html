@@ -3276,8 +3276,11 @@
                 }
             });
             
-            // Ensure no negative balances
+            // Ensure no negative balances, but log if we're forcing to zero
             Object.keys(balances).forEach(key => {
+                if (balances[key] < 0) {
+                    console.warn(`Negative balance detected for ${key}: ${balances[key]}, forcing to 0`);
+                }
                 balances[key] = Math.max(0, balances[key]);
             });
             
@@ -10179,9 +10182,31 @@
             updateAdminWithdrawals();
             updateAdminStats();
             
-            // Update user stats if the withdrawal is for the current user
+            // Force refresh user stats for the affected user
+            // This ensures the dashboard updates immediately after withdrawal approval
             if (currentUser && currentUser.id === userId) {
-                updateUserStats();
+                // Update current user's stats immediately
+                await updateUserStats();
+                // Also refresh the dashboard if user is on it
+                if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
+                    await loadDashboard();
+                }
+            }
+            
+            // Log the withdrawal for debugging
+            console.log(`Withdrawal approved: ${grossAmount} UGX from ${category} category for user ${userId}`);
+            
+            // Force refresh the user's dashboard if they're online
+            // This ensures immediate balance update for the affected user
+            try {
+                // Trigger a custom event that the user's page can listen for
+                if (typeof window !== 'undefined' && window.dispatchEvent) {
+                    window.dispatchEvent(new CustomEvent('withdrawalApproved', {
+                        detail: { userId, amount: grossAmount, category }
+                    }));
+                }
+            } catch (e) {
+                console.log('Could not dispatch withdrawal event:', e);
             }
         } catch (error) {
             console.error("Error approving withdrawal:", error);
@@ -10201,6 +10226,41 @@
         } catch (error) {
             console.error("Error rejecting withdrawal:", error);
             alert('Failed to reject withdrawal: ' + error.message);
+        }
+    }
+
+    // Function to manually refresh a user's balance (for admin use)
+    async function refreshUserBalance(userId) {
+        try {
+            if (!userId) {
+                alert('User ID is required');
+                return;
+            }
+
+            // Force recalculate category balances
+            const categoryBalances = await getUserCategoryBalances(userId);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+
+            // Update user's total balance
+            await db.collection('users').doc(userId).update({
+                balance: totalAvailable
+            });
+
+            console.log(`User ${userId} balance refreshed: ${totalAvailable} UGX`);
+            alert(`User balance refreshed successfully! New balance: ${totalAvailable.toLocaleString()} UGX`);
+            
+            // If this is the current user, update their dashboard
+            if (currentUser && currentUser.id === userId) {
+                updateUserStats();
+                if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
+                    loadDashboard();
+                }
+            }
+        } catch (error) {
+            console.error("Error refreshing user balance:", error);
+            alert('Failed to refresh user balance: ' + error.message);
         }
     }
 
@@ -10232,6 +10292,23 @@
     window.addEventListener('load', function() {
         captureReferralCode(); // FIRST thing - before Firebase init
         init();
+    });
+
+    // Listen for withdrawal approval events to refresh dashboard
+    window.addEventListener('withdrawalApproved', function(event) {
+        const { userId, amount, category } = event.detail;
+        console.log(`Withdrawal approved event received: ${amount} UGX from ${category} for user ${userId}`);
+        
+        // Refresh user stats and dashboard if this is the current user
+        if (currentUser && currentUser.id === userId) {
+            console.log('Refreshing dashboard for current user after withdrawal approval');
+            updateUserStats();
+            
+            // If user is on dashboard, refresh it
+            if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
+                loadDashboard();
+            }
+        }
     });
 </script>
 </body>
