@@ -2015,6 +2015,7 @@
                                 
                                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Withdrawal Amount (UGX)</label>
                                 <input type="number" id="withdrawAmount" placeholder="Enter Amount" oninput="calculateWithdrawFee()" />
+                                <small style="color: var(--gray); margin-top: 0.25rem; display: block;">Minimum withdrawal amount is 4,000 UGX</small>
                                 
                                 <div id="feeBreakdown" style="background: #f9fafb; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: none;">
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -2752,7 +2753,17 @@
                         </button>
                     </div>
                     
-                    <h3 id="profileUserName" style="margin: 0; color: white; font-size: 1.8rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">User</h3>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <h3 id="profileUserName" style="margin: 0; color: white; font-size: 1.8rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">User</h3>
+                        <button id="editNameBtn" onclick="toggleNameEdit()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; backdrop-filter: blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                            ✏️ Edit
+                        </button>
+                    </div>
+                    <div id="nameEditContainer" style="display: none; margin-bottom: 0.5rem;">
+                        <input type="text" id="nameEditInput" placeholder="Enter your full name" style="padding: 0.5rem; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-size: 1rem; width: 200px; margin-right: 0.5rem;" />
+                        <button onclick="saveNameEdit()" style="background: #22c55e; border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer; margin-right: 0.25rem;">Save</button>
+                        <button onclick="cancelNameEdit()" style="background: #ef4444; border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer;">Cancel</button>
+                    </div>
                     <p id="profileUserEmail" style="margin: 0.5rem 0; color: rgba(255,255,255,0.8); font-size: 1rem;">user@example.com</p>
                     <p id="profileJoinedDate" style="margin: 0; color: rgba(255,255,255,0.7); font-size: 0.9rem;">Member since N/A</p>
                     
@@ -3269,6 +3280,7 @@
                         }
                         break;
                     case 'withdrawal_approved':
+                        // Deduct from the source category
                         if (transaction.sourceCategory) {
                             balances[transaction.sourceCategory] -= amount;
                         }
@@ -5461,9 +5473,9 @@
                 const reference = document.getElementById('activationReference');
                 
                 if (method === 'mtn') {
-                    phoneNumber.textContent = '0779710365'; // MTN number
+                    phoneNumber.textContent = '0779710365 (WAFULA KEVIN)'; // MTN number
                 } else if (method === 'airtel') {
-                    phoneNumber.textContent = '0747598486'; // Airtel number
+                    phoneNumber.textContent = '0747598486 (JALIAH BYOGERO)'; // Airtel number
                 }
                 
                 reference.textContent = `ACTIVATION_${currentUser.referralCode}`;
@@ -5883,7 +5895,6 @@
        }
    }
 
-    // Check and display recent withdrawals
     async function checkRecentWithdrawal() {
         if (!currentUser) return;
         
@@ -6111,6 +6122,34 @@
             alert(`Successfully withdrew ${netWithdrawalAmount.toLocaleString()} UGX from vault! (Admin fee: ${adminCommission.toLocaleString()} UGX)`);
             updateUserStats();
             updateVaultSection();
+            
+            // Check for recent withdrawals to show success card
+            await checkRecentWithdrawal();
+            
+            // Update dashboard and other sections in real-time
+            try {
+                // Update dashboard if visible
+                if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
+                    // Dashboard is already updated by updateUserStats() above
+                }
+                
+                // Update profile section if visible
+                if (document.getElementById('profileSection') && !document.getElementById('profileSection').classList.contains('hidden')) {
+                    await updateProfileSection();
+                }
+                
+                // Update wallet section if visible
+                if (document.getElementById('walletPage') && !document.getElementById('walletPage').classList.contains('hidden')) {
+                    await updateWalletSection();
+                }
+                
+                // Update withdraw section if visible
+                if (document.getElementById('withdrawSection') && !document.getElementById('withdrawSection').classList.contains('hidden')) {
+                    await updateWithdrawSection();
+                }
+            } catch (dashboardError) {
+                console.error('Error updating dashboard after vault withdrawal:', dashboardError);
+            }
             
         } catch (error) {
             console.error('Error withdrawing vault:', error);
@@ -6705,6 +6744,82 @@
         } catch (error) {
             console.error('Error uploading profile picture:', error);
             showAlert('profileAlert', 'Failed to upload profile picture', 'error');
+        }
+    }
+
+    // Name editing functions
+    function toggleNameEdit() {
+        const nameEditContainer = document.getElementById('nameEditContainer');
+        const editNameBtn = document.getElementById('editNameBtn');
+        const nameEditInput = document.getElementById('nameEditInput');
+        
+        if (nameEditContainer.style.display === 'none') {
+            // Show edit mode
+            nameEditContainer.style.display = 'block';
+            editNameBtn.style.display = 'none';
+            nameEditInput.value = currentUser.fullName || '';
+            nameEditInput.focus();
+        } else {
+            // Hide edit mode
+            nameEditContainer.style.display = 'none';
+            editNameBtn.style.display = 'block';
+        }
+    }
+
+    function cancelNameEdit() {
+        const nameEditContainer = document.getElementById('nameEditContainer');
+        const editNameBtn = document.getElementById('editNameBtn');
+        
+        nameEditContainer.style.display = 'none';
+        editNameBtn.style.display = 'block';
+    }
+
+    async function saveNameEdit() {
+        const nameEditInput = document.getElementById('nameEditInput');
+        const newName = nameEditInput.value.trim();
+        
+        if (!newName) {
+            showAlert('profileAlert', 'Please enter a valid name', 'error');
+            return;
+        }
+        
+        if (newName.length < 2) {
+            showAlert('profileAlert', 'Name must be at least 2 characters long', 'error');
+            return;
+        }
+        
+        try {
+            showAlert('profileAlert', 'Updating name...', 'info');
+            
+            // Update user document in database
+            await db.collection('users').doc(currentUser.id).update({
+                fullName: newName
+            });
+            
+            // Update current user object
+            currentUser.fullName = newName;
+            
+            // Update UI
+            const profileUserName = document.getElementById('profileUserName');
+            if (profileUserName) {
+                profileUserName.textContent = newName;
+            }
+            
+            // Update profile initials
+            const profileInitials = document.getElementById('profileInitials');
+            if (profileInitials && !currentUser.profilePicture) {
+                const initials = newName.split(' ').map(n => n[0]).join('').toUpperCase();
+                profileInitials.textContent = initials;
+            }
+            
+            // Hide edit mode
+            cancelNameEdit();
+            
+            showAlert('profileAlert', 'Name updated successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Error updating name:', error);
+            showAlert('profileAlert', 'Failed to update name: ' + error.message, 'error');
         }
     }
 
@@ -8418,8 +8533,8 @@
                 return;
             }
 
-            if (amount < 10000) {
-                alert('Minimum withdrawal amount is 10,000 UGX');
+            if (amount < 4000) {
+                alert('Minimum withdrawal amount is 4,000 UGX');
                 return;
             }
 
@@ -8906,6 +9021,16 @@
             const displayAmountEl = document.getElementById('displayDepositAmount');
             if (displayAmountEl) {
                 displayAmountEl.value = amount.toLocaleString() + ' UGX';
+            }
+            
+            // Update admin phone number and name based on payment method
+            const adminPhoneEl = document.getElementById('adminPhoneNumber');
+            if (adminPhoneEl) {
+                if (method === 'mtn') {
+                    adminPhoneEl.value = '0779710365 (WAFULA KEVIN)';
+                } else if (method === 'airtel') {
+                    adminPhoneEl.value = '0747598486 (JALIAH BYOGERO)';
+                }
             }
             
             const depositDetailsEl = document.getElementById('depositDetails');
@@ -10149,7 +10274,7 @@
             const netAmount = withdrawal.netAmount;
             const grossAmount = withdrawal.grossAmount || withdrawal.amount;
 
-            // Deduct the withdrawal amount from user balance (legacy)
+            // Deduct the GROSS amount from user balance (since fee was already calculated)
             await db.collection('users').doc(userId).update({
                 balance: currentBalance - grossAmount
             });
@@ -10168,7 +10293,7 @@
                 userId: userId,
                 userName: userData.fullName,
                 type: 'withdrawal_approved',
-                amount: grossAmount,
+                amount: grossAmount, // Store gross amount
                 sourceCategory: category,
                 categoryName: FUND_CATEGORIES[category] || category,
                 adminFee: adminFee,
@@ -10178,36 +10303,51 @@
                 date: new Date().toISOString()
             });
 
-            alert('Withdrawal approved successfully!');
+            alert(`Withdrawal approved successfully!\nUser will receive: ${netAmount.toLocaleString()} UGX\nAdmin fee: ${adminFee.toLocaleString()} UGX`);
             updateAdminWithdrawals();
             updateAdminStats();
             
-            // Force refresh user stats for the affected user
-            // This ensures the dashboard updates immediately after withdrawal approval
-            if (currentUser && currentUser.id === userId) {
-                // Update current user's stats immediately
-                await updateUserStats();
-                // Also refresh the dashboard if user is on it
-                if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
-                    await loadDashboard();
-                }
-            }
-            
-            // Log the withdrawal for debugging
-            console.log(`Withdrawal approved: ${grossAmount} UGX from ${category} category for user ${userId}`);
-            
-            // Force refresh the user's dashboard if they're online
-            // This ensures immediate balance update for the affected user
+            // Update user's dashboard stats in real-time
             try {
-                // Trigger a custom event that the user's page can listen for
-                if (typeof window !== 'undefined' && window.dispatchEvent) {
-                    window.dispatchEvent(new CustomEvent('withdrawalApproved', {
-                        detail: { userId, amount: grossAmount, category }
-                    }));
+                // Force refresh user data from database
+                const updatedUserDoc = await db.collection('users').doc(userId).get();
+                if (updatedUserDoc.exists) {
+                    // Update the current user object if it's the same user
+                    if (currentUser && currentUser.id === userId) {
+                        currentUser = { id: currentUser.id, ...updatedUserDoc.data() };
+                        
+                        // Update user stats and dashboard
+                        await updateUserStats();
+                        
+                        // Update specific sections that might be visible
+                        if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
+                            // Dashboard is already updated by updateUserStats() above
+                        }
+                        
+                        // Check for recent withdrawals to show success card
+                        await checkRecentWithdrawal();
+                        
+                        // Update profile section if visible
+                        if (document.getElementById('profileSection') && !document.getElementById('profileSection').classList.contains('hidden')) {
+                            await updateProfileSection();
+                        }
+                        
+                        // Update wallet section if visible
+                        if (document.getElementById('walletPage') && !document.getElementById('walletPage').classList.contains('hidden')) {
+                            await updateWalletSection();
+                        }
+                        
+                        // Update withdraw section if visible
+                        if (document.getElementById('withdrawSection') && !document.getElementById('withdrawSection').classList.contains('hidden')) {
+                            await updateWithdrawSection();
+                        }
+                    }
                 }
-            } catch (e) {
-                console.log('Could not dispatch withdrawal event:', e);
+            } catch (dashboardError) {
+                console.error('Error updating user dashboard after withdrawal:', dashboardError);
             }
+            
+            console.log(`Withdrawal approved: ${grossAmount} UGX from ${category} category for user ${userId}`);
         } catch (error) {
             console.error("Error approving withdrawal:", error);
             alert('Failed to approve withdrawal: ' + error.message);
@@ -10255,7 +10395,7 @@
             if (currentUser && currentUser.id === userId) {
                 updateUserStats();
                 if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
-                    loadDashboard();
+                    // Dashboard is already updated by updateUserStats() above
                 }
             }
         } catch (error) {
@@ -10306,7 +10446,7 @@
             
             // If user is on dashboard, refresh it
             if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
-                loadDashboard();
+                // Dashboard is already updated by updateUserStats() above
             }
         }
     });
