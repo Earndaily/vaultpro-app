@@ -3585,10 +3585,10 @@
                 scheduledRound: true
             };
             
-            await db.collection('lubGameRounds').add(roundData);
+            const docRef = await db.collection('lubGameRounds').add(roundData);
             console.log(`New LUB ${scheduledRound.name} started:`, roundData.roundNumber);
             
-            return roundData;
+            return { id: docRef.id, ...roundData };
         } catch (error) {
             console.error('Error starting new LUB round:', error);
             throw error;
@@ -8452,9 +8452,9 @@
                     return;
                 }
             } else if (category === 'lubGame' || category === 'task') {
-                // LUB Game and Task earnings: Weekend only
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    alert(`${category === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on weekends (Saturday and Sunday)`);
+                // LUB Game and Task earnings: Friday and Saturday only
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    alert(`${category === 'lubGame' ? 'LUB Game' : 'Task'} earnings can only be withdrawn on Fridays and Saturdays`);
                     return;
                 }
             }
