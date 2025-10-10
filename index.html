@@ -1328,6 +1328,11 @@
                         <div class="stat-value" id="lubGameEarnings">0</div>
                         <div class="stat-unit">UGX</div>
                     </div>
+                    <div class="stat-card compact">
+                        <div class="stat-label">💸 Total Withdrawn</div>
+                        <div class="stat-value" id="totalWithdrawn">0</div>
+                        <div class="stat-unit">UGX</div>
+                    </div>
                     <div class="stat-card compact" id="withdrawalSuccessCard" style="background: linear-gradient(135deg, #10b981, #059669); display: none;">
                         <div class="stat-label" style="color: white;">💸 Recent Withdrawal</div>
                         <div class="stat-value" style="font-size: 1.5rem; color: white;" id="withdrawnAmount">0</div>
@@ -4053,45 +4058,20 @@
                                 </div>
                                 <div id="dailyScheduleContent" style="display: none;">
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 10 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Morning Round</strong><br>
-                                            <small>8:00 AM - 9:00 AM</small>
-                                            ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                            <small>8:00 AM - 10:00 AM</small>
+                                            ${currentTimeDecimal >= 8 && currentTimeDecimal < 10 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                         </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Late Morning Round</strong><br>
-                                            <small>10:00 AM - 11:00 AM</small>
-                                            ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 13 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Afternoon Round</strong><br>
-                                            <small>12:00 PM - 1:00 PM</small>
-                                            ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                            <small>1:00 PM - 3:00 PM</small>
+                                            ${currentTimeDecimal >= 13 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                         </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Mid Afternoon Round</strong><br>
-                                            <small>2:00 PM - 3:00 PM</small>
-                                            ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 19 && currentTimeDecimal < 21 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Evening Round</strong><br>
-                                            <small>4:00 PM - 5:00 PM</small>
-                                            ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Late Evening Round</strong><br>
-                                            <small>6:00 PM - 7:00 PM</small>
-                                            ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Night Round</strong><br>
-                                            <small>8:00 PM - 9:00 PM</small>
-                                            ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Final Round</strong><br>
-                                            <small>9:00 PM - 10:00 PM</small>
-                                            ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                            <small>7:00 PM - 9:00 PM</small>
+                                            ${currentTimeDecimal >= 19 && currentTimeDecimal < 21 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -5833,6 +5813,19 @@
                .get();
 
            const referralEarnings = referralTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+
+           // Calculate total withdrawn amount from withdrawal transactions
+           const withdrawalTransactions = await db.collection('transactions')
+               .where('userId', '==', currentUser.id)
+               .where('type', 'in', ['withdrawal', 'withdrawal_approved'])
+               .get();
+
+           const totalWithdrawn = withdrawalTransactions.docs.reduce((sum, doc) => {
+               const transaction = doc.data();
+               // For withdrawal_approved, use the absolute value since it's stored as negative
+               const amount = transaction.type === 'withdrawal_approved' ? Math.abs(transaction.amount || 0) : (transaction.amount || 0);
+               return sum + amount;
+           }, 0);
    
            // Replace the totalBalance calculation with category-based system:
            const categoryBalances = await getUserCategoryBalances(currentUser.id);
@@ -5864,6 +5857,12 @@
            const lubEarningsEl = document.getElementById('lubGameEarnings');
            if (lubEarningsEl) {
                lubEarningsEl.textContent = categoryBalances.lubGameEarnings.toLocaleString();
+           }
+
+           // Update total withdrawn display
+           const totalWithdrawnEl = document.getElementById('totalWithdrawn');
+           if (totalWithdrawnEl) {
+               totalWithdrawnEl.textContent = totalWithdrawn.toLocaleString();
            }
            
            // Update user name and activation status in navbar
