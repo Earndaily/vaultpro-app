@@ -5598,7 +5598,8 @@
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') {
-            updateTasksSection();
+            // Initialize platform switching for tasks
+            switchTaskPlatform('youtube'); // This will call updateTasksSection()
             const taskEarningsEl = document.getElementById('taskEarnings');
             if (taskEarningsEl && currentUser) {
                 taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
@@ -8122,15 +8123,21 @@
             const today = getCurrentDayOfWeek();
             
             // Get tasks for today or "all days" - FILTERED BY PLATFORM
+            console.log('Loading tasks for platform:', currentTaskPlatform);
             const tasksSnapshot = await db.collection('tasks')
                 .where('isActive', '==', true)
                 .where('platform', '==', currentTaskPlatform)  // ADD THIS FILTER
                 .get();
             
-            const allTasks = tasksSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            console.log('Found tasks:', tasksSnapshot.docs.length);
+            const allTasks = tasksSnapshot.docs.map(doc => {
+                const taskData = doc.data();
+                console.log('Task data:', { id: doc.id, platform: taskData.platform, title: taskData.title });
+                return {
+                    id: doc.id,
+                    ...taskData
+                };
+            });
 
             // Check which tasks are already completed today
             const todayString = new Date().toDateString();
@@ -10121,7 +10128,7 @@
                 return;
             }
 
-            await db.collection('tasks').add({
+            const taskData = {
                 title: title,
                 description: description,
                 link: link,
@@ -10133,7 +10140,10 @@
                 createdDate: new Date().toISOString(),
                 isActive: true,
                 createdBy: 'admin'
-            });
+            };
+            
+            console.log('Creating task with data:', taskData);
+            await db.collection('tasks').add(taskData);
 
             alert('Task created successfully!');
             
