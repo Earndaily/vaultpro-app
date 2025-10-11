@@ -4230,86 +4230,99 @@
     }
 
     // Leaderboard Functions
-    async function updateLeaderboard() {
-        try {
-            // Get current week's start (Monday)
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - daysUntilMonday);
-            weekStart.setHours(0, 0, 0, 0);
-            
-            // Get all users (exclude admin)
-            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
-            
-            // Calculate weekly referrals for each user
-            const leaderboardData = await Promise.all(usersSnapshot.docs.map(async (doc) => {
-                const userData = doc.data();
-                const userId = doc.id;
-                
-                // Count referrals made this week
-                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
-                const weeklyReferrals = referralsSnapshot.docs.filter(refDoc => {
-                    const refData = refDoc.data();
-                    const refDate = new Date(refData.date);
-                    return refDate >= weekStart;
-                }).length;
-                
-                return {
-                    userId: userId,
-                    userName: userData.fullName,
-                    weeklyReferrals: weeklyReferrals,
-                    totalReferrals: referralsSnapshot.size
-                };
-            }));
-            
-            // Sort by weekly referrals
-            leaderboardData.sort((a, b) => b.weeklyReferrals - a.weeklyReferrals);
-            
-            // Take top 10
-            const top10 = leaderboardData.slice(0, 10);
-            
-            // Display leaderboard
-            const leaderboardList = document.getElementById('leaderboardList');
-            if (top10.length === 0 || top10[0].weeklyReferrals === 0) {
-                leaderboardList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No referrals this week yet. Be the first!</p>';
-            } else {
-                const trophies = ['🥇', '🥈', '🥉'];
-                leaderboardList.innerHTML = top10.map((user, index) => {
-                    const trophy = index < 3 ? trophies[index] : `${index + 1}.`;
-                    const isWinner = index === 0;
-                    
-                    return `
-                        <div style="background: ${isWinner ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f9fafb'}; 
-                                    border: 2px solid ${isWinner ? '#f59e0b' : '#e5e7eb'}; 
-                                    border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; 
-                                    display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 1rem;">
-                                <div style="font-size: 2rem;">${trophy}</div>
-                                <div>
-                                    <div style="font-weight: 700; color: var(--dark);">${user.userName}</div>
-                                    <div style="font-size: 0.875rem; color: var(--gray);">Total: ${user.totalReferrals} referrals</div>
-                                </div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 1.5rem; font-weight: 700; color: ${isWinner ? '#f59e0b' : 'var(--primary)'};">
-                                    ${user.weeklyReferrals}
-                                </div>
-                                <div style="font-size: 0.75rem; color: var(--gray);">this week</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-            
-            // Update countdown timer
-            updateWeekResetTimer();
-            
-        } catch (error) {
-            console.error('Error updating leaderboard:', error);
-        }
-    }
+   async function updateLeaderboard() {
+       try {
+           // Get current week's start (Monday)
+           const now = new Date();
+           const dayOfWeek = now.getDay();
+           const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+           const weekStart = new Date(now);
+           weekStart.setDate(now.getDate() - daysUntilMonday);
+           weekStart.setHours(0, 0, 0, 0);
+           
+           // Get all users (exclude admin)
+           const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+           
+           // Calculate weekly referrals for each user (only counting ACTIVATED referrals)
+           const leaderboardData = await Promise.all(usersSnapshot.docs.map(async (doc) => {
+               const userData = doc.data();
+               const userId = doc.id;
+               
+               // Count referrals made this week - ONLY if they activated
+               const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
+               
+               let weeklyActivatedReferrals = 0;
+               let totalActivatedReferrals = 0;
+               
+               for (const refDoc of referralsSnapshot.docs) {
+                   const refData = refDoc.data();
+                   const refDate = new Date(refData.date);
+                   
+                   // Check if this referral's user is activated
+                   const referredUserDoc = await db.collection('users').doc(refData.userId).get();
+                   if (referredUserDoc.exists && referredUserDoc.data().isActivated) {
+                       totalActivatedReferrals++;
+                       
+                       if (refDate >= weekStart) {
+                           weeklyActivatedReferrals++;
+                       }
+                   }
+               }
+               
+               return {
+                   userId: userId,
+                   userName: userData.fullName,
+                   weeklyReferrals: weeklyActivatedReferrals,
+                   totalReferrals: totalActivatedReferrals
+               };
+           }));
+           
+           // Sort by weekly referrals
+           leaderboardData.sort((a, b) => b.weeklyReferrals - a.weeklyReferrals);
+           
+           // Take top 10
+           const top10 = leaderboardData.slice(0, 10);
+           
+           // Display leaderboard
+           const leaderboardList = document.getElementById('leaderboardList');
+           if (top10.length === 0 || top10[0].weeklyReferrals === 0) {
+               leaderboardList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No referrals this week yet. Be the first!</p>';
+           } else {
+               const trophies = ['🥇', '🥈', '🥉'];
+               leaderboardList.innerHTML = top10.map((user, index) => {
+                   const trophy = index < 3 ? trophies[index] : `${index + 1}.`;
+                   const isWinner = index === 0;
+                   
+                   return `
+                       <div style="background: ${isWinner ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f9fafb'}; 
+                                   border: 2px solid ${isWinner ? '#f59e0b' : '#e5e7eb'}; 
+                                   border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; 
+                                   display: flex; justify-content: space-between; align-items: center;">
+                           <div style="display: flex; align-items: center; gap: 1rem;">
+                               <div style="font-size: 2rem;">${trophy}</div>
+                               <div>
+                                   <div style="font-weight: 700; color: var(--dark);">${user.userName}</div>
+                                   <div style="font-size: 0.875rem; color: var(--gray);">Total: ${user.totalReferrals} activated referrals</div>
+                               </div>
+                           </div>
+                           <div style="text-align: right;">
+                               <div style="font-size: 1.5rem; font-weight: 700; color: ${isWinner ? '#f59e0b' : 'var(--primary)'};">
+                                   ${user.weeklyReferrals}
+                               </div>
+                               <div style="font-size: 0.75rem; color: var(--gray);">this week</div>
+                           </div>
+                       </div>
+                   `;
+               }).join('');
+           }
+           
+           // Update countdown timer
+           updateWeekResetTimer();
+           
+       } catch (error) {
+           console.error('Error updating leaderboard:', error);
+       }
+   }
 
     function updateWeekResetTimer() {
         const now = new Date();
@@ -4333,66 +4346,74 @@
     }
 
     // Award weekly winner (admin function)
-    async function awardWeeklyWinner() {
-        try {
-            // Get current week's start
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - daysUntilMonday);
-            weekStart.setHours(0, 0, 0, 0);
-            
-            // Find top referrer
-            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
-            
-            let topReferrer = null;
-            let maxReferrals = 0;
-            
-            for (const doc of usersSnapshot.docs) {
-                const userData = doc.data();
-                const userId = doc.id;
-                
-                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
-                const weeklyReferrals = referralsSnapshot.docs.filter(refDoc => {
-                    const refData = refDoc.data();
-                    const refDate = new Date(refData.date);
-                    return refDate >= weekStart;
-                }).length;
-                
-                if (weeklyReferrals > maxReferrals) {
-                    maxReferrals = weeklyReferrals;
-                    topReferrer = { userId, userData, weeklyReferrals };
-                }
-            }
-            
-            if (topReferrer && topReferrer.weeklyReferrals > 0) {
-                // Award 50,000 UGX
-                const currentBalance = topReferrer.userData.balance || 0;
-                await db.collection('users').doc(topReferrer.userId).update({
-                    balance: currentBalance + 50000
-                });
-                
-                // Record transaction
-                await db.collection('transactions').add({
-                    userId: topReferrer.userId,
-                    userName: topReferrer.userData.fullName,
-                    type: 'weekly_referral_prize',
-                    amount: 50000,
-                    description: `Weekly Top Referrer Prize (${topReferrer.weeklyReferrals} referrals)`,
-                    date: new Date().toISOString()
-                });
-                
-                console.log(`Weekly winner: ${topReferrer.userData.fullName} with ${topReferrer.weeklyReferrals} referrals`);
-                return topReferrer;
-            }
-            
-            return null;
-        } catch (error) {
-            console.error('Error awarding weekly winner:', error);
-            return null;
-        }
-    }
+   async function awardWeeklyWinner() {
+       try {
+           // Get current week's start
+           const now = new Date();
+           const dayOfWeek = now.getDay();
+           const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+           const weekStart = new Date(now);
+           weekStart.setDate(now.getDate() - daysUntilMonday);
+           weekStart.setHours(0, 0, 0, 0);
+           
+           // Find top referrer (only counting activated referrals)
+           const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+           
+           let topReferrer = null;
+           let maxReferrals = 0;
+           
+           for (const doc of usersSnapshot.docs) {
+               const userData = doc.data();
+               const userId = doc.id;
+               
+               const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
+               
+               let weeklyActivatedReferrals = 0;
+               
+               for (const refDoc of referralsSnapshot.docs) {
+                   const refData = refDoc.data();
+                   const refDate = new Date(refData.date);
+                   
+                   // Only count if activated
+                   const referredUserDoc = await db.collection('users').doc(refData.userId).get();
+                   if (referredUserDoc.exists && referredUserDoc.data().isActivated && refDate >= weekStart) {
+                       weeklyActivatedReferrals++;
+                   }
+               }
+               
+               if (weeklyActivatedReferrals > maxReferrals) {
+                   maxReferrals = weeklyActivatedReferrals;
+                   topReferrer = { userId, userData, weeklyReferrals: weeklyActivatedReferrals };
+               }
+           }
+           
+           if (topReferrer && topReferrer.weeklyReferrals > 0) {
+               // Award 50,000 UGX
+               const currentBalance = topReferrer.userData.balance || 0;
+               await db.collection('users').doc(topReferrer.userId).update({
+                   balance: currentBalance + 50000
+               });
+               
+               // Record transaction
+               await db.collection('transactions').add({
+                   userId: topReferrer.userId,
+                   userName: topReferrer.userData.fullName,
+                   type: 'weekly_referral_prize',
+                   amount: 50000,
+                   description: `Weekly Top Referrer Prize (${topReferrer.weeklyReferrals} activated referrals)`,
+                   date: new Date().toISOString()
+               });
+               
+               console.log(`Weekly winner: ${topReferrer.userData.fullName} with ${topReferrer.weeklyReferrals} activated referrals`);
+               return topReferrer;
+           }
+           
+           return null;
+       } catch (error) {
+           console.error('Error awarding weekly winner:', error);
+           return null;
+       }
+   }
 
     // Check and award winner every Sunday at midnight (admin automation)
     function scheduleWeeklyAward() {
@@ -8858,35 +8879,35 @@
         }
     }
 
-    async function convertPointsToMoney() {
-        try {
-            const pointsToConvert = parseFloat(document.getElementById('pointsToConvert').value);
-            
-            if (!pointsToConvert || pointsToConvert < 1) {
-                alert('Please enter a valid number of points');
-                return;
-            }
-
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            const currentPointsBalance = userData.pointsBalance || 0;
-
-            if (pointsToConvert > currentPointsBalance) {
-                alert(`Insufficient points. You have ${currentPointsBalance} points.`);
-                return;
-            }
-
-            const moneyAmount = pointsToConvert * 10;
-            const currentBalance = userData.balance || 0;
-
-            await db.collection('users').doc(currentUser.id).update({
-                balance: currentBalance + moneyAmount,
-                pointsBalance: currentPointsBalance - pointsToConvert
-            });
-
-            currentUser.balance = currentBalance + moneyAmount;
-            currentUser.pointsBalance = currentPointsBalance - pointsToConvert;
-
+   async function convertPointsToMoney() {
+       try {
+           const pointsToConvert = parseFloat(document.getElementById('pointsToConvert').value);
+           
+           if (!pointsToConvert || pointsToConvert < 1) {
+               alert('Please enter a valid number of points');
+               return;
+           }
+   
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           const currentPointsBalance = userData.pointsBalance || 0;
+   
+           if (pointsToConvert > currentPointsBalance) {
+               alert(`Insufficient points. You have ${currentPointsBalance} points.`);
+               return;
+           }
+   
+           const moneyAmount = pointsToConvert * 10;
+           const currentBalance = userData.balance || 0;
+   
+           await db.collection('users').doc(currentUser.id).update({
+               balance: currentBalance + moneyAmount,
+               pointsBalance: currentPointsBalance - pointsToConvert
+           });
+   
+           currentUser.balance = currentBalance + moneyAmount;
+           currentUser.pointsBalance = currentPointsBalance - pointsToConvert;
+   
             await db.collection('transactions').add({
                 userId: currentUser.id,
                 userName: currentUser.fullName,
@@ -8895,7 +8916,17 @@
                 pointsUsed: pointsToConvert,
                 date: new Date().toISOString()
             });
-
+            
+            // ADD SECOND RECORD HERE
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'deposit',
+                amount: moneyAmount,
+                description: `Points conversion: ${pointsToConvert} points converted to money`,
+                date: new Date().toISOString()
+            });
+            
             alert(`Successfully converted ${pointsToConvert} points to ${moneyAmount.toLocaleString()} UGX!`);
 
             document.getElementById('pointsToConvert').value = '';
