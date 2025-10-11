@@ -7830,18 +7830,24 @@
        console.log('YouTube IFrame API ready');
        isYouTubeAPIReady = true;
    };
-   
+      
    async function startTask(taskId, reward, requiredTime, videoId, platform) {
        // Skip activation checks for admin users
        if (!currentUser.isAdmin && !currentUser.isActivated) {
            alert('Account not activated. Please complete your registration first.');
            return;
        }
-
+   
        const button = document.getElementById(`btn-${taskId}`);
        const videoContainer = document.getElementById(`video-container-${taskId}`);
        const timerDiv = document.getElementById(`timer-${taskId}`);
        const countdownDiv = document.getElementById(`countdown-${taskId}`);
+       
+       // ADD THIS CHECK - prevents null reference error
+       if (!videoContainer || !timerDiv || !countdownDiv) {
+           alert('Error loading task interface. Please try again.');
+           return;
+       }
        
        // Check if already completed today
        const todayString = new Date().toDateString();
@@ -7850,7 +7856,7 @@
            .where('taskId', '==', taskId)
            .where('date', '==', todayString)
            .get();
-
+   
        if (!submissionQuery.empty) {
            alert('You have already completed this task today!');
            return;
