@@ -7830,14 +7830,14 @@
        console.log('YouTube IFrame API ready');
        isYouTubeAPIReady = true;
    };
-      
+   
    async function startTask(taskId, reward, requiredTime, videoId, platform) {
        // Skip activation checks for admin users
        if (!currentUser.isAdmin && !currentUser.isActivated) {
            alert('Account not activated. Please complete your registration first.');
            return;
        }
-   
+
        const button = document.getElementById(`btn-${taskId}`);
        const videoContainer = document.getElementById(`video-container-${taskId}`);
        const timerDiv = document.getElementById(`timer-${taskId}`);
@@ -7856,7 +7856,7 @@
            .where('taskId', '==', taskId)
            .where('date', '==', todayString)
            .get();
-   
+
        if (!submissionQuery.empty) {
            alert('You have already completed this task today!');
            return;
@@ -7871,9 +7871,9 @@
            // YouTube task - use player
            await initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
        } else if (platform === 'tiktok') {
-           // TikTok task - simpler completion
+           // TikTok task - user opens link in new tab, timer counts down
            button.disabled = true;
-           button.textContent = 'Viewing TikTok...';
+           button.textContent = 'Timer Running...';
            videoContainer.classList.remove('hidden');
            timerDiv.classList.remove('hidden');
            
@@ -8171,7 +8171,12 @@
                                <div id="video-container-${task.id}" class="video-container hidden">
                                    ${currentTaskPlatform === 'youtube' ? 
                                        `<div id="player-${task.id}"></div>` :
-                                       `<iframe src="https://www.tiktok.com/embed/v2/${videoId}" width="100%" height="400" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`
+                                       `<div id="timer-placeholder-${task.id}" style="background: #f3f4f6; padding: 2rem; border-radius: 12px; text-align: center;">
+                                           <p style="color: var(--gray); margin: 1rem 0;">Open TikTok in another tab and watch the video while the timer counts down</p>
+                                           <a href="${task.link}" target="_blank" class="btn btn-success" style="display: inline-block;">
+                                               🎵 Open TikTok Video
+                                           </a>
+                                       </div>`
                                    }
                                </div>
                            ` : ''}
