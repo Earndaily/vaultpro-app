@@ -1834,16 +1834,6 @@
                 <h2>Daily Tasks</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Complete tasks to earn rewards!</p>
                 
-                <!-- Platform Toggle -->
-                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                    <button class="btn" id="youtubeTabBtn" style="flex: 1; background: linear-gradient(135deg, #667eea, #764ba2); color: white;" onclick="switchTaskPlatform('youtube')">
-                        📺 YouTube Tasks
-                    </button>
-                    <button class="btn" id="tiktokTabBtn" style="flex: 1; background: #6b7280; color: white;" onclick="switchTaskPlatform('tiktok')">
-                        🎵 TikTok Tasks
-                    </button>
-                </div>
-                
                 <div id="tasksContainer">
                     <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading tasks...</p>
                 </div>
@@ -1851,7 +1841,7 @@
                 <div style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); padding: 1.5rem; border-radius: 12px; border: 2px solid var(--success); margin-top: 1.5rem;">
                     <h4>💰 Task Earnings Today:</h4>
                     <p id="todayTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--success);">0 UGX</p>
-                </div>
+                        </div>
 
                 <h3 class="mt-3">My Task Submissions</h3>
                 <div class="table-responsive">
@@ -1859,19 +1849,18 @@
                         <thead>
                             <tr>
                                 <th>Task</th>
-                                <th>Platform</th>
                                 <th>Submitted</th>
                                 <th>Reward</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="userTaskSubmissionsBody">
-                            <tr><td colspan="5" class="text-center">No submissions yet</td></tr>
+                            <tr><td colspan="4" class="text-center">No submissions yet</td></tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
+                        </div>
+                        </div>
+                        </div>
 
         <!-- Lowest Unique Bet Game Section -->
         <div id="lubGameSection" class="hidden">
@@ -2493,11 +2482,6 @@
                         <option value="saturday">Saturday</option>
                         <option value="sunday">Sunday</option>
                         <option value="all">All Days</option>
-                    </select>
-                    <select id="adminTaskPlatform">
-                        <option value="">Select Platform</option>
-                        <option value="youtube">YouTube</option>
-                        <option value="tiktok">TikTok</option>
                     </select>
                     <div style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -5598,8 +5582,7 @@
         else if (section === 'vault') updateVaultSection();
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') {
-            // Initialize platform switching for tasks
-            switchTaskPlatform('youtube'); // This will call updateTasksSection()
+            updateTasksSection();
             const taskEarningsEl = document.getElementById('taskEarnings');
             if (taskEarningsEl && currentUser) {
                 taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
@@ -7832,40 +7815,21 @@
        isYouTubeAPIReady = true;
    };
    
-   async function startTask(taskId, reward, requiredTime, videoId, platform) {
+   async function startYouTubeTask(taskId, reward, requiredTime, videoId) {
        // Skip activation checks for admin users
        if (!currentUser.isAdmin && !currentUser.isActivated) {
-           alert('Account not activated. Please complete your registration first.');
+           alert('Account not activated. Please complete your registration by paying the 20,000 UGX activation fee to access tasks.');
            return;
        }
-
+   
        const button = document.getElementById(`btn-${taskId}`);
        const videoContainer = document.getElementById(`video-container-${taskId}`);
        const timerDiv = document.getElementById(`timer-${taskId}`);
        const countdownDiv = document.getElementById(`countdown-${taskId}`);
        
-       // DIAGNOSTIC LOGGING
-       console.log('Task Details:', { taskId, reward, requiredTime, videoId, platform });
-       console.log('Element IDs being searched:', {
-           button: `btn-${taskId}`,
-           videoContainer: `video-container-${taskId}`,
-           timerDiv: `timer-${taskId}`,
-           countdownDiv: `countdown-${taskId}`
-       });
-       console.log('Elements found:', {
-           button: button ? 'YES' : 'NO',
-           videoContainer: videoContainer ? 'YES' : 'NO',
-           timerDiv: timerDiv ? 'YES' : 'NO',
-           countdownDiv: countdownDiv ? 'YES' : 'NO'
-       });
-       
-       if (!videoContainer || !timerDiv || !countdownDiv) {
-           console.error('Missing elements:', {
-               videoContainer: !videoContainer ? 'MISSING' : 'EXISTS',
-               timerDiv: !timerDiv ? 'MISSING' : 'EXISTS',
-               countdownDiv: !countdownDiv ? 'MISSING' : 'EXISTS'
-           });
-           alert('Error loading task interface. Check console for details.');
+       if (!videoId) {
+           // Fallback for non-YouTube tasks
+           alert('This task requires manual completion. Please follow the instructions.');
            return;
        }
        
@@ -7876,37 +7840,30 @@
            .where('taskId', '==', taskId)
            .where('date', '==', todayString)
            .get();
-
+   
        if (!submissionQuery.empty) {
            alert('You have already completed this task today!');
            return;
        }
        
-       if (platform === 'youtube' && !videoId) {
-           alert('This task requires manual completion. Please follow the instructions.');
-           return;
-       }
-       
-       if (platform === 'youtube') {
-           // YouTube task - use player
-           await initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
-       } else if (platform === 'tiktok') {
-           // TikTok task - user opens link in new tab, timer counts down
-           button.disabled = true;
-           button.textContent = 'Timer Running...';
-           videoContainer.classList.remove('hidden');
-           timerDiv.classList.remove('hidden');
-           
-           let watchedTime = 0;
-           const timerInterval = setInterval(() => {
-               watchedTime++;
-               countdownDiv.textContent = watchedTime;
-               
-               if (watchedTime >= requiredTime) {
-                   clearInterval(timerInterval);
-                   completeTask(taskId, reward, button, videoContainer);
+       // Wait for YouTube API if not ready
+       if (!isYouTubeAPIReady) {
+           button.textContent = 'Loading YouTube Player...';
+           let attempts = 0;
+           const checkAPI = setInterval(() => {
+               attempts++;
+               if (isYouTubeAPIReady || attempts > 50) {
+                   clearInterval(checkAPI);
+                   if (!isYouTubeAPIReady) {
+                       alert('Failed to load YouTube player. Please refresh the page.');
+                       button.textContent = 'Watch Video & Earn';
+                       return;
+                   }
+                   initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
                }
-           }, 1000);
+           }, 100);
+       } else {
+           initializeYouTubePlayer(taskId, reward, requiredTime, videoId, button, videoContainer, timerDiv, countdownDiv);
        }
    }
    
@@ -8059,7 +8016,6 @@
                taskId: taskId,
                taskTitle: taskTitle,
                reward: reward,
-               platform: currentTaskPlatform,
                status: 'approved',
                date: todayString,
                submittedDate: new Date().toISOString(),
@@ -8095,49 +8051,20 @@
            alert('Failed to award reward: ' + error.message);
        }
    }
-    // Platform switching for tasks
-    let currentTaskPlatform = 'youtube';
-
-    function switchTaskPlatform(platform) {
-        currentTaskPlatform = platform;
-        
-        // Update button styles
-        const youtubeBtn = document.getElementById('youtubeTabBtn');
-        const tiktokBtn = document.getElementById('tiktokTabBtn');
-        
-        if (platform === 'youtube') {
-            youtubeBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            tiktokBtn.style.background = '#6b7280';
-        } else {
-            youtubeBtn.style.background = '#6b7280';
-            tiktokBtn.style.background = 'linear-gradient(135deg, #ff1493, #ff69b4)';
-        }
-        
-        // Reload tasks for this platform
-        updateTasksSection();
-    }
-
     // User Task Functions
     async function updateTasksSection() {
         try {
             const today = getCurrentDayOfWeek();
             
-            // Get tasks for today or "all days" - FILTERED BY PLATFORM
-            console.log('Loading tasks for platform:', currentTaskPlatform);
+            // Get tasks for today or "all days"
             const tasksSnapshot = await db.collection('tasks')
                 .where('isActive', '==', true)
-                .where('platform', '==', currentTaskPlatform)  // ADD THIS FILTER
                 .get();
             
-            console.log('Found tasks:', tasksSnapshot.docs.length);
-            const allTasks = tasksSnapshot.docs.map(doc => {
-                const taskData = doc.data();
-                console.log('Task data:', { id: doc.id, platform: taskData.platform, title: taskData.title });
-                return {
-                    id: doc.id,
-                    ...taskData
-                };
-            });
+            const allTasks = tasksSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
             // Check which tasks are already completed today
             const todayString = new Date().toDateString();
@@ -8164,16 +8091,13 @@
                 }
             } else {
                tasksContainer.innerHTML = availableTasks.map(task => {
+                   // Extract YouTube video ID from link
                    let videoId = null;
                    if (task.link) {
-                       if (currentTaskPlatform === 'youtube') {
-                           const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-                           const match = task.link.match(youtubeRegex);
-                           if (match) videoId = match[1];
-                       } else if (currentTaskPlatform === 'tiktok') {
-                           const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[\w.]+\/video\/(\d+)/;
-                           const match = task.link.match(tiktokRegex);
-                           if (match) videoId = match[1];
+                       const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                       const match = task.link.match(youtubeRegex);
+                       if (match) {
+                           videoId = match[1];
                        }
                    }
                    
@@ -8183,39 +8107,30 @@
                                <h4>${task.title}</h4>
                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
-                               <p style="color: var(--gray); font-size: 0.875rem;">
-                                   Platform: ${currentTaskPlatform === 'youtube' ? '📺 YouTube' : '🎵 TikTok'} | 
-                                   Watch time: ${task.timer || 60} seconds
-                               </p>
+                               <p style="color: var(--gray); font-size: 0.875rem;">Required watch time: ${task.timer || 60} seconds</p>
                            </div>
                            
-                           <div id="video-container-${task.id}" class="video-container hidden" style="margin: 1rem 0; padding: 1rem; background: #f3f4f6; border-radius: 12px;">
-                               ${currentTaskPlatform === 'youtube' ? 
-                                   `<div id="player-${task.id}" style="width: 100%; min-height: 315px;"></div>` :
-                                   `<div style="text-align: center;">
-                                       <p style="color: var(--gray); margin-bottom: 1rem;">👉 Open the TikTok video in a new tab and watch while the timer runs</p>
-                                       <a href="${task.link}" target="_blank" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ff1493, #ff69b4); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                                           Open TikTok Video 🎵
-                                       </a>
-                                   </div>`
-                               }
-                           </div>
-                           
-                           <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin: 1rem 0; padding: 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); border-radius: 8px;">
-                               <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
-                               <div style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">seconds watched</div>
-                           </div>
+                           ${videoId ? `
+                               <!-- Embedded YouTube Video -->
+                               <div id="video-container-${task.id}" class="video-container hidden">
+                                   <div id="player-${task.id}"></div>
+                               </div>
+                           ` : ''}
                            
                            <div class="task-action">
-                               <button class="btn btn-success" id="btn-${task.id}" onclick="startTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}', '${currentTaskPlatform}')">
-                                   ${currentTaskPlatform === 'youtube' ? '📺 Watch & Earn' : '🎵 Complete Task'}
+                               <button class="btn btn-success" id="btn-${task.id}" onclick="startYouTubeTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}')">
+                                   ${videoId ? 'Watch Video & Earn' : 'Start Task'}
                                </button>
+                               <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
+                                   <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
+                                   <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
+                               </div>
                            </div>
                        </div>
                    `;
                }).join('');
             }
-            // Update user submissions (shows all, not filtered by platform)
+            // Update user submissions
             const submissionsSnapshot = await db.collection('taskSubmissions')
                 .where('userId', '==', currentUser.id)
                 .orderBy('submittedDate', 'desc')
@@ -8229,7 +8144,7 @@
 
             const tbody = document.getElementById('userTaskSubmissionsBody');
             if (submissions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No submissions yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No submissions yet</td></tr>';
             } else {
                 tbody.innerHTML = submissions.map(sub => {
                     let statusClass = 'status-pending';
@@ -8245,7 +8160,6 @@
                     return `
                         <tr>
                             <td>${sub.taskTitle}</td>
-                            <td>${sub.platform === 'youtube' ? '📺 YouTube' : '🎵 TikTok'}</td>
                             <td>${new Date(sub.submittedDate).toLocaleDateString()}</td>
                             <td>${sub.reward.toLocaleString()} UGX</td>
                             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -8255,8 +8169,8 @@
             }
 
             // Update today's earnings
-            const todayTaskEarnings = await calculateTodayTaskEarnings();
-            document.getElementById('todayTaskEarnings').textContent = todayTaskEarnings.toLocaleString() + ' UGX';
+            const todayEarnings = await calculateTodayTaskEarnings();
+            document.getElementById('todayTaskEarnings').textContent = todayEarnings.toLocaleString() + ' UGX';
 
         } catch (error) {
             console.error("Error updating tasks section:", error);
@@ -10120,30 +10034,25 @@
             const reward = parseFloat(document.getElementById('adminTaskReward').value);
             const timer = parseInt(document.getElementById('adminTaskTimer').value);
             const day = document.getElementById('adminTaskDay').value;
-            const platform = document.getElementById('adminTaskPlatform').value;
             const requiresProof = document.getElementById('adminTaskRequiresProof').checked;
 
-            if (!title || !description || !reward || !day || !timer || !platform) {
+            if (!title || !description || !reward || !day || !timer) {
                 alert('Please fill all required fields');
                 return;
             }
 
-            const taskData = {
+            await db.collection('tasks').add({
                 title: title,
                 description: description,
                 link: link,
                 reward: reward,
                 timer: timer,
                 day: day,
-                platform: platform,
                 requiresProof: requiresProof,
                 createdDate: new Date().toISOString(),
                 isActive: true,
                 createdBy: 'admin'
-            };
-            
-            console.log('Creating task with data:', taskData);
-            await db.collection('tasks').add(taskData);
+            });
 
             alert('Task created successfully!');
             
@@ -10154,7 +10063,6 @@
             document.getElementById('adminTaskReward').value = '';
             document.getElementById('adminTaskTimer').value = '60';
             document.getElementById('adminTaskDay').value = '';
-            document.getElementById('adminTaskPlatform').value = '';
             document.getElementById('adminTaskRequiresProof').checked = true;
             
             updateAdminTasks();
@@ -10183,7 +10091,6 @@
                             <h4>${task.title}</h4>
                             <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
                             <p style="color: var(--gray); font-size: 0.875rem;">
-                                <strong>Platform:</strong> ${task.platform === 'youtube' ? '📺 YouTube' : '🎵 TikTok'} | 
                                 <strong>Day:</strong> ${task.day === 'all' ? 'All Days' : task.day.charAt(0).toUpperCase() + task.day.slice(1)} | 
                                 <strong>Reward:</strong> ${task.reward.toLocaleString()} UGX | 
                                 <strong>Timer:</strong> ${task.timer || 60} seconds | 
