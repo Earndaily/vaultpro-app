@@ -3627,76 +3627,65 @@
     }
 
     // Get current active round
-    async function getCurrentLUBRound() {
-        try {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // First check for any active rounds (including admin-started ones)
-            const allActiveRoundsSnapshot = await db.collection('lubGameRounds')
-                .where('status', 'in', ['active', 'calculating'])
-                .where('createdDate', '>=', today.toISOString())
-                .orderBy('createdDate', 'desc')
-                .limit(1)
-                .get();
-            
-            if (!allActiveRoundsSnapshot.empty) {
-                const roundDoc = allActiveRoundsSnapshot.docs[0];
-                const roundData = { id: roundDoc.id, ...roundDoc.data() };
-                
-                // Check if round has ended
-                const now = new Date();
-                const endTime = new Date(roundData.endTime);
-                
-                if (now >= endTime && roundData.status === 'active') {
-                    // Round ended - process results
-                    await processLUBRoundResults(roundData.id);
-                    return null; // Round ended, no active round
-                }
-                
-                return roundData;
-            }
-            
-            // No active rounds - check if we're in a valid scheduled time
-            if (!isInValidRoundTime()) {
-                return null; // No round outside scheduled times
-            }
-            
-            const scheduledRound = getCurrentScheduledRound();
-            
-            // Look for today's scheduled round for this time slot
-            const scheduledRoundsSnapshot = await db.collection('lubGameRounds')
-                .where('status', 'in', ['active', 'calculating'])
-                .where('roundName', '==', scheduledRound.name)
-                .where('createdDate', '>=', today.toISOString())
-                .orderBy('createdDate', 'desc')
-                .limit(1)
-                .get();
-            
-            if (scheduledRoundsSnapshot.empty) {
-                // No active round for this time slot today - start new one
-                return await startNewLUBRound();
-            }
-            
-            const roundDoc = scheduledRoundsSnapshot.docs[0];
-            const roundData = { id: roundDoc.id, ...roundDoc.data() };
-            
-            // Check if round has ended
-            const now = new Date();
-            const endTime = new Date(roundData.endTime);
-            
-            if (now >= endTime && roundData.status === 'active') {
-                // Round ended - process results
-                await processLUBRoundResults(roundData.id);
-                return null; // Round ended, no active round
-            }
-            
-            return roundData;
-        } catch (error) {
-            console.error('Error getting current LUB round:', error);
-            return null;
-        }
-    }
+   async function getCurrentLUBRound() {
+       try {
+           const today = new Date();
+           today.setHours(0, 0, 0, 0);
+           
+           console.log('getCurrentLUBRound() called');
+           console.log('Current time:', new Date().toLocaleString());
+           
+           // FIRST: Check if we're in a valid scheduled round time
+           const scheduledRound = getCurrentScheduledRound();
+           console.log('Scheduled round check:', scheduledRound ? scheduledRound.name : 'Not in valid time');
+           
+           if (!scheduledRound) {
+               console.log('Not in valid round time window');
+               return null;
+           }
+           
+           // SECOND: Check for ANY active rounds (including admin-started ones)
+           const allActiveRoundsSnapshot = await db.collection('lubGameRounds')
+               .where('status', 'in', ['active', 'calculating'])
+               .where('createdDate', '>=', today.toISOString())
+               .orderBy('createdDate', 'desc')
+               .limit(1)
+               .get();
+           
+           if (!allActiveRoundsSnapshot.empty) {
+               const roundDoc = allActiveRoundsSnapshot.docs[0];
+               const roundData = { id: roundDoc.id, ...roundDoc.data() };
+               
+               console.log('Found active round:', roundData.roundNumber);
+               
+               // Check if round has ended
+               const now = new Date();
+               const endTime = new Date(roundData.endTime);
+               
+               if (now >= endTime && roundData.status === 'active') {
+                   console.log('Round ended, processing results');
+                   // Round ended - process results
+                   await processLUBRoundResults(roundData.id);
+                   return null;
+               }
+               
+               console.log('Returning active round');
+               return roundData;
+           }
+           
+           console.log('No active round found for today, creating new one');
+           
+           // THIRD: We're in valid time but no active round exists - CREATE ONE
+           const newRound = await startNewLUBRound();
+           console.log('Created new round:', newRound.roundNumber);
+           return newRound;
+           
+       } catch (error) {
+           console.error('Error getting current LUB round:', error);
+           console.error('Error details:', error.message);
+           return null;
+       }
+   }
 
     // Place a bet in current round
     async function placeLUBBet() {
