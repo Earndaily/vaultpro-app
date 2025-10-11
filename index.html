@@ -7991,12 +7991,11 @@
            const userDoc = await db.collection('users').doc(currentUser.id).get();
            const userData = userDoc.data();
            const currentBalance = userData.balance || 0;
-           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
+        
    
-           await db.collection('users').doc(currentUser.id).update({
-               balance: currentBalance + reward,
-               totalTaskEarnings: newTotalTaskEarnings
-           });
+         await db.collection('users').doc(currentUser.id).update({
+             balance: currentBalance + reward
+         });
    
            // Record task submission
            await db.collection('taskSubmissions').add({
@@ -8243,7 +8242,7 @@
                 const userData = userDoc.data();
                 const currentBalance = userData.balance || 0;
 
-                const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
+                
                 await db.collection('users').doc(currentUser.id).update({
                     balance: currentBalance + reward,
                     
@@ -8261,10 +8260,7 @@
                 alert(`Task completed! You earned ${reward.toLocaleString()} UGX!`);
             }
             
-            // Update local cache and UI immediately
-            currentUser.totalTaskEarnings = (currentUser.totalTaskEarnings || 0) + reward;
-            const taskEarningsEl = document.getElementById('taskEarnings');
-            if (taskEarningsEl) taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+
 
             updateTasksSection();
             updateUserStats();
