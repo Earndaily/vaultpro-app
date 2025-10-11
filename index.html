@@ -5558,24 +5558,20 @@
             loadCandidates();
             loadMyStakes();
         }
-        else if (section === 'vault') updateVaultSection();
-        else if (section === 'streak') updateStreakSection();
-        else if (section === 'tasks') {
-            updateTasksSection();
-            const taskEarningsEl = document.getElementById('taskEarnings');
-            if (taskEarningsEl && currentUser) {
-                taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
-            }
-        }
-        else if (section === 'profile') {
-            if (currentUser && currentUser.id) {
-                refreshUserData().then(() => {
-                    updateProfileSection();
-                });
-            } else {
-                updateProfileSection();
-            }
-        }
+         else if (section === 'vault') updateVaultSection();
+         else if (section === 'streak') updateStreakSection();
+         else if (section === 'tasks') {
+             updateTasksSection();
+         }
+         else if (section === 'profile') {
+             if (currentUser && currentUser.id) {
+                 refreshUserData().then(() => {
+                     updateProfileSection();
+                 });
+             } else {
+                 updateProfileSection();
+             }
+         }
         else if (section === 'lubGame') {
             updateLUBGameSection();
             startLUBGameAutoUpdate();
