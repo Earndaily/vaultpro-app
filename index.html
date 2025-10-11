@@ -8246,7 +8246,7 @@
                 const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
                 await db.collection('users').doc(currentUser.id).update({
                     balance: currentBalance + reward,
-                    totalTaskEarnings: newTotalTaskEarnings
+                    
                 });
 
                 await db.collection('transactions').add({
