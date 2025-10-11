@@ -7843,9 +7843,28 @@
        const timerDiv = document.getElementById(`timer-${taskId}`);
        const countdownDiv = document.getElementById(`countdown-${taskId}`);
        
-       // ADD THIS CHECK - prevents null reference error
+       // DIAGNOSTIC LOGGING
+       console.log('Task Details:', { taskId, reward, requiredTime, videoId, platform });
+       console.log('Element IDs being searched:', {
+           button: `btn-${taskId}`,
+           videoContainer: `video-container-${taskId}`,
+           timerDiv: `timer-${taskId}`,
+           countdownDiv: `countdown-${taskId}`
+       });
+       console.log('Elements found:', {
+           button: button ? 'YES' : 'NO',
+           videoContainer: videoContainer ? 'YES' : 'NO',
+           timerDiv: timerDiv ? 'YES' : 'NO',
+           countdownDiv: countdownDiv ? 'YES' : 'NO'
+       });
+       
        if (!videoContainer || !timerDiv || !countdownDiv) {
-           alert('Error loading task interface. Please try again.');
+           console.error('Missing elements:', {
+               videoContainer: !videoContainer ? 'MISSING' : 'EXISTS',
+               timerDiv: !timerDiv ? 'MISSING' : 'EXISTS',
+               countdownDiv: !countdownDiv ? 'MISSING' : 'EXISTS'
+           });
+           alert('Error loading task interface. Check console for details.');
            return;
        }
        
@@ -8138,22 +8157,16 @@
                 }
             } else {
                tasksContainer.innerHTML = availableTasks.map(task => {
-                   // Extract video ID from link
                    let videoId = null;
                    if (task.link) {
-                       let regex;
                        if (currentTaskPlatform === 'youtube') {
-                           regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                           const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                           const match = task.link.match(youtubeRegex);
+                           if (match) videoId = match[1];
                        } else if (currentTaskPlatform === 'tiktok') {
-                           // TikTok video IDs are different - extract from URL
-                           regex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[\w.]+\/video\/(\d+)/;
-                       }
-                       
-                       if (regex) {
-                           const match = task.link.match(regex);
-                           if (match) {
-                               videoId = match[1];
-                           }
+                           const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[\w.]+\/video\/(\d+)/;
+                           const match = task.link.match(tiktokRegex);
+                           if (match) videoId = match[1];
                        }
                    }
                    
@@ -8163,32 +8176,33 @@
                                <h4>${task.title}</h4>
                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
-                               <p style="color: var(--gray); font-size: 0.875rem;">Platform: ${currentTaskPlatform === 'youtube' ? '📺 YouTube' : '🎵 TikTok'} | Required watch time: ${task.timer || 60} seconds</p>
+                               <p style="color: var(--gray); font-size: 0.875rem;">
+                                   Platform: ${currentTaskPlatform === 'youtube' ? '📺 YouTube' : '🎵 TikTok'} | 
+                                   Watch time: ${task.timer || 60} seconds
+                               </p>
                            </div>
                            
-                           ${videoId ? `
-                               <!-- Embedded Video -->
-                               <div id="video-container-${task.id}" class="video-container hidden">
-                                   ${currentTaskPlatform === 'youtube' ? 
-                                       `<div id="player-${task.id}"></div>` :
-                                       `<div id="timer-placeholder-${task.id}" style="background: #f3f4f6; padding: 2rem; border-radius: 12px; text-align: center;">
-                                           <p style="color: var(--gray); margin: 1rem 0;">Open TikTok in another tab and watch the video while the timer counts down</p>
-                                           <a href="${task.link}" target="_blank" class="btn btn-success" style="display: inline-block;">
-                                               🎵 Open TikTok Video
-                                           </a>
-                                       </div>`
-                                   }
-                               </div>
-                           ` : ''}
+                           <div id="video-container-${task.id}" class="video-container hidden" style="margin: 1rem 0; padding: 1rem; background: #f3f4f6; border-radius: 12px;">
+                               ${currentTaskPlatform === 'youtube' ? 
+                                   `<div id="player-${task.id}" style="width: 100%; min-height: 315px;"></div>` :
+                                   `<div style="text-align: center;">
+                                       <p style="color: var(--gray); margin-bottom: 1rem;">👉 Open the TikTok video in a new tab and watch while the timer runs</p>
+                                       <a href="${task.link}" target="_blank" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ff1493, #ff69b4); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                                           Open TikTok Video 🎵
+                                       </a>
+                                   </div>`
+                               }
+                           </div>
+                           
+                           <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin: 1rem 0; padding: 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1)); border-radius: 8px;">
+                               <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
+                               <div style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">seconds watched</div>
+                           </div>
                            
                            <div class="task-action">
                                <button class="btn btn-success" id="btn-${task.id}" onclick="startTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}', '${currentTaskPlatform}')">
-                                   ${currentTaskPlatform === 'youtube' ? 'Watch Video & Earn' : 'View & Complete'}
+                                   ${currentTaskPlatform === 'youtube' ? '📺 Watch & Earn' : '🎵 Complete Task'}
                                </button>
-                               <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
-                                   <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
-                                   <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
-                               </div>
                            </div>
                        </div>
                    `;
