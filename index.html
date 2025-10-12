@@ -3717,6 +3717,12 @@
 
     async function processLUBBet(sourceCategory, categoryName, betAmount) {
         try {
+            // ONLY allow deposits for LUB game
+            if (sourceCategory !== 'depositEarnings' && sourceCategory !== 'deposit') {
+                showAlert('lubGameAlert', 'LUB Game bets can only be placed using deposit funds.', 'error');
+                return;
+            }
+            
             // Verify category has sufficient funds
             const balances = await getUserCategoryBalances(currentUser.id);
             if (balances[sourceCategory] < betAmount) {
@@ -4172,27 +4178,35 @@
             const historySnapshot = await db.collection('lubGameRounds')
                 .where('status', '==', 'completed')
                 .orderBy('completedAt', 'desc')
-                .limit(50) // Increased from 10 to 50
+                .limit(50)
                 .get();
             
             const historyContainer = document.getElementById('lubHistoryBody');
-            if (!historyContainer) return;
+            if (!historyContainer) {
+                console.warn('History container not found');
+                return;
+            }
             
             if (historySnapshot.empty) {
                 historyContainer.innerHTML = '<tr><td colspan="6" class="text-center">No history yet</td></tr>';
                 return;
             }
             
+            // Check if data exists
+            console.log('Found rounds:', historySnapshot.size);
+            
             const historyHTML = historySnapshot.docs.map(doc => {
                 const round = doc.data();
+                console.log('Round data:', round); // Debug log
+                
                 return `
                     <tr>
-                        <td>#${round.roundNumber.toString().slice(-6)}</td>
+                        <td>#${(round.roundNumber || '').toString().slice(-6)}</td>
                         <td>${round.winner || 'No winner'}</td>
                         <td>${round.winningAmount ? round.winningAmount.toLocaleString() + ' UGX' : '-'}</td>
                         <td>${round.prize ? round.prize.toLocaleString() + ' UGX' : '-'}</td>
                         <td>${round.totalPlayers || 0}</td>
-                        <td>${new Date(round.completedAt).toLocaleString()}</td>
+                        <td>${round.completedAt ? new Date(round.completedAt).toLocaleString() : 'N/A'}</td>
                     </tr>
                 `;
             }).join('');
@@ -4348,7 +4362,6 @@
     // Award weekly winner (admin function)
    async function awardWeeklyWinner() {
        try {
-           // Get current week's start
            const now = new Date();
            const dayOfWeek = now.getDay();
            const daysUntilMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -4356,11 +4369,10 @@
            weekStart.setDate(now.getDate() - daysUntilMonday);
            weekStart.setHours(0, 0, 0, 0);
            
-           // Find top referrer (only counting activated referrals)
            const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
            
            let topReferrer = null;
-           let maxReferrals = 0;
+           let maxWeeklyReferrals = 0;
            
            for (const doc of usersSnapshot.docs) {
                const userData = doc.data();
@@ -4368,43 +4380,45 @@
                
                const referralsSnapshot = await db.collection('users').doc(userId).collection('referrals').get();
                
+               // Count ONLY referrals made THIS WEEK and that are ACTIVATED
                let weeklyActivatedReferrals = 0;
                
                for (const refDoc of referralsSnapshot.docs) {
                    const refData = refDoc.data();
                    const refDate = new Date(refData.date);
                    
-                   // Only count if activated
-                   const referredUserDoc = await db.collection('users').doc(refData.userId).get();
-                   if (referredUserDoc.exists && referredUserDoc.data().isActivated && refDate >= weekStart) {
-                       weeklyActivatedReferrals++;
+                   // Check: referral is from THIS WEEK AND user is activated
+                   if (refDate >= weekStart && refDate <= now) {
+                       const referredUserDoc = await db.collection('users').doc(refData.userId).get();
+                       if (referredUserDoc.exists && referredUserDoc.data().isActivated) {
+                           weeklyActivatedReferrals++;
+                       }
                    }
                }
                
-               if (weeklyActivatedReferrals > maxReferrals) {
-                   maxReferrals = weeklyActivatedReferrals;
+               if (weeklyActivatedReferrals > maxWeeklyReferrals) {
+                   maxWeeklyReferrals = weeklyActivatedReferrals;
                    topReferrer = { userId, userData, weeklyReferrals: weeklyActivatedReferrals };
                }
            }
            
            if (topReferrer && topReferrer.weeklyReferrals > 0) {
-               // Award 50,000 UGX
                const currentBalance = topReferrer.userData.balance || 0;
                await db.collection('users').doc(topReferrer.userId).update({
-                   balance: currentBalance + 50000
+                   balance: currentBalance + 50000,
+                   lastWeeklyPrizeDate: new Date().toISOString() // Track when prize was given
                });
                
-               // Record transaction
                await db.collection('transactions').add({
                    userId: topReferrer.userId,
                    userName: topReferrer.userData.fullName,
                    type: 'weekly_referral_prize',
                    amount: 50000,
-                   description: `Weekly Top Referrer Prize (${topReferrer.weeklyReferrals} activated referrals)`,
+                   description: `Weekly Top Referrer Prize - Week of ${weekStart.toLocaleDateString()} (${topReferrer.weeklyReferrals} new activated referrals)`,
                    date: new Date().toISOString()
                });
                
-               console.log(`Weekly winner: ${topReferrer.userData.fullName} with ${topReferrer.weeklyReferrals} activated referrals`);
+               console.log(`Weekly winner: ${topReferrer.userData.fullName} with ${topReferrer.weeklyReferrals} NEW activated referrals this week`);
                return topReferrer;
            }
            
@@ -5600,6 +5614,8 @@
         else if (section === 'lubGame') {
             updateLUBGameSection();
             startLUBGameAutoUpdate();
+            // Restore collapsible states after LUB section loads
+            setTimeout(() => restoreLUBCollapsibleStates(), 500);
         } else {
             stopLUBGameAutoUpdate();
         }
@@ -5624,15 +5640,36 @@
         const content = document.getElementById(elementId);
         const toggle = document.getElementById(elementId + 'Toggle');
         
-        if (content && toggle) {
-            if (content.style.display === 'none' || content.style.display === '') {
-                content.style.display = 'block';
-                toggle.textContent = '▲';
-            } else {
-                content.style.display = 'none';
-                toggle.textContent = '▼';
-            }
+        if (!content || !toggle) return;
+        
+        const isHidden = content.style.display === 'none' || content.style.display === '';
+        
+        if (isHidden) {
+            content.style.display = 'block';
+            content.style.maxHeight = '1000px'; // Prevent content clipping
+            toggle.textContent = '▲';
+        } else {
+            content.style.display = 'none';
+            toggle.textContent = '▼';
         }
+        
+        // Store state in sessionStorage
+        sessionStorage.setItem(`lub_collapsible_${elementId}`, isHidden ? 'open' : 'closed');
+    }
+
+    // Restore state on page load
+    function restoreLUBCollapsibleStates() {
+        ['dailyScheduleContent', 'previousWinnersContent', 'howToWinContent'].forEach(id => {
+            const savedState = sessionStorage.getItem(`lub_collapsible_${id}`);
+            const element = document.getElementById(id);
+            const toggle = document.getElementById(id + 'Toggle');
+            
+            if (element && toggle && savedState === 'open') {
+                element.style.display = 'block';
+                element.style.maxHeight = '1000px';
+                toggle.textContent = '▲';
+            }
+        });
     }
 
     async function refreshUserData() {
@@ -7134,6 +7171,12 @@
 
     async function processStake(sourceCategory, categoryName, stakeAmount) {
         try {
+            // ONLY allow deposits for political stakes
+            if (sourceCategory !== 'depositEarnings' && sourceCategory !== 'deposit') {
+                showAlert('stakeConfirmAlert', 'Political stakes can only be placed using deposit funds.', 'error');
+                return;
+            }
+            
             // Verify category has sufficient funds
             const balances = await getUserCategoryBalances(currentUser.id);
             if (balances[sourceCategory] < stakeAmount) {
@@ -8090,6 +8133,10 @@
                     tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No tasks available today. Check back tomorrow!</p>';
                 }
             } else {
+                // Add explicit styling to prevent overflow
+                tasksContainer.style.maxHeight = 'none';
+                tasksContainer.style.overflow = 'visible';
+                
                tasksContainer.innerHTML = availableTasks.map(task => {
                    // Extract YouTube video ID from link
                    let videoId = null;
