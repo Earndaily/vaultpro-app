@@ -3391,6 +3391,7 @@
     }
 
     // Populate category options
+    // Modified populateCategoryOptions to filter for deposits only
     async function populateCategoryOptions(amount, onConfirm, transactionType) {
         const categoryOptions = document.getElementById('categoryOptions');
         const categoryAlert = document.getElementById('categoryAlert');
@@ -3401,14 +3402,21 @@
             
             categoryOptions.innerHTML = '';
             
-            Object.entries(FUND_CATEGORIES).forEach(([key, name]) => {
+            // Filter categories based on transaction type
+            let categoriesToShow = Object.entries(FUND_CATEGORIES);
+            
+            // For LUB game and stakes, show ONLY deposits
+            if (transactionType === 'lub_game_bet' || transactionType === 'stake_placed') {
+                categoriesToShow = [['depositEarnings', FUND_CATEGORIES['depositEarnings']]];
+            }
+            
+            categoriesToShow.forEach(([key, name]) => {
                 const balance = balances[key] || 0;
                 const isSufficient = balance >= amount;
                 const isDisabled = !isSufficient;
                 
                 if (isSufficient) hasSufficientFunds = true;
                 
-                // Get category icon and color
                 const categoryInfo = getCategoryInfo(key);
                 
                 const option = document.createElement('button');
@@ -3446,7 +3454,7 @@
                             </div>
                             <div>
                                 <div style="font-weight: 600; color: ${isSufficient ? '#1f2937' : '#9ca3af'}; font-size: 1.1rem; margin-bottom: 0.25rem;">
-                                    ${name}
+                                    Deposit Funds
                                 </div>
                                 <div style="font-size: 0.875rem; color: ${isSufficient ? '#6b7280' : '#9ca3af'};">
                                     ${isSufficient ? 'Available' : 'Insufficient funds'}
@@ -3468,7 +3476,6 @@
                         document.querySelector('.modal').remove();
                     };
                     
-                    // Add hover effects
                     option.onmouseenter = () => {
                         if (!isDisabled) {
                             option.style.borderColor = '#3b82f6';
@@ -3490,13 +3497,13 @@
             });
             
             if (!hasSufficientFunds) {
-                categoryAlert.innerHTML = 'Insufficient funds in all categories. Please deposit more money first.';
+                categoryAlert.innerHTML = 'Insufficient deposit funds. Please deposit more money first.';
                 categoryAlert.style.display = 'block';
             }
             
         } catch (error) {
             console.error('Error populating category options:', error);
-            categoryAlert.innerHTML = 'Error loading category balances. Please try again.';
+            categoryAlert.innerHTML = 'Error loading funds. Please try again.';
             categoryAlert.style.display = 'block';
         }
     }
@@ -3717,16 +3724,16 @@
 
     async function processLUBBet(sourceCategory, categoryName, betAmount) {
         try {
-            // ONLY allow deposits for LUB game
-            if (sourceCategory !== 'depositEarnings' && sourceCategory !== 'deposit') {
-                showAlert('lubGameAlert', 'LUB Game bets can only be placed using deposit funds.', 'error');
+            const balances = await getUserCategoryBalances(currentUser.id);
+            
+            // Verify it's deposit funds
+            if (sourceCategory !== 'depositEarnings') {
+                showAlert('lubGameAlert', 'Only deposit funds can be used for LUB Game bets.', 'error');
                 return;
             }
             
-            // Verify category has sufficient funds
-            const balances = await getUserCategoryBalances(currentUser.id);
-            if (balances[sourceCategory] < betAmount) {
-                showAlert('lubGameAlert', `Insufficient funds in ${categoryName}. Available: ${balances[sourceCategory].toLocaleString()} UGX`, 'error');
+            if (balances.depositEarnings < betAmount) {
+                showAlert('lubGameAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
                 return;
             }
             
@@ -7171,16 +7178,16 @@
 
     async function processStake(sourceCategory, categoryName, stakeAmount) {
         try {
-            // ONLY allow deposits for political stakes
-            if (sourceCategory !== 'depositEarnings' && sourceCategory !== 'deposit') {
-                showAlert('stakeConfirmAlert', 'Political stakes can only be placed using deposit funds.', 'error');
+            const balances = await getUserCategoryBalances(currentUser.id);
+            
+            // Verify it's deposit funds
+            if (sourceCategory !== 'depositEarnings') {
+                showAlert('stakeConfirmAlert', 'Only deposit funds can be used for political stakes.', 'error');
                 return;
             }
             
-            // Verify category has sufficient funds
-            const balances = await getUserCategoryBalances(currentUser.id);
-            if (balances[sourceCategory] < stakeAmount) {
-                showAlert('stakeConfirmAlert', `Insufficient funds in ${categoryName}. Available: ${balances[sourceCategory].toLocaleString()} UGX`, 'error');
+            if (balances.depositEarnings < stakeAmount) {
+                showAlert('stakeConfirmAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
                 return;
             }
 
