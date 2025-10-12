@@ -1268,7 +1268,6 @@
                 <div class="nav-link" onclick="showSection('referrals')">Referrals</div>
                 <div class="nav-link" onclick="showSection('streak')">Daily Streak</div>
                 <div class="nav-link" onclick="showSection('tasks')">Daily Tasks</div>
-                <div class="nav-link" onclick="showSection('externalTasks')">External Tasks</div>
                 <div class="nav-link" onclick="showSection('lubGame')">LUB Game</div>
                 <div class="nav-link" onclick="showSection('wallet')">Wallet</div>
                 <div class="nav-link" onclick="showSection('stake')">Stake</div>
@@ -1847,68 +1846,79 @@
                 <h2>Daily Tasks</h2>
                 <p style="color: var(--gray); margin-bottom: 1rem;">Complete tasks to earn rewards!</p>
                 
-                <div id="tasksContainer">
-                    <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading tasks...</p>
+                <!-- Task Type Toggle Buttons -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
+                    <button id="youtubeTabBtn" class="task-type-btn active" onclick="switchTaskType('youtube')" 
+                        style="padding: 1rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px;">
+                        📺 YouTube Tasks
+                    </button>
+                    <button id="externalTabBtn" class="task-type-btn" onclick="switchTaskType('external')"
+                        style="padding: 1rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--gray); transition: color 0.3s;">
+                        🔗 External Tasks
+                    </button>
                 </div>
-
-                <div style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); padding: 1.5rem; border-radius: 12px; border: 2px solid var(--success); margin-top: 1.5rem;">
-                    <h4>💰 Task Earnings Today:</h4>
-                    <p id="todayTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--success);">0 UGX</p>
-                        </div>
-
-                <h3 class="mt-3">My Task Submissions</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Submitted</th>
-                                <th>Reward</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="userTaskSubmissionsBody">
-                            <tr><td colspan="4" class="text-center">No submissions yet</td></tr>
-                        </tbody>
-                    </table>
-                        </div>
-                        </div>
-                        </div>
-
-        <!-- External Tasks Section -->
-        <div id="externalTasksSection" class="hidden">
-            <div class="card">
-                <h2>🌐 External Link Tasks</h2>
-                <p style="color: var(--gray); margin-bottom: 1rem;">Complete social media tasks to earn rewards!</p>
                 
-                <div id="externalTasksContainer">
-                    <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading external tasks...</p>
+                <!-- YouTube Tasks Content -->
+                <div id="youtubeTasksContent">
+                    <div id="tasksContainer">
+                        <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading YouTube tasks...</p>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); padding: 1.5rem; border-radius: 12px; border: 2px solid var(--success); margin-top: 1.5rem;">
+                        <h4>💰 YouTube Task Earnings Today:</h4>
+                        <p id="todayTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--success);">0 UGX</p>
+                    </div>
+
+                    <h3 class="mt-3">My YouTube Task Submissions</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Submitted</th>
+                                    <th>Reward</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTaskSubmissionsBody">
+                                <tr><td colspan="4" class="text-center">No submissions yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 1.5rem; border-radius: 12px; border: 2px solid var(--primary); margin-top: 1.5rem;">
-                    <h4>💰 External Task Earnings Today:</h4>
-                    <p id="todayExternalTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">0 UGX</p>
-                </div>
+                <!-- External Tasks Content -->
+                <div id="externalTasksContent" style="display: none;">
+                    <div id="externalTasksContainer">
+                        <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading external tasks...</p>
+                    </div>
 
-                <h3 class="mt-3">My External Task Submissions</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Platform</th>
-                                <th>Submitted</th>
-                                <th>Reward</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="userExternalTaskSubmissionsBody">
-                            <tr><td colspan="5" class="text-center">No submissions yet</td></tr>
-                        </tbody>
-                    </table>
+                    <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 1.5rem; border-radius: 12px; border: 2px solid var(--primary); margin-top: 1.5rem;">
+                        <h4>💰 External Task Earnings Today:</h4>
+                        <p id="todayExternalTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">0 UGX</p>
+                    </div>
+
+                    <h3 class="mt-3">My External Task Submissions</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Platform</th>
+                                    <th>Submitted</th>
+                                    <th>Reward</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userExternalTaskSubmissionsBody">
+                                <tr><td colspan="5" class="text-center">No submissions yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Lowest Unique Bet Game Section -->
         <div id="lubGameSection" class="hidden">
@@ -2844,10 +2854,6 @@
         <div class="bottom-nav-item" onclick="showSection('tasks')" data-section="tasks">
             <div class="bottom-nav-icon">✅</div>
             <div class="bottom-nav-label">Tasks</div>
-        </div>
-        <div class="bottom-nav-item" onclick="showSection('externalTasks')" data-section="externalTasks">
-            <div class="bottom-nav-icon">🌐</div>
-            <div class="bottom-nav-label">External</div>
         </div>
         <div class="bottom-nav-item" onclick="showSection('lubGame')" data-section="lubGame">
             <div class="bottom-nav-icon">🎲</div>
@@ -5691,7 +5697,7 @@
         }
         
         // Hide all sections
-        ['home', 'vault', 'referrals', 'streak', 'tasks', 'externalTasks', 'wallet', 'profile', 'stake', 'lubGame'].forEach(s => {
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake', 'lubGame'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
                 el.classList.add('hidden');
@@ -5721,7 +5727,6 @@
         // Section-specific updates
         if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
-        else if (section === 'externalTasks') updateExternalTasksSection();
         else if (section === 'stake') {
             loadCandidates();
             loadMyStakes();
@@ -8351,12 +8356,58 @@
                 }).join('');
             }
 
-            // Update today's earnings
-            const todayEarnings = await calculateTodayTaskEarnings();
-            document.getElementById('todayTaskEarnings').textContent = todayEarnings.toLocaleString() + ' UGX';
+            // Load both types of tasks
+            await loadYouTubeTasks(getCurrentDayOfWeek(), document.getElementById('tasksContainer'));
+            await loadExternalLinkTasks(getCurrentDayOfWeek(), document.getElementById('externalTasksContainer'));
+
+            // Update today's earnings for both types
+            const youtubeEarnings = await calculateTodayTaskEarnings();
+            const externalEarnings = await calculateTodayExternalTaskEarnings();
+            
+            document.getElementById('todayTaskEarnings').textContent = youtubeEarnings.toLocaleString() + ' UGX';
+            document.getElementById('todayExternalTaskEarnings').textContent = externalEarnings.toLocaleString() + ' UGX';
 
         } catch (error) {
             console.error("Error updating tasks section:", error);
+        }
+    }
+
+    function switchTaskType(type) {
+        const youtubeContent = document.getElementById('youtubeTasksContent');
+        const externalContent = document.getElementById('externalTasksContent');
+        const youtubeBtn = document.getElementById('youtubeTabBtn');
+        const externalBtn = document.getElementById('externalTabBtn');
+        
+        if (type === 'youtube') {
+            // Show YouTube content, hide External content
+            youtubeContent.style.display = 'block';
+            externalContent.style.display = 'none';
+            
+            // Update button styles
+            youtubeBtn.style.color = 'var(--primary)';
+            youtubeBtn.style.borderBottom = '3px solid var(--primary)';
+            youtubeBtn.style.marginBottom = '-2px';
+            externalBtn.style.color = 'var(--gray)';
+            externalBtn.style.borderBottom = 'none';
+            externalBtn.style.marginBottom = '0';
+            
+            // Load YouTube tasks
+            loadYouTubeTasks(getCurrentDayOfWeek(), document.getElementById('tasksContainer'));
+        } else {
+            // Show External content, hide YouTube content
+            youtubeContent.style.display = 'none';
+            externalContent.style.display = 'block';
+            
+            // Update button styles
+            externalBtn.style.color = 'var(--primary)';
+            externalBtn.style.borderBottom = '3px solid var(--primary)';
+            externalBtn.style.marginBottom = '-2px';
+            youtubeBtn.style.color = 'var(--gray)';
+            youtubeBtn.style.borderBottom = 'none';
+            youtubeBtn.style.marginBottom = '0';
+            
+            // Load External tasks
+            loadExternalLinkTasks(getCurrentDayOfWeek(), document.getElementById('externalTasksContainer'));
         }
     }
 
