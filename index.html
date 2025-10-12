@@ -5837,7 +5837,10 @@
         updateFeatureAccess();
 
         // Section-specific updates
-        if (section === 'referrals') updateReferralsSection();
+        if (section === 'home') {
+            updateUserStats();
+        }
+        else if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
         else if (section === 'stake') {
             loadCandidates();
