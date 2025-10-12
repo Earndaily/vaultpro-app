@@ -5837,10 +5837,7 @@
         updateFeatureAccess();
 
         // Section-specific updates
-        if (section === 'home') {
-            updateUserStats();
-        }
-        else if (section === 'referrals') updateReferralsSection();
+        if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
         else if (section === 'stake') {
             loadCandidates();
@@ -6150,13 +6147,10 @@
            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Update task earnings display to show TODAY'S earnings only
+           // Update task earnings display using category balances
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
-               const todayTaskEarnings = await calculateTodayTaskEarnings();
-               const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
-               const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
-               taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
+               taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
            }
 
            // Update LUB Game earnings display using category balances
