@@ -6569,58 +6569,57 @@
     }
 
     // Vault section
-    async function updateVaultSection() {
-        try {
-            if (!currentUser || !currentUser.id) return;
-            
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            const activationFeePaid = userData ? userData.activationFeePaid || 0 : 0;
-            
-            // Use category-based balance calculation for consistency
-            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-            
-            document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
-            
-            const planCards = document.querySelectorAll('.plan-card');
-            planCards.forEach(card => {
-                const planName = card.querySelector('.plan-name').textContent.toLowerCase();
-                let planAmount = 0;
-                
-                // Map plan names to amounts
-                if (planName.includes('seed')) planAmount = 45000;
-                else if (planName.includes('rising')) planAmount = 180000;
-                else if (planName.includes('nova')) planAmount = 600000;
-                else if (planName.includes('mastermind')) planAmount = 1800000;
-                else if (planName.includes('titan')) planAmount = 5000000;
-                else if (planName.includes('king')) planAmount = 10000000;
-                else if (planName.includes('emperor')) planAmount = 20000000;
-                else if (planName.includes('icon')) planAmount = 35000000;
-                else if (planName.includes('supreme')) planAmount = 60000000;
-                else if (planName.includes('legendary')) planAmount = 90000000;
-                
-                // Check activation status
-                if (!userData || !userData.isActivated) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else if (usableBalance < planAmount) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else {
-                    card.classList.remove('disabled');
-                    card.style.opacity = '1';
-                    card.style.cursor = 'pointer';
-                }
-            });
-        } catch (error) {
-            console.error("Error updating vault section:", error);
-        }
-    }
+   async function updateVaultSection() {
+       try {
+           if (!currentUser || !currentUser.id) return;
+           
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           
+           // Use category-based balance calculation instead of usableBalance
+           const categoryBalances = await getUserCategoryBalances(currentUser.id);
+           const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                               categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+           const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+           
+           document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
+           
+           const planCards = document.querySelectorAll('.plan-card');
+           planCards.forEach(card => {
+               const planName = card.querySelector('.plan-name').textContent.toLowerCase();
+               let planAmount = 0;
+               
+               // Map plan names to amounts
+               if (planName.includes('seed')) planAmount = 45000;
+               else if (planName.includes('rising')) planAmount = 180000;
+               else if (planName.includes('nova')) planAmount = 600000;
+               else if (planName.includes('mastermind')) planAmount = 1800000;
+               else if (planName.includes('titan')) planAmount = 5000000;
+               else if (planName.includes('king')) planAmount = 10000000;
+               else if (planName.includes('emperor')) planAmount = 20000000;
+               else if (planName.includes('icon')) planAmount = 35000000;
+               else if (planName.includes('supreme')) planAmount = 60000000;
+               else if (planName.includes('legendary')) planAmount = 90000000;
+               
+               // Check activation status
+               if (!userData || !userData.isActivated) {
+                   card.classList.add('disabled');
+                   card.style.opacity = '0.6';
+                   card.style.cursor = 'not-allowed';
+               } else if (totalAvailable < planAmount) {
+                   card.classList.add('disabled');
+                   card.style.opacity = '0.6';
+                   card.style.cursor = 'not-allowed';
+               } else {
+                   card.classList.remove('disabled');
+                   card.style.opacity = '1';
+                   card.style.cursor = 'pointer';
+               }
+           });
+       } catch (error) {
+           console.error("Error updating vault section:", error);
+       }
+   }
 
     function selectPlan(plan) {
         const planCard = event.target.closest('.plan-card');
