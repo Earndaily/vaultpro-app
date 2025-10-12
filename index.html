@@ -6147,10 +6147,13 @@
            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Update task earnings display using category balances
+           // Update task earnings display to show TODAY'S earnings only
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
-               taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
+               const todayTaskEarnings = await calculateTodayTaskEarnings();
+               const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
+               const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+               taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
            }
 
            // Update LUB Game earnings display using category balances
