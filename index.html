@@ -1167,6 +1167,12 @@
             Continue to Registration
         </button>
         
+        <!-- WhatsApp Join Button -->
+        <a href="https://chat.whatsapp.com/KBvY0dutPIcHPLNzjBcJZQ" target="_blank" class="btn btn-success btn-block mt-2" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <span>📱</span>
+            Join WhatsApp Community
+        </a>
+        
         <p class="text-center mt-2" style="color: var(--gray);">
             Already have an account? 
             <a href="#" onclick="showLogin()" style="color: var(--primary); font-weight: 600;">Login</a>
@@ -1210,6 +1216,12 @@
         <button class="btn btn-block mt-2" id="registerBtn" onclick="register()">
             Register
         </button>
+        
+        <!-- WhatsApp Join Button -->
+        <a href="https://chat.whatsapp.com/KBvY0dutPIcHPLNzjBcJZQ" target="_blank" class="btn btn-success btn-block mt-2" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <span>📱</span>
+            Join WhatsApp Community
+        </a>
         
         <p class="text-center mt-2" style="color: var(--gray);">
             Already have an account? 
@@ -1256,6 +1268,7 @@
                 <div class="nav-link" onclick="showSection('referrals')">Referrals</div>
                 <div class="nav-link" onclick="showSection('streak')">Daily Streak</div>
                 <div class="nav-link" onclick="showSection('tasks')">Daily Tasks</div>
+                <div class="nav-link" onclick="showSection('externalTasks')">External Tasks</div>
                 <div class="nav-link" onclick="showSection('lubGame')">LUB Game</div>
                 <div class="nav-link" onclick="showSection('wallet')">Wallet</div>
                 <div class="nav-link" onclick="showSection('stake')">Stake</div>
@@ -1862,6 +1875,41 @@
                         </div>
                         </div>
 
+        <!-- External Tasks Section -->
+        <div id="externalTasksSection" class="hidden">
+            <div class="card">
+                <h2>🌐 External Link Tasks</h2>
+                <p style="color: var(--gray); margin-bottom: 1rem;">Complete social media tasks to earn rewards!</p>
+                
+                <div id="externalTasksContainer">
+                    <p class="text-center" style="color: var(--gray); padding: 2rem;">Loading external tasks...</p>
+                </div>
+
+                <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 1.5rem; border-radius: 12px; border: 2px solid var(--primary); margin-top: 1.5rem;">
+                    <h4>💰 External Task Earnings Today:</h4>
+                    <p id="todayExternalTaskEarnings" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">0 UGX</p>
+                </div>
+
+                <h3 class="mt-3">My External Task Submissions</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Platform</th>
+                                <th>Submitted</th>
+                                <th>Reward</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userExternalTaskSubmissionsBody">
+                            <tr><td colspan="5" class="text-center">No submissions yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Lowest Unique Bet Game Section -->
         <div id="lubGameSection" class="hidden">
             <div class="card">
@@ -2464,8 +2512,20 @@
             <div class="card">
                 <h2>Task Management</h2>
                 
-                <!-- Create New Task -->
-                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
+                <!-- Task Type Navigation -->
+                <div id="adminTaskTypeButtons" style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb;">
+                    <button style="padding: 1rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px;" onclick="showAdminTaskType('youtube')">
+                        📺 YouTube Tasks
+                    </button>
+                    <button style="padding: 1rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--gray);" onclick="showAdminTaskType('external')">
+                        🔗 External Link Tasks
+                    </button>
+                </div>
+                
+                <!-- YouTube Tasks Admin -->
+                <div id="youtubeTasksAdmin">
+                    <!-- Create New Task -->
+                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
                     <h3>Create New Task</h3>
                     <input type="text" id="adminTaskTitle" placeholder="Task Title (e.g., Follow our TikTok)" />
                     <textarea id="adminTaskDescription" placeholder="Task Description and Instructions" rows="3" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
@@ -2519,8 +2579,74 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
+
+                <!-- External Tasks Admin -->
+                <div id="externalTasksAdmin" style="display: none;">
+                    <!-- Create New External Task -->
+                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05)); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 2px solid #e5e7eb;">
+                        <h3>Create New External Link Task</h3>
+                        <input type="text" id="adminExtTaskTitle" placeholder="Task Title (e.g., Follow our TikTok)" />
+                        <textarea id="adminExtTaskDescription" placeholder="Task Description and Instructions" rows="3" style="width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem;"></textarea>
+                        <input type="url" id="adminExtTaskLink" placeholder="External Link (TikTok, Instagram, YouTube, etc.)" />
+                        <select id="adminExtTaskPlatform" style="margin-bottom: 1rem;">
+                            <option value="">Select Platform</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="youtube_shorts">YouTube Shorts</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="twitter">Twitter</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input type="number" id="adminExtTaskReward" placeholder="Reward Amount (UGX)" min="100" />
+                        <input type="number" id="adminExtTaskVerificationTime" placeholder="Verification Time (seconds)" min="0" value="0" />
+                        <select id="adminExtTaskDay">
+                            <option value="">Select Day</option>
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="sunday">Sunday</option>
+                            <option value="all">All Days</option>
+                        </select>
+                        <button class="btn btn-success btn-block mt-2" onclick="createExternalLinkTask()">
+                            📝 Create External Task
+                        </button>
+                    </div>
+
+                    <!-- Active External Tasks -->
+                    <h3>Active External Link Tasks</h3>
+                    <div id="adminExternalTasksList">
+                        <p class="text-center" style="color: var(--gray); padding: 2rem;">No external link tasks created yet</p>
+                    </div>
+
+                    <!-- Pending External Task Submissions -->
+                    <h3 class="mt-3">Pending External Task Submissions</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Task</th>
+                                    <th>Submitted</th>
+                                    <th>Link</th>
+                                    <th>Reward</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminExternalTaskSubmissionsBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">No pending submissions</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
+
 
         <!-- Admin Candidates Management -->
         <div id="adminCandidatesSection" class="hidden">
@@ -2718,6 +2844,10 @@
         <div class="bottom-nav-item" onclick="showSection('tasks')" data-section="tasks">
             <div class="bottom-nav-icon">✅</div>
             <div class="bottom-nav-label">Tasks</div>
+        </div>
+        <div class="bottom-nav-item" onclick="showSection('externalTasks')" data-section="externalTasks">
+            <div class="bottom-nav-icon">🌐</div>
+            <div class="bottom-nav-label">External</div>
         </div>
         <div class="bottom-nav-item" onclick="showSection('lubGame')" data-section="lubGame">
             <div class="bottom-nav-icon">🎲</div>
@@ -4896,11 +5026,6 @@
 
             showAlert('registerAlert', 'Registration successful! Please activate your account to access all features.', 'success');
             
-            // Show WhatsApp group join button
-            setTimeout(() => {
-                showWhatsAppGroupModal();
-            }, 2000);
-            
             // Clear referral code after successful registration
             clearStoredReferralCode();
             
@@ -5566,7 +5691,7 @@
         }
         
         // Hide all sections
-        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake', 'lubGame'].forEach(s => {
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'externalTasks', 'wallet', 'profile', 'stake', 'lubGame'].forEach(s => {
             const el = document.getElementById(s + 'Section');
             if (el) {
                 el.classList.add('hidden');
@@ -5596,6 +5721,7 @@
         // Section-specific updates
         if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
+        else if (section === 'externalTasks') updateExternalTasksSection();
         else if (section === 'stake') {
             loadCandidates();
             loadMyStakes();
@@ -5745,7 +5871,10 @@
         if (sectionEl) sectionEl.classList.remove('hidden');
 
         if (section === 'users') updateAdminUsers();
-        if (section === 'tasks') updateAdminTasks();
+        if (section === 'tasks') {
+            updateAdminTasks();
+            updateAdminExternalTasks();
+        }
         if (section === 'transactions') updateAdminTransactions();
         if (section === 'deposits') updateAdminDeposits();
         if (section === 'withdrawals') updateAdminWithdrawals();
@@ -8231,6 +8360,196 @@
         }
     }
 
+    function switchTaskTab(tab) {
+        sessionStorage.setItem('activeTaskTab', tab);
+        
+        // Update button styles
+        document.querySelectorAll('.task-tab-btn').forEach(btn => {
+            if (btn.dataset.tab === tab) {
+                btn.classList.add('active');
+                btn.style.color = 'var(--primary)';
+                btn.style.borderBottom = '3px solid var(--primary)';
+                btn.style.marginBottom = '-2px';
+            } else {
+                btn.classList.remove('active');
+                btn.style.color = 'var(--gray)';
+                btn.style.borderBottom = 'none';
+                btn.style.marginBottom = '0';
+            }
+        });
+        
+        updateTasksSection();
+    }
+
+    async function loadYouTubeTasks(today, container) {
+        try {
+            const tasksSnapshot = await db.collection('tasks')
+                .where('isActive', '==', true)
+                .get();
+            
+            const allTasks = tasksSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Check which tasks are completed today
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            
+            const availableTasks = allTasks.filter(task => 
+                (task.day === today || task.day === 'all') && 
+                !completedTaskIds.includes(task.id)
+            );
+
+            if (availableTasks.length === 0) {
+                container.innerHTML = '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all YouTube tasks for today.</p>';
+            } else {
+                container.style.maxHeight = 'none';
+                container.style.overflow = 'visible';
+                
+                container.innerHTML = availableTasks.map(task => {
+                    let videoId = null;
+                    if (task.link) {
+                        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                        const match = task.link.match(youtubeRegex);
+                        if (match) videoId = match[1];
+                    }
+                    
+                    return `
+                        <div class="task-card" id="task-${task.id}">
+                            <div class="task-info">
+                                <h4>${task.title}</h4>
+                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
+                            </div>
+                            ${videoId ? `<div id="video-container-${task.id}" class="video-container hidden"><div id="player-${task.id}"></div></div>` : ''}
+                            <div class="task-action">
+                                <button class="btn btn-success" id="btn-${task.id}" onclick="startYouTubeTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}')">
+                                    Watch Video & Earn
+                                </button>
+                                <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
+                                    <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error loading YouTube tasks:', error);
+        }
+    }
+
+    async function loadExternalLinkTasks(today, container) {
+        try {
+            const tasksSnapshot = await db.collection('externalLinkTasks')
+                .where('isActive', '==', true)
+                .get();
+            
+            const allTasks = tasksSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Check which tasks are completed today
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('externalTaskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            
+            const availableTasks = allTasks.filter(task => 
+                (task.day === today || task.day === 'all') && 
+                !completedTaskIds.includes(task.id)
+            );
+
+            if (availableTasks.length === 0) {
+                container.innerHTML = '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all external tasks for today.</p>';
+            } else {
+                container.style.maxHeight = 'none';
+                container.style.overflow = 'visible';
+                
+                container.innerHTML = availableTasks.map(task => `
+                    <div class="task-card" id="task-${task.id}">
+                        <div class="task-info">
+                            <h4>${task.title}</h4>
+                            <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                            <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
+                            <p style="color: var(--primary); font-size: 0.875rem;">Platform: ${task.platform.toUpperCase()}</p>
+                        </div>
+                        <div class="task-action">
+                            <a href="${task.link}" target="_blank" class="btn btn-success" style="text-decoration: none; display: inline-flex;">
+                                🔗 Open Link
+                            </a>
+                            <button class="btn" style="background: var(--primary); color: white; margin-left: 0.5rem;" onclick="markExternalTaskComplete('${task.id}', ${task.reward}, '${task.title}')">
+                                ✅ Mark Complete
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Error loading external link tasks:', error);
+        }
+    }
+
+    async function markExternalTaskComplete(taskId, reward, taskTitle) {
+        try {
+            if (!currentUser.isActivated) {
+                alert('Account not activated. Please complete your registration first.');
+                return;
+            }
+
+            // Check if already completed today
+            const todayString = new Date().toDateString();
+            const submissionQuery = await db.collection('externalTaskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('taskId', '==', taskId)
+                .where('date', '==', todayString)
+                .get();
+
+            if (!submissionQuery.empty) {
+                alert('You have already completed this task today!');
+                return;
+            }
+
+            // Get task details
+            const taskDoc = await db.collection('externalLinkTasks').doc(taskId).get();
+            const task = taskDoc.data();
+
+            // Submit for verification
+            await db.collection('externalTaskSubmissions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                userEmail: currentUser.email,
+                taskId: taskId,
+                taskTitle: taskTitle,
+                platform: task.platform,
+                taskLink: task.link,
+                reward: reward,
+                status: 'pending',
+                date: todayString,
+                submittedDate: new Date().toISOString()
+            });
+
+            alert('Task submitted for verification! Admin will review and approve shortly.');
+            updateTasksSection();
+            updateUserStats();
+
+        } catch (error) {
+            console.error("Error submitting external task:", error);
+            alert('Failed to submit task: ' + error.message);
+        }
+    }
+
     async function calculateTodayTaskEarnings() {
         try {
             const today = new Date().toISOString().split('T')[0];
@@ -8255,6 +8574,258 @@
         } catch (error) {
             console.error("Error calculating today's task earnings:", error);
             return 0;
+        }
+    }
+
+    // External Tasks Functions
+    async function updateExternalTasksSection() {
+        try {
+            const today = getCurrentDayOfWeek();
+            
+            // Get external tasks for today or "all days"
+            const tasksSnapshot = await db.collection('externalLinkTasks')
+                .where('isActive', '==', true)
+                .get();
+            
+            const allTasks = tasksSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Check which tasks are already completed today
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('externalTaskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            
+            // Filter out completed tasks to hide them
+            const availableTasks = allTasks.filter(task => 
+                (task.day === today || task.day === 'all') && 
+                !completedTaskIds.includes(task.id)
+            );
+
+            const tasksContainer = document.getElementById('externalTasksContainer');
+            
+            if (availableTasks.length === 0) {
+                if (completedTaskIds.length > 0) {
+                    tasksContainer.innerHTML = '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all available external tasks for today. Check back tomorrow for new tasks!</p>';
+                } else {
+                    tasksContainer.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No external tasks available today. Check back tomorrow!</p>';
+                }
+            } else {
+                tasksContainer.innerHTML = availableTasks.map(task => {
+                    const platformIcon = getPlatformIcon(task.platform);
+                    return `
+                        <div class="task-card" id="external-task-${task.id}">
+                            <div class="task-info">
+                                <h4>${platformIcon} ${task.title}</h4>
+                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
+                                <p style="color: var(--gray); font-size: 0.875rem;">Platform: ${task.platform.toUpperCase()}</p>
+                                <p style="color: var(--primary); font-size: 0.875rem; word-break: break-all;">
+                                    <strong>Link:</strong> <a href="${task.link}" target="_blank" style="color: var(--primary);">${task.link}</a>
+                                </p>
+                            </div>
+                            
+                            <div class="task-action">
+                                <button class="btn btn-success" id="btn-external-${task.id}" onclick="startExternalTask('${task.id}', ${task.reward}, '${task.link}', '${task.platform}', ${task.verificationTime || 0})">
+                                    Complete Task & Earn
+                                </button>
+                                <div id="timer-external-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-external-${task.id}">0</div>
+                                    <div style="font-size: 0.875rem; color: var(--gray);">verification time</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update user submissions
+            const submissionsSnapshot = await db.collection('externalTaskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .orderBy('submittedDate', 'desc')
+                .limit(20)
+                .get();
+            
+            const submissions = submissionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const tbody = document.getElementById('userExternalTaskSubmissionsBody');
+            if (submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No submissions yet</td></tr>';
+            } else {
+                tbody.innerHTML = submissions.map(sub => {
+                    let statusClass = 'status-pending';
+                    let statusText = 'Pending';
+                    
+                    if (sub.status === 'approved') {
+                        statusClass = 'status-approved';
+                        statusText = 'Approved';
+                    } else if (sub.status === 'rejected') {
+                        statusClass = 'status-rejected';
+                        statusText = 'Rejected';
+                    }
+                    
+                    return `
+                        <tr>
+                            <td>${sub.taskTitle}</td>
+                            <td>${getPlatformIcon(sub.platform)} ${sub.platform.toUpperCase()}</td>
+                            <td>${new Date(sub.submittedDate).toLocaleString()}</td>
+                            <td>${sub.reward.toLocaleString()} UGX</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Update today's earnings
+            const todayEarnings = await calculateTodayExternalTaskEarnings();
+            document.getElementById('todayExternalTaskEarnings').textContent = todayEarnings.toLocaleString() + ' UGX';
+
+        } catch (error) {
+            console.error("Error updating external tasks section:", error);
+        }
+    }
+
+    function getPlatformIcon(platform) {
+        const icons = {
+            'tiktok': '🎵',
+            'instagram': '📷',
+            'youtube_shorts': '🎬',
+            'facebook': '👥',
+            'twitter': '🐦',
+            'other': '🔗'
+        };
+        return icons[platform] || '🔗';
+    }
+
+    async function calculateTodayExternalTaskEarnings() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Get today's approved external task submissions
+            const submissionsSnapshot = await db.collection('externalTaskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('status', '==', 'approved')
+                .get();
+            
+            let totalEarnings = 0;
+            submissionsSnapshot.docs.forEach(doc => {
+                const submission = doc.data();
+                const submissionDate = submission.approvedDate ? submission.approvedDate.split('T')[0] : submission.submittedDate.split('T')[0];
+                
+                if (submissionDate === today) {
+                    totalEarnings += submission.reward || 0;
+                }
+            });
+            
+            return totalEarnings;
+        } catch (error) {
+            console.error("Error calculating today's external task earnings:", error);
+            return 0;
+        }
+    }
+
+    async function startExternalTask(taskId, reward, taskLink, platform, verificationTime) {
+        try {
+            const button = document.getElementById(`btn-external-${taskId}`);
+            const timer = document.getElementById(`timer-external-${taskId}`);
+            const countdown = document.getElementById(`countdown-external-${taskId}`);
+            
+            // Disable button
+            button.disabled = true;
+            button.textContent = 'Processing...';
+            
+            // Open the external link in a new tab
+            window.open(taskLink, '_blank');
+            
+            if (verificationTime > 0) {
+                // Show timer
+                timer.classList.remove('hidden');
+                
+                let timeLeft = verificationTime;
+                countdown.textContent = timeLeft;
+                
+                const countdownInterval = setInterval(() => {
+                    timeLeft--;
+                    countdown.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        timer.classList.add('hidden');
+                        button.disabled = false;
+                        button.textContent = 'Submit Task';
+                        button.onclick = () => submitExternalTask(taskId, reward, taskLink, platform);
+                    }
+                }, 1000);
+            } else {
+                // No verification time, allow immediate submission
+                button.textContent = 'Submit Task';
+                button.onclick = () => submitExternalTask(taskId, reward, taskLink, platform);
+            }
+            
+        } catch (error) {
+            console.error('Error starting external task:', error);
+            alert('Failed to start task: ' + error.message);
+        }
+    }
+
+    async function submitExternalTask(taskId, reward, taskLink, platform) {
+        try {
+            // Skip activation checks for admin users
+            if (!currentUser.isAdmin && !currentUser.isActivated) {
+                alert('Please activate your account first to complete tasks.');
+                return;
+            }
+
+            const todayString = new Date().toDateString();
+            
+            // Check if already completed today
+            const existingSubmission = await db.collection('externalTaskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('taskId', '==', taskId)
+                .where('date', '==', todayString)
+                .get();
+            
+            if (!existingSubmission.empty) {
+                alert('You have already completed this task today!');
+                return;
+            }
+
+            // Get task details
+            const taskDoc = await db.collection('externalLinkTasks').doc(taskId).get();
+            const taskData = taskDoc.data();
+
+            // Create submission
+            await db.collection('externalTaskSubmissions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                userEmail: currentUser.email,
+                taskId: taskId,
+                taskTitle: taskData.title,
+                taskLink: taskLink,
+                platform: platform,
+                reward: reward,
+                status: 'pending',
+                submittedDate: new Date().toISOString(),
+                date: todayString
+            });
+
+            alert('✅ External task submitted successfully! Admin will review and approve your submission.');
+
+            // Update UI
+            updateUserStats();
+            updateExternalTasksSection();
+
+        } catch (error) {
+            console.error("Error submitting external task:", error);
+            alert('Failed to submit task: ' + error.message);
         }
     }
 
@@ -10343,6 +10914,307 @@
 
             alert('Task submission rejected');
             updateAdminTasks();
+        } catch (error) {
+            console.error("Error rejecting task:", error);
+            alert('Failed to reject task: ' + error.message);
+        }
+    }
+
+    function showAdminTaskType(type) {
+        if (type === 'youtube') {
+            document.getElementById('youtubeTasksAdmin').style.display = 'block';
+            document.getElementById('externalTasksAdmin').style.display = 'none';
+            // Update button styles
+            document.querySelectorAll('#adminTaskTypeButtons button').forEach(btn => {
+                if (btn.textContent.includes('YouTube')) {
+                    btn.style.color = 'var(--primary)';
+                    btn.style.borderBottom = '3px solid var(--primary)';
+                    btn.style.marginBottom = '-2px';
+                } else {
+                    btn.style.color = 'var(--gray)';
+                    btn.style.borderBottom = 'none';
+                    btn.style.marginBottom = '0';
+                }
+            });
+        } else {
+            document.getElementById('youtubeTasksAdmin').style.display = 'none';
+            document.getElementById('externalTasksAdmin').style.display = 'block';
+            // Update button styles
+            document.querySelectorAll('#adminTaskTypeButtons button').forEach(btn => {
+                if (btn.textContent.includes('External')) {
+                    btn.style.color = 'var(--primary)';
+                    btn.style.borderBottom = '3px solid var(--primary)';
+                    btn.style.marginBottom = '-2px';
+                } else {
+                    btn.style.color = 'var(--gray)';
+                    btn.style.borderBottom = 'none';
+                    btn.style.marginBottom = '0';
+                }
+            });
+            // Load external tasks when switching to external tab
+            updateAdminExternalTasks();
+        }
+    }
+
+    // Admin External Link Task Management
+    async function createExternalLinkTask() {
+        try {
+            const title = document.getElementById('adminExtTaskTitle').value.trim();
+            const description = document.getElementById('adminExtTaskDescription').value.trim();
+            const taskLink = document.getElementById('adminExtTaskLink').value.trim();
+            const platform = document.getElementById('adminExtTaskPlatform').value;
+            const reward = parseFloat(document.getElementById('adminExtTaskReward').value);
+            const day = document.getElementById('adminExtTaskDay').value;
+            const verificationTime = parseInt(document.getElementById('adminExtTaskVerificationTime').value) || 0;
+
+            if (!title || !description || !taskLink || !platform || !reward || !day) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            await db.collection('externalLinkTasks').add({
+                title: title,
+                description: description,
+                link: taskLink,
+                platform: platform, // 'tiktok', 'instagram', 'youtube_shorts', 'other'
+                reward: reward,
+                verificationTime: verificationTime, // in seconds
+                day: day,
+                createdDate: new Date().toISOString(),
+                isActive: true,
+                createdBy: 'admin'
+            });
+
+            alert('External link task created successfully!');
+            
+            // Reset form
+            document.getElementById('adminExtTaskTitle').value = '';
+            document.getElementById('adminExtTaskDescription').value = '';
+            document.getElementById('adminExtTaskLink').value = '';
+            document.getElementById('adminExtTaskPlatform').value = '';
+            document.getElementById('adminExtTaskReward').value = '';
+            document.getElementById('adminExtTaskDay').value = '';
+            document.getElementById('adminExtTaskVerificationTime').value = '0';
+            
+            updateAdminExternalTasks();
+        } catch (error) {
+            console.error("Error creating external link task:", error);
+            alert('Failed to create task: ' + error.message);
+        }
+    }
+
+    async function updateAdminExternalTasks() {
+        try {
+            // Load active external tasks
+            const tasksSnapshot = await db.collection('externalLinkTasks').where('isActive', '==', true).get();
+            const tasks = tasksSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const tasksList = document.getElementById('adminExternalTasksList');
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-center" style="color: var(--gray); padding: 2rem;">No external link tasks created yet</p>';
+            } else {
+                tasksList.innerHTML = tasks.map(task => `
+                    <div class="task-card">
+                        <div class="task-info">
+                            <h4>${task.title}</h4>
+                            <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                            <p style="color: var(--gray); font-size: 0.875rem;">
+                                <strong>Platform:</strong> ${task.platform.toUpperCase()} | 
+                                <strong>Day:</strong> ${task.day === 'all' ? 'All Days' : task.day.charAt(0).toUpperCase() + task.day.slice(1)} | 
+                                <strong>Reward:</strong> ${task.reward.toLocaleString()} UGX
+                            </p>
+                            <p style="color: var(--primary); font-size: 0.875rem; word-break: break-all;"><strong>Link:</strong> <a href="${task.link}" target="_blank">${task.link}</a></p>
+                        </div>
+                        <div class="task-action">
+                            <button class="btn" style="background: var(--warning); padding: 0.5rem 1rem; font-size: 0.875rem; margin-right: 0.5rem;" onclick="editExternalTask('${task.id}')">
+                                ✏️ Edit
+                            </button>
+                            <button class="btn" style="background: var(--error); padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="deleteExternalTask('${task.id}')">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Load pending submissions
+            const submissionsSnapshot = await db.collection('externalTaskSubmissions')
+                .where('status', '==', 'pending')
+                .get();
+            
+            const submissions = submissionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const tbody = document.getElementById('adminExternalTaskSubmissionsBody');
+            if (submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No pending submissions</td></tr>';
+            } else {
+                tbody.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>${sub.userName}<br><small style="color: var(--gray);">${sub.userEmail}</small></td>
+                        <td>${sub.taskTitle}<br><small style="color: var(--gray);">${sub.platform}</small></td>
+                        <td>${new Date(sub.submittedDate).toLocaleString()}</td>
+                        <td><a href="${sub.taskLink}" target="_blank" class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">View</a></td>
+                        <td>${sub.reward.toLocaleString()} UGX</td>
+                        <td>
+                            <button class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem; margin-right: 0.5rem;" onclick="approveExternalTaskSubmission('${sub.id}', ${sub.reward}, '${sub.userId}', '${sub.taskTitle}')">
+                                Approve
+                            </button>
+                            <button class="btn" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: var(--error);" onclick="rejectExternalTaskSubmission('${sub.id}')">
+                                Reject
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (error) {
+            console.error("Error updating admin external tasks:", error);
+        }
+    }
+
+    async function editExternalTask(taskId) {
+        try {
+            const taskDoc = await db.collection('externalLinkTasks').doc(taskId).get();
+            const task = taskDoc.data();
+            
+            // Populate form with existing data
+            document.getElementById('adminExtTaskTitle').value = task.title;
+            document.getElementById('adminExtTaskDescription').value = task.description;
+            document.getElementById('adminExtTaskLink').value = task.link;
+            document.getElementById('adminExtTaskPlatform').value = task.platform;
+            document.getElementById('adminExtTaskReward').value = task.reward;
+            document.getElementById('adminExtTaskDay').value = task.day;
+            document.getElementById('adminExtTaskVerificationTime').value = task.verificationTime || 0;
+            
+            // Change button text and onclick
+            const createBtn = document.querySelector('button[onclick="createExternalLinkTask()"]');
+            if (createBtn) {
+                createBtn.textContent = 'Update External Task';
+                createBtn.onclick = () => updateExternalTask(taskId);
+            }
+            
+            // Scroll to form
+            document.getElementById('adminExtTaskTitle').scrollIntoView({ behavior: 'smooth' });
+            
+        } catch (error) {
+            console.error('Error loading external task for edit:', error);
+            alert('Failed to load task data: ' + error.message);
+        }
+    }
+
+    async function updateExternalTask(taskId) {
+        try {
+            const title = document.getElementById('adminExtTaskTitle').value.trim();
+            const description = document.getElementById('adminExtTaskDescription').value.trim();
+            const taskLink = document.getElementById('adminExtTaskLink').value.trim();
+            const platform = document.getElementById('adminExtTaskPlatform').value;
+            const reward = parseFloat(document.getElementById('adminExtTaskReward').value);
+            const day = document.getElementById('adminExtTaskDay').value;
+            const verificationTime = parseInt(document.getElementById('adminExtTaskVerificationTime').value) || 0;
+
+            if (!title || !description || !taskLink || !platform || !reward || !day) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            await db.collection('externalLinkTasks').doc(taskId).update({
+                title: title,
+                description: description,
+                link: taskLink,
+                platform: platform,
+                reward: reward,
+                verificationTime: verificationTime,
+                day: day,
+                updatedDate: new Date().toISOString()
+            });
+
+            alert('External task updated successfully!');
+            
+            // Reset form and button
+            document.getElementById('adminExtTaskTitle').value = '';
+            document.getElementById('adminExtTaskDescription').value = '';
+            document.getElementById('adminExtTaskLink').value = '';
+            document.getElementById('adminExtTaskPlatform').value = '';
+            document.getElementById('adminExtTaskReward').value = '';
+            document.getElementById('adminExtTaskDay').value = '';
+            document.getElementById('adminExtTaskVerificationTime').value = '0';
+            
+            const createBtn = document.querySelector('button[onclick*="updateExternalTask"]');
+            if (createBtn) {
+                createBtn.textContent = '📝 Create External Task';
+                createBtn.onclick = () => createExternalLinkTask();
+            }
+            
+            updateAdminExternalTasks();
+        } catch (error) {
+            console.error('Error updating external task:', error);
+            alert('Failed to update task: ' + error.message);
+        }
+    }
+
+    async function deleteExternalTask(taskId) {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+        
+        try {
+            await db.collection('externalLinkTasks').doc(taskId).update({
+                isActive: false
+            });
+            alert('Task deleted successfully!');
+            updateAdminExternalTasks();
+        } catch (error) {
+            console.error("Error deleting task:", error);
+            alert('Failed to delete task: ' + error.message);
+        }
+    }
+
+    async function approveExternalTaskSubmission(submissionId, reward, userId, taskTitle) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userData = userDoc.data();
+            const currentBalance = userData.balance || 0;
+
+            await db.collection('users').doc(userId).update({
+                balance: currentBalance + reward,
+                totalTaskEarnings: (userData.totalTaskEarnings || 0) + reward
+            });
+
+            await db.collection('externalTaskSubmissions').doc(submissionId).update({
+                status: 'approved',
+                approvedDate: new Date().toISOString()
+            });
+
+            await db.collection('transactions').add({
+                userId: userId,
+                userName: userData.fullName,
+                type: 'task_completion',
+                amount: reward,
+                taskTitle: taskTitle,
+                date: new Date().toISOString()
+            });
+
+            alert('External task submission approved!');
+            updateAdminExternalTasks();
+            updateAdminStats();
+        } catch (error) {
+            console.error("Error approving task:", error);
+            alert('Failed to approve task: ' + error.message);
+        }
+    }
+
+    async function rejectExternalTaskSubmission(submissionId) {
+        try {
+            await db.collection('externalTaskSubmissions').doc(submissionId).update({
+                status: 'rejected',
+                rejectedDate: new Date().toISOString()
+            });
+
+            alert('Task submission rejected');
+            updateAdminExternalTasks();
         } catch (error) {
             console.error("Error rejecting task:", error);
             alert('Failed to reject task: ' + error.message);
