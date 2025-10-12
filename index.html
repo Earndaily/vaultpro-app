@@ -2004,7 +2004,7 @@
                         <h3 style="margin: 0;">🏆 Previous Winners</h3>
                         <span id="previousWinnersContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
                     </div>
-                    <div id="previousWinnersContent" style="display: none;">
+                    <div id="previousWinnersContent" style="display: block;">
                         <div class="table-responsive">
                             <table>
                                 <thead>
@@ -4258,7 +4258,7 @@
                                     <h3 style="margin: 0; color: var(--primary);">📅 Daily Schedule</h3>
                                     <span id="dailyScheduleContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
                                 </div>
-                                <div id="dailyScheduleContent" style="display: none;">
+                                <div id="dailyScheduleContent" style="display: block;">
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                                         <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 10 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Morning Round</strong><br>
@@ -4294,6 +4294,9 @@
                     document.getElementById('placeBetSection').classList.add('hidden');
                     document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active round - check schedule above</p>';
                 }
+                
+                // ALWAYS load history regardless of round status
+                await loadLUBGameHistory();
                 return;
             }
             
