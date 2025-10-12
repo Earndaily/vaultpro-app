@@ -3984,25 +3984,13 @@
                 return;
             }
             
-            // Record transaction FIRST
-            await db.collection('transactions').add({
-                userId: currentUser.id,
-                userName: currentUser.fullName,
-                type: 'lub_game_bet',
-                amount: betAmount,
-                sourceCategory: sourceCategory,
-                categoryName: categoryName,
-                roundId: round.id,
-                date: new Date().toISOString()
-            });
-            
-            // THEN deduct balance
+            // Update total balance (for display purposes)
             const userDoc = await db.collection('users').doc(currentUser.id).get();
             const userData = userDoc.data();
-            const currentBalance = userData.balance || 0;
+            const balance = userData.balance || 0;
             
             await db.collection('users').doc(currentUser.id).update({
-                balance: currentBalance - betAmount
+                balance: balance - betAmount
             });
             
             // Place bet
@@ -4022,7 +4010,19 @@
                 totalStakes: (round.totalStakes || 0) + betAmount
             });
             
-            currentUser.balance = currentBalance - betAmount;
+            // Record transaction with source category
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'lub_game_bet',
+                amount: betAmount,
+                sourceCategory: sourceCategory,
+                categoryName: categoryName,
+                roundId: round.id,
+                date: new Date().toISOString()
+            });
+            
+            currentUser.balance = balance - betAmount;
             
             showAlert('lubGameAlert', `Bet placed successfully! Your bet: ${betAmount.toLocaleString()} UGX`, 'success');
             
@@ -4060,10 +4060,9 @@
                 return;
             }
             
-            // Update status to calculating immediately
+            // Update status to calculating
             await db.collection('lubGameRounds').doc(roundId).update({
-                status: 'calculating',
-                calculatingAt: new Date().toISOString()
+                status: 'calculating'
             });
             
             // Get all bets for this round
@@ -4078,7 +4077,9 @@
                     completedAt: new Date().toISOString()
                 });
                 
-                console.log('Round completed with no bets.');
+                // Round completed - next round will start at scheduled time
+                console.log('Round completed. Next round will start at scheduled time.');
+                
                 processingRounds.delete(roundId);
                 return;
             }
@@ -4089,7 +4090,7 @@
                 totalLosses += doc.data().betAmount;
             });
             
-            // Get all bets and group by amount
+            // Group bets by amount
             const betsByAmount = {};
             betsSnapshot.docs.forEach(doc => {
                 const bet = doc.data();
@@ -4099,16 +4100,13 @@
                 betsByAmount[bet.betAmount].push({ id: doc.id, ...bet });
             });
             
-            // Find TRULY unique bets (amounts with only 1 bet)
+            // Find unique bets
             const uniqueBets = [];
             for (const [amount, bets] of Object.entries(betsByAmount)) {
                 if (bets.length === 1) {
                     uniqueBets.push({ amount: parseInt(amount), bet: bets[0] });
                 }
             }
-            
-            // Sort by amount to find lowest
-            uniqueBets.sort((a, b) => a.amount - b.amount);
             
             if (uniqueBets.length === 0) {
                 // No unique bets - everyone loses, admin gets everything
@@ -4139,31 +4137,62 @@
                 });
                 
                 console.log('No unique bets. Admin earned:', totalLosses);
+                
+                // Round completed - next round will start at scheduled time
+                console.log('Round completed. Next round will start at scheduled time.');
+                
                 processingRounds.delete(roundId);
                 return;
             }
             
-            // Now the winner is simply the first one (lowest unique)
+            // Find lowest unique bet
+            uniqueBets.sort((a, b) => a.amount - b.amount);
+
+            // Check if multiple people have the same lowest unique bet
+            if (uniqueBets.length > 1 && uniqueBets[0].amount === uniqueBets[1].amount) {
+                // Multiple people bet the same lowest amount - NOT UNIQUE!
+                // Remove all duplicates at the lowest amount
+                const lowestAmount = uniqueBets[0].amount;
+                uniqueBets = uniqueBets.filter(bet => bet.amount !== lowestAmount);
+                
+                if (uniqueBets.length === 0) {
+                    // No truly unique bets after removing duplicates
+                    await db.collection('lubGameRounds').doc(roundId).update({
+                        status: 'completed',
+                        completedAt: new Date().toISOString(),
+                        winner: null,
+                        winningAmount: null,
+                        result: 'no_winner',
+                        adminEarnings: totalLosses
+                    });
+                    
+                    const updatePromises = betsSnapshot.docs.map(doc => 
+                        db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+                    );
+                    await Promise.all(updatePromises);
+                    processingRounds.delete(roundId);
+                    return;
+                }
+            }
+
             const winningBet = uniqueBets[0];
-            const prizeAmount = winningBet.amount * 10;
+            const prize = winningBet.amount * 10;
             
             // Calculate admin earnings (all losing bets)
             const adminEarnings = totalLosses - winningBet.amount;
             
-            // Get fresh user data and update balance atomically
-            const userDocRef = db.collection('users').doc(winningBet.bet.userId);
-            const userDoc = await userDocRef.get();
-            const currentBalance = userDoc.data().balance || 0;
+            // Update winner's balance
+            const winnerDoc = await db.collection('users').doc(winningBet.bet.userId).get();
+            const winnerBalance = winnerDoc.data().balance || 0;
             
-            // Update balance
-            await userDocRef.update({
-                balance: currentBalance + prizeAmount
+            await db.collection('users').doc(winningBet.bet.userId).update({
+                balance: winnerBalance + prize
             });
             
             // Update winning bet
             await db.collection('lubGameBets').doc(winningBet.bet.id).update({
                 status: 'won',
-                prize: prizeAmount
+                prize: prize
             });
             
             // Mark other bets as lost
@@ -4180,21 +4209,19 @@
                 winner: winningBet.bet.userName,
                 winnerId: winningBet.bet.userId,
                 winningAmount: winningBet.amount,
-                prize: prizeAmount,
+                prize: prize,
                 result: 'winner_found',
                 adminEarnings: adminEarnings
             });
             
-            // Record winner transaction with full details
+            // Record winner transaction
             await db.collection('transactions').add({
                 userId: winningBet.bet.userId,
                 userName: winningBet.bet.userName,
                 type: 'lub_game_win',
-                amount: prizeAmount,
+                amount: prize,
                 betAmount: winningBet.amount,
-                odds: 10,
-                roundId: round.id,
-                description: `LUB Game Win - Lowest unique bet: ${winningBet.amount} UGX`,
+                roundId: roundId,
                 date: new Date().toISOString()
             });
             
@@ -4204,17 +4231,19 @@
                 userName: 'Administrator',
                 type: 'lub_game_admin_earnings',
                 amount: adminEarnings,
-                description: `LUB Game earnings - Round ${roundData.roundNumber}: ${betsSnapshot.size} players, winner bet: ${winningBet.amount} UGX`,
+                description: `LUB Game Round #${roundId.slice(-6)} - Losing bets (Winner: ${winningBet.bet.userName})`,
                 roundId: roundId,
+                winnerBet: winningBet.amount,
+                totalPlayers: betsSnapshot.size,
                 date: new Date().toISOString()
             });
             
-            // Send notification to winner
-            await sendNotification(winningBet.bet.userId, 'referral_bonus', `🎲 You won ${prizeAmount.toLocaleString()} UGX in LUB Game!`, prizeAmount);
-            
             console.log('LUB round results processed.');
-            console.log('Winner:', winningBet.bet.userName, '- Prize:', prizeAmount);
+            console.log('Winner:', winningBet.bet.userName, '- Prize:', prize);
             console.log('Admin earned from losing bets:', adminEarnings);
+            
+            // Round completed - next round will start at scheduled time
+            console.log('Round completed. Next round will start at scheduled time.');
             
         } catch (error) {
             console.error('Error processing LUB round results:', error);
@@ -5818,7 +5847,10 @@
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') {
             updateTasksSection();
-            // Don't update dashboard stats here - let updateUserStats() handle it
+            const taskEarningsEl = document.getElementById('taskEarnings');
+            if (taskEarningsEl && currentUser) {
+                taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+            }
         }
         else if (section === 'profile') {
             if (currentUser && currentUser.id) {
@@ -6115,13 +6147,10 @@
            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Update task earnings display to show TODAY'S earnings only
+           // Update task earnings display using category balances
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
-               const todayTaskEarnings = await calculateTodayTaskEarnings();
-               const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
-               const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
-               taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
+               taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
            }
 
            // Update LUB Game earnings display using category balances
@@ -6543,58 +6572,57 @@
     }
 
     // Vault section
-    async function updateVaultSection() {
-        try {
-            if (!currentUser || !currentUser.id) return;
-            
-            const userDoc = await db.collection('users').doc(currentUser.id).get();
-            const userData = userDoc.data();
-            const activationFeePaid = userData ? userData.activationFeePaid || 0 : 0;
-            
-            // Use category-based balance calculation for consistency
-            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-            
-            document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
-            
-            const planCards = document.querySelectorAll('.plan-card');
-            planCards.forEach(card => {
-                const planName = card.querySelector('.plan-name').textContent.toLowerCase();
-                let planAmount = 0;
-                
-                // Map plan names to amounts
-                if (planName.includes('seed')) planAmount = 45000;
-                else if (planName.includes('rising')) planAmount = 180000;
-                else if (planName.includes('nova')) planAmount = 600000;
-                else if (planName.includes('mastermind')) planAmount = 1800000;
-                else if (planName.includes('titan')) planAmount = 5000000;
-                else if (planName.includes('king')) planAmount = 10000000;
-                else if (planName.includes('emperor')) planAmount = 20000000;
-                else if (planName.includes('icon')) planAmount = 35000000;
-                else if (planName.includes('supreme')) planAmount = 60000000;
-                else if (planName.includes('legendary')) planAmount = 90000000;
-                
-                // Check activation status
-                if (!userData || !userData.isActivated) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else if (usableBalance < planAmount) {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.6';
-                    card.style.cursor = 'not-allowed';
-                } else {
-                    card.classList.remove('disabled');
-                    card.style.opacity = '1';
-                    card.style.cursor = 'pointer';
-                }
-            });
-        } catch (error) {
-            console.error("Error updating vault section:", error);
-        }
-    }
+   async function updateVaultSection() {
+       try {
+           if (!currentUser || !currentUser.id) return;
+           
+           const userDoc = await db.collection('users').doc(currentUser.id).get();
+           const userData = userDoc.data();
+           
+           // Use category-based balance calculation instead of usableBalance
+           const categoryBalances = await getUserCategoryBalances(currentUser.id);
+           const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                               categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+           const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+           
+           document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
+           
+           const planCards = document.querySelectorAll('.plan-card');
+           planCards.forEach(card => {
+               const planName = card.querySelector('.plan-name').textContent.toLowerCase();
+               let planAmount = 0;
+               
+               // Map plan names to amounts
+               if (planName.includes('seed')) planAmount = 45000;
+               else if (planName.includes('rising')) planAmount = 180000;
+               else if (planName.includes('nova')) planAmount = 600000;
+               else if (planName.includes('mastermind')) planAmount = 1800000;
+               else if (planName.includes('titan')) planAmount = 5000000;
+               else if (planName.includes('king')) planAmount = 10000000;
+               else if (planName.includes('emperor')) planAmount = 20000000;
+               else if (planName.includes('icon')) planAmount = 35000000;
+               else if (planName.includes('supreme')) planAmount = 60000000;
+               else if (planName.includes('legendary')) planAmount = 90000000;
+               
+               // Check activation status
+               if (!userData || !userData.isActivated) {
+                   card.classList.add('disabled');
+                   card.style.opacity = '0.6';
+                   card.style.cursor = 'not-allowed';
+               } else if (totalAvailable < planAmount) {
+                   card.classList.add('disabled');
+                   card.style.opacity = '0.6';
+                   card.style.cursor = 'not-allowed';
+               } else {
+                   card.classList.remove('disabled');
+                   card.style.opacity = '1';
+                   card.style.cursor = 'pointer';
+               }
+           });
+       } catch (error) {
+           console.error("Error updating vault section:", error);
+       }
+   }
 
     function selectPlan(plan) {
         const planCard = event.target.closest('.plan-card');
