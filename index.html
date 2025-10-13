@@ -6517,14 +6517,20 @@
             
             const userVaultInfo = await getUserVaultLevel(currentUser.id);
             
-            // Get today's completed tasks count
+            // Get today's completed tasks count (both YouTube and external)
             const todayString = new Date().toDateString();
-            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
-                .where('userId', '==', currentUser.id)
-                .where('date', '==', todayString)
-                .get();
-            
-            const completedCount = todaySubmissionsSnapshot.size;
+            const [youtubeSubmissions, externalSubmissions] = await Promise.all([
+                db.collection('taskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get(),
+                db.collection('externalTaskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get()
+            ]);
+
+            const completedCount = youtubeSubmissions.size + externalSubmissions.size;
             const remainingTasks = userVaultInfo.dailyTasks - completedCount;
             
             const allocationDiv = document.createElement('div');
@@ -8639,12 +8645,23 @@
                return;
            }
 
-           // Check if user has reached their daily task limit
-           const todayTaskCount = submissionQuery.size;
-           if (todayTaskCount >= userVaultInfo.dailyTasks) {
-               alert(`You have completed all ${userVaultInfo.dailyTasks} tasks for today. Come back tomorrow!`);
-               return;
-           }
+            // Check if user has reached their daily task limit (both YouTube and external tasks)
+            const [youtubeTaskCount, externalTaskCount] = await Promise.all([
+                db.collection('taskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get(),
+                db.collection('externalTaskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get()
+            ]);
+
+            const totalTodayTasks = youtubeTaskCount.size + externalTaskCount.size;
+            if (totalTodayTasks >= userVaultInfo.dailyTasks) {
+                alert(`You have completed all ${userVaultInfo.dailyTasks} tasks for today. Come back tomorrow!`);
+                return;
+            }
 
            // Update user balance and earnings
            const userDoc = await db.collection('users').doc(currentUser.id).get();
@@ -8692,7 +8709,7 @@
            await sendNotification(currentUser.id, 'new_earnings', `You earned ${taskReward.toLocaleString()} UGX from completing a task! (${userVaultInfo.planName} level)`, taskReward);
 
            // Show success alert
-           alert(`🎉 Task completed! You earned ${taskReward.toLocaleString()} UGX! (${userVaultInfo.planName}: ${todayTaskCount + 1}/${userVaultInfo.dailyTasks} tasks today)`);
+            alert(`🎉 Task completed! You earned ${taskReward.toLocaleString()} UGX! (${userVaultInfo.planName}: ${totalTodayTasks + 1}/${userVaultInfo.dailyTasks} tasks today)`);
 
            // Update UI
            updateUserStats();
@@ -8906,41 +8923,48 @@
                 console.log('User not available for YouTube tasks');
                 return;
             }
-            
+
             // Get user's vault level
             const userVaultInfo = await getUserVaultLevel(currentUser.id);
             const allowedTaskCount = userVaultInfo.dailyTasks;
             const taskReward = userVaultInfo.taskReward;
-            
+
             const tasksSnapshot = await db.collection('tasks')
                 .where('isActive', '==', true)
                 .get();
-            
+
             const allTasks = tasksSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            // Check completed today
+            // Check ALL completed tasks today (both YouTube and external)
             const todayString = new Date().toDateString();
-            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
-                .where('userId', '==', currentUser.id)
-                .where('date', '==', todayString)
-                .get();
-            
-            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
-            const completedCount = completedTaskIds.length;
-            
+            const [youtubeSubmissions, externalSubmissions] = await Promise.all([
+                db.collection('taskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get(),
+                db.collection('externalTaskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get()
+            ]);
+
+            const completedYouTubeTaskIds = youtubeSubmissions.docs.map(doc => doc.data().taskId);
+            const completedExternalTaskIds = externalSubmissions.docs.map(doc => doc.data().taskId);
+            const totalCompletedCount = youtubeSubmissions.size + externalSubmissions.size;
+
             // Filter: correct day + not completed
-            let availableTasks = allTasks.filter(task => 
-                (task.day === today || task.day === 'all') && 
-                !completedTaskIds.includes(task.id)
+            let availableTasks = allTasks.filter(task =>
+                (task.day === today || task.day === 'all') &&
+                !completedYouTubeTaskIds.includes(task.id)
             );
-            
+
             // Check if user has reached their daily limit
-            const remainingTasks = allowedTaskCount - completedCount;
+            const remainingTasks = allowedTaskCount - totalCompletedCount;
             const hasReachedLimit = remainingTasks <= 0;
-            
+
             if (!hasReachedLimit) {
                 // Limit available tasks to remaining tasks
                 availableTasks = availableTasks.slice(0, remainingTasks);
@@ -8961,7 +8985,7 @@
                     <strong>📋 Your Plan Level:</strong> ${userVaultInfo.planName}
                 </div>
                 <div style="font-size: 1rem; font-weight: 600; color: #0369a1; margin-bottom: 0.5rem;">
-                    Daily Tasks: ${completedCount} / ${allowedTaskCount} Completed
+                    Daily Tasks: ${totalCompletedCount} / ${allowedTaskCount} Completed
                 </div>
                 <div style="font-size: 0.875rem; color: #0c4a6e;">
                     Reward per Task: <strong>${taskReward.toLocaleString()} UGX</strong>
@@ -9058,24 +9082,31 @@
                 ...doc.data()
             }));
 
-            // Check which tasks are completed today
+            // Check ALL completed tasks today (both YouTube and external)
             const todayString = new Date().toDateString();
-            const todaySubmissionsSnapshot = await db.collection('externalTaskSubmissions')
-                .where('userId', '==', currentUser.id)
-                .where('date', '==', todayString)
-                .get();
-            
-            const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
-            const completedCount = completedTaskIds.length;
+            const [youtubeSubmissions, externalSubmissions] = await Promise.all([
+                db.collection('taskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get(),
+                db.collection('externalTaskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get()
+            ]);
+
+            const completedYouTubeTaskIds = youtubeSubmissions.docs.map(doc => doc.data().taskId);
+            const completedExternalTaskIds = externalSubmissions.docs.map(doc => doc.data().taskId);
+            const totalCompletedCount = youtubeSubmissions.size + externalSubmissions.size;
             
             // Filter tasks based on user's vault level
             let availableTasks = allTasks.filter(task => 
                 (task.day === today || task.day === 'all') && 
-                !completedTaskIds.includes(task.id)
+                !completedExternalTaskIds.includes(task.id)
             );
 
             // Check if user has reached their daily limit
-            const remainingTasks = allowedTaskCount - completedCount;
+            const remainingTasks = allowedTaskCount - totalCompletedCount;
             const hasReachedLimit = remainingTasks <= 0;
 
             if (!hasReachedLimit) {
@@ -9098,7 +9129,7 @@
                     <strong>📋 Your Plan Level:</strong> ${userVaultInfo.planName}
                 </div>
                 <div style="font-size: 1rem; font-weight: 600; color: #0369a1; margin-bottom: 0.5rem;">
-                    Daily Tasks: ${completedCount} / ${allowedTaskCount} Completed
+                    Daily Tasks: ${totalCompletedCount} / ${allowedTaskCount} Completed
                 </div>
                 <div style="font-size: 0.875rem; color: #0c4a6e;">
                     Reward per Task: <strong>${taskReward.toLocaleString()} UGX</strong>
@@ -9229,13 +9260,20 @@
                 return;
             }
 
-            // Check daily task limit
-            const todayTaskCount = await db.collection('externalTaskSubmissions')
-                .where('userId', '==', currentUser.id)
-                .where('date', '==', todayString)
-                .get();
+            // Check daily task limit (both YouTube and external tasks)
+            const [youtubeTaskCount, externalTaskCount] = await Promise.all([
+                db.collection('taskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get(),
+                db.collection('externalTaskSubmissions')
+                    .where('userId', '==', currentUser.id)
+                    .where('date', '==', todayString)
+                    .get()
+            ]);
 
-            if (todayTaskCount.size >= userVaultInfo.dailyTasks) {
+            const totalTodayTasks = youtubeTaskCount.size + externalTaskCount.size;
+            if (totalTodayTasks >= userVaultInfo.dailyTasks) {
                 alert(`You have completed all ${userVaultInfo.dailyTasks} tasks for today. Come back tomorrow!`);
                 return;
             }
@@ -9261,7 +9299,7 @@
                 submittedDate: new Date().toISOString()
             });
 
-            alert(`Task submitted for verification! You'll earn ${taskReward.toLocaleString()} UGX upon approval. (${userVaultInfo.planName}: ${todayTaskCount.size + 1}/${userVaultInfo.dailyTasks} tasks today)`);
+            alert(`Task submitted for verification! You'll earn ${taskReward.toLocaleString()} UGX upon approval. (${userVaultInfo.planName}: ${totalTodayTasks + 1}/${userVaultInfo.dailyTasks} tasks today)`);
             updateTasksSection();
             updateUserStats();
 
