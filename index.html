@@ -3430,9 +3430,14 @@
     // LUB Game Schedule Configuration
     const LUB_SCHEDULE = {
         rounds: [
-            { start: 8, end: 10, name: 'Morning Round' },    // 8:00 AM - 10:00 AM (2 hours)
-            { start: 13, end: 15, name: 'Afternoon Round' }, // 1:00 PM - 3:00 PM (2 hours)
-            { start: 19, end: 21, name: 'Evening Round' }    // 7:00 PM - 9:00 PM (2 hours)
+            { start: 8, end: 9, name: 'Morning Round' },     // 8:00 AM - 9:00 AM
+            { start: 10, end: 11, name: 'Late Morning Round' }, // 10:00 AM - 11:00 AM
+            { start: 12, end: 13, name: 'Afternoon Round' }, // 12:00 PM - 1:00 PM
+            { start: 14, end: 15, name: 'Mid Afternoon Round' }, // 2:00 PM - 3:00 PM
+            { start: 16, end: 17, name: 'Evening Round' },   // 4:00 PM - 5:00 PM
+            { start: 18, end: 19, name: 'Late Evening Round' }, // 6:00 PM - 7:00 PM
+            { start: 20, end: 21, name: 'Night Round' },     // 8:00 PM - 9:00 PM
+            { start: 21, end: 22, name: 'Final Round' }      // 9:00 PM - 10:00 PM
         ]
     };
 
@@ -4017,65 +4022,76 @@
     }
 
     // Get current active round
-   async function getCurrentLUBRound() {
-       try {
-           const today = new Date();
-           today.setHours(0, 0, 0, 0);
-           
-           console.log('getCurrentLUBRound() called');
-           console.log('Current time:', new Date().toLocaleString());
-           
-           // FIRST: Check if we're in a valid scheduled round time
-           const scheduledRound = getCurrentScheduledRound();
-           console.log('Scheduled round check:', scheduledRound ? scheduledRound.name : 'Not in valid time');
-           
-           if (!scheduledRound) {
-               console.log('Not in valid round time window');
-               return null;
-           }
-           
-           // SECOND: Check for ANY active rounds (including admin-started ones)
-           const allActiveRoundsSnapshot = await db.collection('lubGameRounds')
-               .where('status', 'in', ['active', 'calculating'])
-               .where('createdDate', '>=', today.toISOString())
-               .orderBy('createdDate', 'desc')
-               .limit(1)
-               .get();
-           
-           if (!allActiveRoundsSnapshot.empty) {
-               const roundDoc = allActiveRoundsSnapshot.docs[0];
-               const roundData = { id: roundDoc.id, ...roundDoc.data() };
-               
-               console.log('Found active round:', roundData.roundNumber);
-               
-               // Check if round has ended
-               const now = new Date();
-               const endTime = new Date(roundData.endTime);
-               
-               if (now >= endTime && roundData.status === 'active') {
-                   console.log('Round ended, processing results');
-                   // Round ended - process results
-                   await processLUBRoundResults(roundData.id);
-                   return null;
-               }
-               
-               console.log('Returning active round');
-               return roundData;
-           }
-           
-           console.log('No active round found for today, creating new one');
-           
-           // THIRD: We're in valid time but no active round exists - CREATE ONE
-           const newRound = await startNewLUBRound();
-           console.log('Created new round:', newRound.roundNumber);
-           return newRound;
-           
-       } catch (error) {
-           console.error('Error getting current LUB round:', error);
-           console.error('Error details:', error.message);
-           return null;
-       }
-   }
+    async function getCurrentLUBRound() {
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // First check for any active rounds (including admin-started ones)
+            const allActiveRoundsSnapshot = await db.collection('lubGameRounds')
+                .where('status', 'in', ['active', 'calculating'])
+                .where('createdDate', '>=', today.toISOString())
+                .orderBy('createdDate', 'desc')
+                .limit(1)
+                .get();
+            
+            if (!allActiveRoundsSnapshot.empty) {
+                const roundDoc = allActiveRoundsSnapshot.docs[0];
+                const roundData = { id: roundDoc.id, ...roundDoc.data() };
+                
+                // Check if round has ended
+                const now = new Date();
+                const endTime = new Date(roundData.endTime);
+                
+                if (now >= endTime && roundData.status === 'active') {
+                    // Round ended - process results
+                    await processLUBRoundResults(roundData.id);
+                    return null; // Round ended, no active round
+                }
+                
+                return roundData;
+            }
+            
+            // No active rounds - check if we're in a valid scheduled time
+            if (!isInValidRoundTime()) {
+                return null; // No round outside scheduled times
+            }
+            
+            const scheduledRound = getCurrentScheduledRound();
+            
+            // Look for today's scheduled round for this time slot
+            const scheduledRoundsSnapshot = await db.collection('lubGameRounds')
+                .where('status', 'in', ['active', 'calculating'])
+                .where('roundName', '==', scheduledRound.name)
+                .where('createdDate', '>=', today.toISOString())
+                .orderBy('createdDate', 'desc')
+                .limit(1)
+                .get();
+            
+            if (scheduledRoundsSnapshot.empty) {
+                // No active round for this time slot today - start new one
+                return await startNewLUBRound();
+            }
+            
+            const roundDoc = scheduledRoundsSnapshot.docs[0];
+            const roundData = { id: roundDoc.id, ...roundDoc.data() };
+            
+            // Check if round has ended
+            const now = new Date();
+            const endTime = new Date(roundData.endTime);
+            
+            if (now >= endTime && roundData.status === 'active') {
+                // Round ended - process results
+                await processLUBRoundResults(roundData.id);
+                return null; // Round ended, no active round
+            }
+            
+            return roundData;
+        } catch (error) {
+            console.error('Error getting current LUB round:', error);
+            return null;
+        }
+    }
 
     // Place a bet in current round
     async function placeLUBBet() {
@@ -4107,6 +4123,7 @@
 
     async function processLUBBet(sourceCategory, categoryName, betAmount) {
         try {
+            // Verify category has sufficient funds
             const balances = await getUserCategoryBalances(currentUser.id);
             
             // Verify it's deposit funds
@@ -4115,8 +4132,8 @@
                 return;
             }
             
-            if (balances.depositEarnings < betAmount) {
-                showAlert('lubGameAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+            if (balances[sourceCategory] < betAmount) {
+                showAlert('lubGameAlert', `Insufficient funds in ${categoryName}. Available: ${balances[sourceCategory].toLocaleString()} UGX`, 'error');
                 return;
             }
             
@@ -4158,11 +4175,10 @@
                 status: 'pending' // pending, won, lost
             });
             
-            // Update round stats - use Firestore increment for atomic updates
+            // Update round stats
             await db.collection('lubGameRounds').doc(round.id).update({
                 totalPlayers: (round.totalPlayers || 0) + 1,
-                totalStakes: (round.totalStakes || 0) + betAmount,
-                lastBetAt: new Date().toISOString()
+                totalStakes: (round.totalStakes || 0) + betAmount
             });
             
             // Record transaction with source category
@@ -4536,22 +4552,47 @@
                                     <h3 style="margin: 0; color: var(--primary);">📅 Daily Schedule</h3>
                                     <span id="dailyScheduleContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
                                 </div>
-                                <div id="dailyScheduleContent" style="display: block;">
+                                <div id="dailyScheduleContent" style="display: none;">
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 10 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Morning Round</strong><br>
-                                            <small>8:00 AM - 10:00 AM</small>
-                                            ${currentTimeDecimal >= 8 && currentTimeDecimal < 10 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                            <small>8:00 AM - 9:00 AM</small>
+                                            ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                         </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 13 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Late Morning Round</strong><br>
+                                            <small>10:00 AM - 11:00 AM</small>
+                                            ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Afternoon Round</strong><br>
-                                            <small>1:00 PM - 3:00 PM</small>
-                                            ${currentTimeDecimal >= 13 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                            <small>12:00 PM - 1:00 PM</small>
+                                            ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                         </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 19 && currentTimeDecimal < 21 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Mid Afternoon Round</strong><br>
+                                            <small>2:00 PM - 3:00 PM</small>
+                                            ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
                                             <strong>Evening Round</strong><br>
-                                            <small>7:00 PM - 9:00 PM</small>
-                                            ${currentTimeDecimal >= 19 && currentTimeDecimal < 21 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                            <small>4:00 PM - 5:00 PM</small>
+                                            ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Late Evening Round</strong><br>
+                                            <small>6:00 PM - 7:00 PM</small>
+                                            ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Night Round</strong><br>
+                                            <small>8:00 PM - 9:00 PM</small>
+                                            ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
+                                        </div>
+                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
+                                            <strong>Final Round</strong><br>
+                                            <small>9:00 PM - 10:00 PM</small>
+                                            ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
                                         </div>
                                     </div>
                                 </div>
