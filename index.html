@@ -3113,6 +3113,8 @@
     const REFERRAL_EXPIRY_HOURS = 24; // Code valid for 24 hours
     let allowManualRegistration = false;
 
+    // LUB Game System Variables
+
     // Store referral code with expiry in localStorage
    function captureReferralCode() {
        console.log('captureReferralCode() called');
@@ -5063,6 +5065,11 @@
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) {
                 bottomNav.style.display = 'none';
+            }
+            
+            // Initialize LUB Game System
+            if (firebaseInitialized) {
+                initializeLUBGameSystem();
             }
             
         } catch (error) {
@@ -12645,6 +12652,530 @@
 
     // Call this when user logs in
     // initializeNotificationSystem(); // Now called in login function // Now called in login function
+
+    // ==================== LUB GAME SYSTEM ====================
+
+    // Initialize LUB Game System
+    async function initializeLUBGameSystem() {
+        try {
+            // Start the round scheduler
+            startLUBRoundScheduler();
+            console.log('LUB Game system initialized');
+        } catch (error) {
+            console.error('Error initializing LUB game:', error);
+        }
+    }
+
+    // Round Scheduler (Runs Every Minute)
+    function startLUBRoundScheduler() {
+        // Check and process rounds every minute
+        setInterval(async () => {
+            try {
+                await checkAndProcessRounds();
+            } catch (error) {
+                console.error('Error in round scheduler:', error);
+            }
+        }, 60000); // Every 60 seconds
+    }
+
+    async function checkAndProcessRounds() {
+        try {
+            // Find all active rounds that have ended
+            const activeRoundsSnapshot = await db.collection('lubGameRounds')
+                .where('status', '==', 'active')
+                .get();
+
+            for (const roundDoc of activeRoundsSnapshot.docs) {
+                const round = roundDoc.data();
+                const now = new Date();
+                const endTime = new Date(round.endTime);
+
+                // If round has ended, process it
+                if (now >= endTime) {
+                    await processLUBRoundResults(roundDoc.id, round);
+                }
+            }
+        } catch (error) {
+            console.error('Error checking rounds:', error);
+        }
+    }
+
+    // Get Current Round (No Auto-Creation)
+    async function getCurrentLUBRound() {
+        try {
+            // Only return active rounds, don't create new ones
+            const activeRoundSnapshot = await db.collection('lubGameRounds')
+                .where('status', '==', 'active')
+                .limit(1)
+                .get();
+
+            if (!activeRoundSnapshot.empty) {
+                const roundDoc = activeRoundSnapshot.docs[0];
+                return { id: roundDoc.id, ...roundDoc.data() };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error getting current round:', error);
+            return null;
+        }
+    }
+
+    // Place LUB Bet (Clean Version)
+    async function placeLUBBet() {
+        try {
+            if (!currentUser.isActivated) {
+                showAlert('lubGameAlert', 'You must activate your account to play this game.', 'error');
+                return;
+            }
+
+            const betAmount = parseInt(document.getElementById('lubBetAmount').value);
+
+            if (!betAmount || betAmount < 500) {
+                showAlert('lubGameAlert', 'Minimum bet is 500 UGX', 'error');
+                return;
+            }
+
+            // Get current round
+            const round = await getCurrentLUBRound();
+            if (!round) {
+                showAlert('lubGameAlert', 'No active round. Please wait for the next round to start.', 'error');
+                return;
+            }
+
+            // Show category selection - deposits only for LUB
+            showCategorySelectionModal(betAmount, async (sourceCategory, categoryName) => {
+                await processLUBBetPlacement(sourceCategory, categoryName, betAmount, round);
+            }, 'lub_game_bet');
+
+        } catch (error) {
+            console.error('Error in placeLUBBet:', error);
+            showAlert('lubGameAlert', 'Failed to place bet: ' + error.message, 'error');
+        }
+    }
+
+    async function processLUBBetPlacement(sourceCategory, categoryName, betAmount, round) {
+        try {
+            // Only allow deposits
+            if (sourceCategory !== 'depositEarnings') {
+                showAlert('lubGameAlert', 'LUB Game bets must use deposit funds only.', 'error');
+                return;
+            }
+
+            // Verify funds
+            const balances = await getUserCategoryBalances(currentUser.id);
+            if (balances.depositEarnings < betAmount) {
+                showAlert('lubGameAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+                return;
+            }
+
+            // Check if user already bet in this round
+            const existingBetQuery = await db.collection('lubGameBets')
+                .where('roundId', '==', round.id)
+                .where('userId', '==', currentUser.id)
+                .get();
+
+            if (!existingBetQuery.empty) {
+                showAlert('lubGameAlert', 'You already have a bet in this round!', 'error');
+                return;
+            }
+
+            // Deduct from balance
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const currentBalance = userDoc.data().balance || 0;
+
+            // Record transaction first
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'lub_game_bet',
+                amount: -betAmount,
+                sourceCategory: sourceCategory,
+                roundId: round.id,
+                date: new Date().toISOString()
+            });
+
+            // Then update balance
+            await db.collection('users').doc(currentUser.id).update({
+                balance: currentBalance - betAmount
+            });
+
+            // Create bet record
+            await db.collection('lubGameBets').add({
+                roundId: round.id,
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                userEmail: currentUser.email,
+                betAmount: betAmount,
+                placedAt: new Date().toISOString(),
+                status: 'pending'
+            });
+
+            // Update round stats
+            await db.collection('lubGameRounds').doc(round.id).update({
+                totalPlayers: (round.totalPlayers || 0) + 1,
+                totalStakes: (round.totalStakes || 0) + betAmount
+            });
+
+            currentUser.balance = currentBalance - betAmount;
+
+            showAlert('lubGameAlert', `✅ Bet placed! ${betAmount.toLocaleString()} UGX wagered`, 'success');
+
+            document.getElementById('lubBetAmount').value = '';
+            updateLUBGameSection();
+            updateUserStats();
+
+        } catch (error) {
+            console.error('Error processing LUB bet:', error);
+            showAlert('lubGameAlert', 'Failed to place bet: ' + error.message, 'error');
+        }
+    }
+
+    // Process Round Results (Complete Rewrite)
+    async function processLUBRoundResults(roundId, roundData) {
+        try {
+            // Prevent double processing
+            if (processingRounds.has(roundId)) {
+                console.log('Round already being processed:', roundId);
+                return;
+            }
+
+            processingRounds.add(roundId);
+            console.log('Processing LUB round:', roundId);
+
+            // Verify round exists and is still active
+            const roundDoc = await db.collection('lubGameRounds').doc(roundId).get();
+            if (!roundDoc.exists) {
+                console.error('Round not found:', roundId);
+                processingRounds.delete(roundId);
+                return;
+            }
+
+            const round = roundDoc.data();
+            if (round.status !== 'active') {
+                console.log('Round status is not active:', round.status);
+                processingRounds.delete(roundId);
+                return;
+            }
+
+            // Mark as calculating
+            await db.collection('lubGameRounds').doc(roundId).update({
+                status: 'calculating',
+                calculatingAt: new Date().toISOString()
+            });
+
+            // Get all bets
+            const betsSnapshot = await db.collection('lubGameBets')
+                .where('roundId', '==', roundId)
+                .get();
+
+            console.log('Total bets in round:', betsSnapshot.size);
+
+            if (betsSnapshot.empty) {
+                // No bets - mark complete
+                await db.collection('lubGameRounds').doc(roundId).update({
+                    status: 'completed',
+                    completedAt: new Date().toISOString(),
+                    result: 'no_bets',
+                    winner: null,
+                    adminEarnings: 0
+                });
+                processingRounds.delete(roundId);
+                return;
+            }
+
+            // Group bets by amount
+            const betsByAmount = {};
+            let totalStakes = 0;
+
+            betsSnapshot.docs.forEach(doc => {
+                const bet = doc.data();
+                const amount = bet.betAmount;
+
+                if (!betsByAmount[amount]) {
+                    betsByAmount[amount] = [];
+                }
+                betsByAmount[amount].push({ docId: doc.id, ...bet });
+                totalStakes += amount;
+            });
+
+            console.log('Grouped bets by amount:', Object.keys(betsByAmount).length, 'unique amounts');
+
+            // Find truly unique bets (only one person bet this amount)
+            const uniqueBets = [];
+            for (const [amount, bets] of Object.entries(betsByAmount)) {
+                if (bets.length === 1) {
+                    uniqueBets.push({
+                        amount: parseInt(amount),
+                        bet: bets[0]
+                    });
+                }
+            }
+
+            console.log('Unique bets found:', uniqueBets.length);
+
+            if (uniqueBets.length === 0) {
+                // No unique bets - admin gets everything
+                console.log('No unique bets - admin wins all stakes');
+
+                await db.collection('lubGameRounds').doc(roundId).update({
+                    status: 'completed',
+                    completedAt: new Date().toISOString(),
+                    result: 'no_winner',
+                    winner: null,
+                    adminEarnings: totalStakes
+                });
+
+                // Mark all bets as lost
+                const lostUpdates = betsSnapshot.docs.map(doc =>
+                    db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+                );
+                await Promise.all(lostUpdates);
+
+                // Record admin earnings
+                await db.collection('transactions').add({
+                    userId: 'admin',
+                    userName: 'Administrator',
+                    type: 'lub_game_admin_earnings',
+                    amount: totalStakes,
+                    description: `LUB Game Round - No unique bets (${betsSnapshot.size} players)`,
+                    roundId: roundId,
+                    date: new Date().toISOString()
+                });
+
+                processingRounds.delete(roundId);
+                return;
+            }
+
+            // Find the LOWEST unique bet
+            uniqueBets.sort((a, b) => a.amount - b.amount);
+            const winningBet = uniqueBets[0];
+            const winningAmount = winningBet.amount;
+            const prize = winningAmount * 10;
+
+            console.log('Winner found - bet amount:', winningAmount, 'prize:', prize);
+
+            // Award prize to winner
+            const winnerUserDoc = await db.collection('users').doc(winningBet.bet.userId).get();
+            const winnerBalance = winnerUserDoc.data().balance || 0;
+
+            await db.collection('users').doc(winningBet.bet.userId).update({
+                balance: winnerBalance + prize
+            });
+
+            // Mark winning bet
+            await db.collection('lubGameBets').doc(winningBet.bet.docId).update({
+                status: 'won',
+                prize: prize
+            });
+
+            // Mark all other bets as lost
+            const lostBets = betsSnapshot.docs.filter(doc => doc.id !== winningBet.bet.docId);
+            const lostUpdates = lostBets.map(doc =>
+                db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
+            );
+            await Promise.all(lostUpdates);
+
+            // Calculate admin earnings
+            const adminEarnings = totalStakes - winningAmount;
+
+            // Update round to completed
+            await db.collection('lubGameRounds').doc(roundId).update({
+                status: 'completed',
+                completedAt: new Date().toISOString(),
+                result: 'winner_found',
+                winner: winningBet.bet.userName,
+                winnerId: winningBet.bet.userId,
+                winningAmount: winningAmount,
+                prize: prize,
+                adminEarnings: adminEarnings
+            });
+
+            // Record winner transaction
+            await db.collection('transactions').add({
+                userId: winningBet.bet.userId,
+                userName: winningBet.bet.userName,
+                type: 'lub_game_win',
+                amount: prize,
+                description: `LUB Game Win - Lowest unique bet: ${winningAmount} UGX (Prize: ${prize} UGX)`,
+                roundId: roundId,
+                date: new Date().toISOString()
+            });
+
+            // Record admin earnings
+            await db.collection('transactions').add({
+                userId: 'admin',
+                userName: 'Administrator',
+                type: 'lub_game_admin_earnings',
+                amount: adminEarnings,
+                description: `LUB Game Admin Earnings - ${betsSnapshot.size} players, winner: ${winningBet.bet.userName}`,
+                roundId: roundId,
+                date: new Date().toISOString()
+            });
+
+            // Send notification to winner
+            await sendNotification(
+                winningBet.bet.userId,
+                'referral_bonus',
+                `🎲 Congratulations! You won ${prize.toLocaleString()} UGX in LUB Game!`,
+                prize
+            );
+
+            console.log('Round completed successfully');
+            console.log('Winner:', winningBet.bet.userName);
+            console.log('Prize awarded:', prize);
+            console.log('Admin earned:', adminEarnings);
+
+            processingRounds.delete(roundId);
+
+        } catch (error) {
+            console.error('Error processing LUB round:', error);
+            processingRounds.delete(roundId);
+        }
+    }
+
+    // Update LUB Game Display Section
+    async function updateLUBGameSection() {
+        try {
+            const round = await getCurrentLUBRound();
+
+            if (!round) {
+                // No active round
+                const nextRoundTime = getNextRoundStartTime();
+                const now = new Date();
+                const timeUntilNext = nextRoundTime - now;
+
+                if (timeUntilNext > 0) {
+                    const hours = Math.floor(timeUntilNext / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60));
+
+                    document.getElementById('gameStatus').innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
+                                <h2 style="margin: 0 0 0.5rem 0; color: white;">⏰ Next Round</h2>
+                                <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0;">${hours}h ${minutes}m</div>
+                                <p style="margin: 0; opacity: 0.9;">Starts at ${nextRoundTime.toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('placeBetSection').classList.add('hidden');
+                document.getElementById('currentParticipantsSection').classList.add('hidden');
+                document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Waiting for next round...</p>';
+
+                return;
+            }
+
+            // Active round exists
+            const now = new Date();
+            const endTime = new Date(round.endTime);
+            const timeRemaining = endTime - now;
+
+            if (timeRemaining > 0) {
+                const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+                document.getElementById('gameStatus').innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
+                            <h2 style="margin: 0 0 0.5rem 0; color: white;">🎲 Round Active</h2>
+                            <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;">${hours}h ${minutes}m ${seconds}s</div>
+                            <p style="margin: 0; opacity: 0.9;">Players: ${round.totalPlayers || 0} | Total Stakes: ${(round.totalStakes || 0).toLocaleString()} UGX</p>
+                        </div>
+                    </div>
+                `;
+
+                // Update wallet balance
+                const categoryBalances = await getUserCategoryBalances(currentUser.id);
+                const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                    categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+                const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+                document.getElementById('lubWalletBalance').textContent = totalAvailable.toLocaleString();
+
+                // Check if user has bet
+                const userBetQuery = await db.collection('lubGameBets')
+                    .where('roundId', '==', round.id)
+                    .where('userId', '==', currentUser.id)
+                    .get();
+
+                if (userBetQuery.empty) {
+                    document.getElementById('placeBetSection').classList.remove('hidden');
+                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No bet placed yet</p>';
+                } else {
+                    document.getElementById('placeBetSection').classList.add('hidden');
+                    const userBet = userBetQuery.docs[0].data();
+
+                    document.getElementById('myActiveLUBBet').innerHTML = `
+                        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); border: 2px solid var(--success); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: var(--success);">✅ Bet Placed</h4>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin: 1rem 0;">${userBet.betAmount.toLocaleString()} UGX</div>
+                            <p style="margin: 0; color: var(--gray); font-size: 0.875rem;">Potential prize: ${(userBet.betAmount * 10).toLocaleString()} UGX</p>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('currentParticipantsSection').classList.remove('hidden');
+                document.getElementById('totalPlayers').textContent = round.totalPlayers || 0;
+                document.getElementById('totalStakes').textContent = (round.totalStakes || 0).toLocaleString();
+            }
+
+            await loadLUBGameHistory();
+
+        } catch (error) {
+            console.error('Error updating LUB game section:', error);
+        }
+    }
+
+    // Load History
+    async function loadLUBGameHistory() {
+        try {
+            const historySnapshot = await db.collection('lubGameRounds')
+                .where('status', '==', 'completed')
+                .orderBy('completedAt', 'desc')
+                .limit(50)
+                .get();
+
+            const historyContainer = document.getElementById('lubHistoryBody');
+            if (!historyContainer) return;
+
+            if (historySnapshot.empty) {
+                historyContainer.innerHTML = '<tr><td colspan="6" class="text-center">No completed rounds yet</td></tr>';
+                return;
+            }
+
+            const historyHTML = historySnapshot.docs.map(doc => {
+                const round = doc.data();
+                return `
+                    <tr>
+                        <td>#${(round.roundNumber || '').toString().slice(-6)}</td>
+                        <td>${round.winner || 'No winner'}</td>
+                        <td>${round.winningAmount ? round.winningAmount.toLocaleString() + ' UGX' : '-'}</td>
+                        <td>${round.prize ? round.prize.toLocaleString() + ' UGX' : '-'}</td>
+                        <td>${round.totalPlayers || 0}</td>
+                        <td>${round.completedAt ? new Date(round.completedAt).toLocaleString() : 'N/A'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            historyContainer.innerHTML = historyHTML;
+
+        } catch (error) {
+            console.error('Error loading LUB game history:', error);
+        }
+    }
+
+    // Helper function to get next round start time (you may need to implement this based on your round scheduling)
+    function getNextRoundStartTime() {
+        // This is a placeholder - implement based on your round scheduling logic
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+        return nextHour;
+    }
+
+    // ==================== END LUB GAME SYSTEM ====================
 </script>
 
 <!-- Notification System -->
