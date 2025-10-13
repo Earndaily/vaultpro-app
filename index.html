@@ -4045,12 +4045,10 @@
                return;
            }
            
-           // Show category selection (deposits only)
-           showCategorySelectionModal(betAmount, async (sourceCategory) => {
-               if (sourceCategory !== 'depositEarnings') {
-                   showAlert('lubGameAlert', '⚠️ Only deposit funds allowed!', 'error');
-                   return;
-               }
+         // Show category selection - deposits only for LUB
+         showCategorySelectionModal(betAmount, async (sourceCategory, categoryName) => {
+             await processLUBBetPlacement(betAmount, round);
+         }, 'lub_game_bet');
                
                await processLUBBetPlacement(betAmount, round);
            }, 'lub_game_bet');
@@ -4061,7 +4059,7 @@
        }
    }
 
-    async function processLUBBet(sourceCategory, categoryName, betAmount) {
+    async function processLUBBetPlacement(betAmount, round) {
         try {
             // Verify category has sufficient funds
             const balances = await getUserCategoryBalances(currentUser.id);
@@ -4127,8 +4125,7 @@
                 userName: currentUser.fullName,
                 type: 'lub_game_bet',
                 amount: betAmount,
-                sourceCategory: sourceCategory,
-                categoryName: categoryName,
+
                 roundId: round.id,
                 date: new Date().toISOString()
             });
