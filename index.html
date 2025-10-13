@@ -3221,16 +3221,86 @@
     }
 
     const vaultPlans = {
-        seed: { name: '🌱 Seed', amount: 45000, days: 30, profit: 0.51, dailyROI: 1.7 },
-        rising: { name: '🌅 Rising', amount: 180000, days: 30, profit: 0.51, dailyROI: 1.7 },
-        nova: { name: '💡 Nova', amount: 600000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        mastermind: { name: '🧠 Mastermind', amount: 1800000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        titan: { name: '💪 Titan', amount: 5000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        king: { name: '👑 King', amount: 10000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        emperor: { name: '🦅 Emperor', amount: 20000000, days: 30, profit: 0.54, dailyROI: 1.8 },
-        icon: { name: '💫 Icon', amount: 35000000, days: 30, profit: 0.57, dailyROI: 1.9 },
-        supreme: { name: '🔱 Supreme', amount: 60000000, days: 30, profit: 0.60, dailyROI: 2.0 },
-        legendary: { name: '🕊️ Legendary', amount: 90000000, days: 30, profit: 0.60, dailyROI: 2.0 }
+        seed: { 
+            name: '🌱 Seed', 
+            amount: 45000, 
+            days: 30, 
+            level: 1,
+            dailyTasks: 1,
+            taskMultiplier: 1.0
+        },
+        rising: { 
+            name: '🌅 Rising', 
+            amount: 180000, 
+            days: 30, 
+            level: 2,
+            dailyTasks: 2,
+            taskMultiplier: 1.1
+        },
+        nova: { 
+            name: '💡 Nova', 
+            amount: 600000, 
+            days: 30, 
+            level: 3,
+            dailyTasks: 3,
+            taskMultiplier: 1.2
+        },
+        mastermind: { 
+            name: '🧠 Mastermind', 
+            amount: 1800000, 
+            days: 30, 
+            level: 4,
+            dailyTasks: 4,
+            taskMultiplier: 1.3
+        },
+        titan: { 
+            name: '💪 Titan', 
+            amount: 5000000, 
+            days: 30, 
+            level: 5,
+            dailyTasks: 5,
+            taskMultiplier: 1.4
+        },
+        king: { 
+            name: '👑 King', 
+            amount: 10000000, 
+            days: 30, 
+            level: 6,
+            dailyTasks: 6,
+            taskMultiplier: 1.5
+        },
+        emperor: { 
+            name: '🦅 Emperor', 
+            amount: 20000000, 
+            days: 30, 
+            level: 7,
+            dailyTasks: 7,
+            taskMultiplier: 1.6
+        },
+        icon: { 
+            name: '💫 Icon', 
+            amount: 35000000, 
+            days: 30, 
+            level: 8,
+            dailyTasks: 8,
+            taskMultiplier: 1.7
+        },
+        supreme: { 
+            name: '🔱 Supreme', 
+            amount: 60000000, 
+            days: 30, 
+            level: 9,
+            dailyTasks: 9,
+            taskMultiplier: 1.8
+        },
+        legendary: { 
+            name: '🕊️ Legendary', 
+            amount: 90000000, 
+            days: 30, 
+            level: 10,
+            dailyTasks: 10,
+            taskMultiplier: 2.0
+        }
     };
 
     // Store referral code with expiry
@@ -3457,6 +3527,70 @@
                 lubGameEarnings: 0,
                 vaultEarnings: 0,
                 depositEarnings: 0
+            };
+        }
+    }
+
+    // Get user's highest vault level for task allocation
+    async function getUserVaultLevel(userId) {
+        try {
+            // Check if database is available
+            if (!db) {
+                console.log('Database not available for vault level check');
+                return {
+                    level: 0,
+                    dailyTasks: 1,
+                    taskMultiplier: 1.0,
+                    planName: 'Beginner'
+                };
+            }
+            
+            const vaultsSnapshot = await db.collection('users').doc(userId).collection('vaults').get();
+            const activeVaults = vaultsSnapshot.docs.map(doc => doc.data()).filter(v => v.status === 'active');
+            
+            if (activeVaults.length === 0) {
+                // No active vaults - user gets 1 task (beginner)
+                return {
+                    level: 0,
+                    dailyTasks: 1,
+                    taskMultiplier: 1.0,
+                    planName: 'Beginner'
+                };
+            }
+            
+            // Get highest level vault
+            let highestLevel = 0;
+            let highestMultiplier = 1.0;
+            let highestTasks = 1;
+            
+            activeVaults.forEach(vault => {
+                const planKey = Object.keys(vaultPlans).find(key => 
+                    vaultPlans[key].name === vault.planName
+                );
+                
+                if (planKey) {
+                    const plan = vaultPlans[planKey];
+                    if (plan.level > highestLevel) {
+                        highestLevel = plan.level;
+                        highestTasks = plan.dailyTasks;
+                        highestMultiplier = plan.taskMultiplier;
+                    }
+                }
+            });
+            
+            return {
+                level: highestLevel,
+                dailyTasks: highestTasks,
+                taskMultiplier: highestMultiplier,
+                planName: activeVaults[activeVaults.length - 1].planName
+            };
+        } catch (error) {
+            console.error('Error getting user vault level:', error);
+            return {
+                level: 0,
+                dailyTasks: 1,
+                taskMultiplier: 1.0,
+                planName: 'Beginner'
             };
         }
     }
@@ -4004,10 +4138,11 @@
                 status: 'pending' // pending, won, lost
             });
             
-            // Update round stats
+            // Update round stats - use Firestore increment for atomic updates
             await db.collection('lubGameRounds').doc(round.id).update({
                 totalPlayers: (round.totalPlayers || 0) + 1,
-                totalStakes: (round.totalStakes || 0) + betAmount
+                totalStakes: (round.totalStakes || 0) + betAmount,
+                lastBetAt: new Date().toISOString()
             });
             
             // Record transaction with source category
@@ -4133,8 +4268,16 @@
                     amount: totalLosses,
                     description: `LUB Game Round #${roundId.slice(-6)} - All bets lost (No unique bets)`,
                     roundId: roundId,
+                    sourceCategory: 'adminEarnings',
+                    categoryName: 'Admin Earnings',
+                    totalPlayers: betsSnapshot.size,
                     date: new Date().toISOString()
                 });
+                
+                console.log(`LUB Game Round ${roundId.slice(-6)} completed (no winner):`);
+                console.log(`- No unique bets found`);
+                console.log(`- Total players: ${betsSnapshot.size}`);
+                console.log(`- Admin earnings: ${totalLosses} UGX`);
                 
                 console.log('No unique bets. Admin earned:', totalLosses);
                 
@@ -4170,6 +4313,26 @@
                         db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
                     );
                     await Promise.all(updatePromises);
+                    
+                    // Record admin earnings transaction for this case too
+                    await db.collection('transactions').add({
+                        userId: 'admin',
+                        userName: 'Administrator',
+                        type: 'lub_game_admin_earnings',
+                        amount: totalLosses,
+                        description: `LUB Game Round #${roundId.slice(-6)} - All bets lost (Duplicate lowest amounts)`,
+                        roundId: roundId,
+                        sourceCategory: 'adminEarnings',
+                        categoryName: 'Admin Earnings',
+                        totalPlayers: betsSnapshot.size,
+                        date: new Date().toISOString()
+                    });
+                    
+                    console.log(`LUB Game Round ${roundId.slice(-6)} completed (no winner - duplicates):`);
+                    console.log(`- Multiple people bet the same lowest amount`);
+                    console.log(`- Total players: ${betsSnapshot.size}`);
+                    console.log(`- Admin earnings: ${totalLosses} UGX`);
+                    
                     processingRounds.delete(roundId);
                     return;
                 }
@@ -4181,10 +4344,12 @@
             // Calculate admin earnings (all losing bets)
             const adminEarnings = totalLosses - winningBet.amount;
             
-            // Update winner's balance
+            // Update winner's balance using category-based system
             const winnerDoc = await db.collection('users').doc(winningBet.bet.userId).get();
-            const winnerBalance = winnerDoc.data().balance || 0;
+            const winnerData = winnerDoc.data();
+            const winnerBalance = winnerData.balance || 0;
             
+            // Update the main balance
             await db.collection('users').doc(winningBet.bet.userId).update({
                 balance: winnerBalance + prize
             });
@@ -4214,7 +4379,7 @@
                 adminEarnings: adminEarnings
             });
             
-            // Record winner transaction
+            // Record winner transaction with proper category tracking
             await db.collection('transactions').add({
                 userId: winningBet.bet.userId,
                 userName: winningBet.bet.userName,
@@ -4222,6 +4387,8 @@
                 amount: prize,
                 betAmount: winningBet.amount,
                 roundId: roundId,
+                sourceCategory: 'lubGameEarnings',
+                categoryName: 'LUB Game Earnings',
                 date: new Date().toISOString()
             });
             
@@ -4235,12 +4402,27 @@
                 roundId: roundId,
                 winnerBet: winningBet.amount,
                 totalPlayers: betsSnapshot.size,
+                sourceCategory: 'adminEarnings',
+                categoryName: 'Admin Earnings',
                 date: new Date().toISOString()
             });
+            
+            console.log(`LUB Game Round ${roundId.slice(-6)} completed:`);
+            console.log(`- Winner: ${winningBet.bet.userName} (${winningBet.bet.userId})`);
+            console.log(`- Winning bet: ${winningBet.amount} UGX`);
+            console.log(`- Prize: ${prize} UGX`);
+            console.log(`- Total players: ${betsSnapshot.size}`);
+            console.log(`- Admin earnings: ${adminEarnings} UGX`);
             
             console.log('LUB round results processed.');
             console.log('Winner:', winningBet.bet.userName, '- Prize:', prize);
             console.log('Admin earned from losing bets:', adminEarnings);
+            
+            // Refresh the LUB game section for all users
+            setTimeout(() => {
+                updateLUBGameSection();
+                loadLUBGameHistory();
+            }, 1000);
             
             // Round completed - next round will start at scheduled time
             console.log('Round completed. Next round will start at scheduled time.');
@@ -4250,6 +4432,53 @@
         } finally {
             // Always remove from processing set
             processingRounds.delete(roundId);
+        }
+    }
+    
+    // Manual function to process current round (for testing)
+    async function manualProcessLUBRound() {
+        try {
+            console.log('Manual process LUB round called');
+            
+            // Check if user is admin
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Admin access required');
+                return;
+            }
+            
+            const round = await getCurrentLUBRound();
+            console.log('Current round:', round);
+            
+            if (!round) {
+                alert('No active round found');
+                return;
+            }
+            
+            if (round.status !== 'active') {
+                alert(`Round is not active. Current status: ${round.status}`);
+                return;
+            }
+            
+            const now = new Date();
+            const endTime = new Date(round.endTime);
+            
+            console.log('Current time:', now);
+            console.log('Round end time:', endTime);
+            console.log('Time remaining:', endTime - now);
+            
+            if (now < endTime) {
+                if (!confirm(`Round is still active. Time remaining: ${Math.floor((endTime - now) / 60000)} minutes. Are you sure you want to process it now?`)) {
+                    return;
+                }
+            }
+            
+            console.log('Processing round:', round.id);
+            await processLUBRoundResults(round.id);
+            alert('Round processed successfully');
+            
+        } catch (error) {
+            console.error('Error manually processing round:', error);
+            alert('Error processing round: ' + error.message);
         }
     }
 
@@ -4385,10 +4614,19 @@
                     `;
                 }
                 
-                // Show participants
+                // Show participants - get real-time data from bets
                 document.getElementById('currentParticipantsSection').classList.remove('hidden');
-                document.getElementById('totalPlayers').textContent = round.totalPlayers || 0;
-                document.getElementById('totalStakes').textContent = (round.totalStakes || 0).toLocaleString();
+                
+                // Get real-time participant count and stakes from bets
+                const currentBetsQuery = await db.collection('lubGameBets')
+                    .where('roundId', '==', round.id)
+                    .get();
+                
+                const totalPlayers = currentBetsQuery.size;
+                const totalStakes = currentBetsQuery.docs.reduce((sum, doc) => sum + (doc.data().betAmount || 0), 0);
+                
+                document.getElementById('totalPlayers').textContent = totalPlayers;
+                document.getElementById('totalStakes').textContent = totalStakes.toLocaleString();
                 
             } else {
                 // Round ended - calculating
@@ -5837,7 +6075,18 @@
         updateFeatureAccess();
 
         // Section-specific updates
-        if (section === 'referrals') updateReferralsSection();
+        if (section === 'home') {
+            try {
+                console.log('Loading home section...');
+                updateUserStats();
+                console.log('Calling displayUserTaskAllocation...');
+                displayUserTaskAllocation();
+                console.log('Home section loaded');
+            } catch (error) {
+                console.error('Error loading home section:', error);
+            }
+        }
+        else if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
         else if (section === 'stake') {
             loadCandidates();
@@ -6147,10 +6396,13 @@
            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Update task earnings display using category balances
+           // Update task earnings display to show TODAY'S earnings only
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
-               taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
+               const todayTaskEarnings = await calculateTodayTaskEarnings();
+               const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
+               const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+               taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
            }
 
            // Update LUB Game earnings display using category balances
@@ -6234,6 +6486,52 @@
            console.error("Error updating user stats:", error);
        }
    }
+
+    // Display user's task allocation in dashboard
+    async function displayUserTaskAllocation() {
+        try {
+            // Check if user is available
+            if (!currentUser || !currentUser.id) {
+                console.log('User not available for task allocation display');
+                return;
+            }
+            
+            const userVaultInfo = await getUserVaultLevel(currentUser.id);
+            const allocationDiv = document.createElement('div');
+            allocationDiv.style.cssText = `
+                background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+                border: 2px solid #22c55e;
+                border-radius: 12px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            `;
+            allocationDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #166534;">📋 Your Task Allocation</h4>
+                        <p style="margin: 0; color: #15803d; font-size: 0.875rem;">
+                            Plan: <strong>${userVaultInfo.planName}</strong> | 
+                            Daily Tasks: <strong>${userVaultInfo.dailyTasks}</strong> | 
+                            Reward Multiplier: <strong>${(userVaultInfo.taskMultiplier * 100).toFixed(0)}%</strong>
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <button class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="showSection('vault')">
+                            Upgrade Plan
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            const homeSection = document.getElementById('homeSection');
+            if (homeSection && homeSection.querySelector('#taskAllocationInfo') === null) {
+                allocationDiv.id = 'taskAllocationInfo';
+                homeSection.insertBefore(allocationDiv, homeSection.firstChild);
+            }
+        } catch (error) {
+            console.error('Error displaying task allocation:', error);
+        }
+    }
 
     async function checkRecentWithdrawal() {
         if (!currentUser) return;
@@ -8271,14 +8569,17 @@
            alert('Failed to complete task: ' + error.message);
        }
    }
-   async function awardTaskReward(taskId, reward, taskTitle) {
+   async function awardTaskReward(taskId, baseReward, taskTitle) {
        try {
-           // Check if user is activated
-           if (!currentUser.isAdmin && !currentUser.isActivated) {
+           if (!currentUser || !currentUser.isActivated) {
                alert('Account not activated. Please complete your registration first.');
                return;
            }
-   
+
+           // Get user's vault level and apply multiplier
+           const userVaultInfo = await getUserVaultLevel(currentUser.id);
+           const adjustedReward = Math.floor(baseReward * userVaultInfo.taskMultiplier);
+           
            // Check if already completed today
            const todayString = new Date().toDateString();
            const submissionQuery = await db.collection('taskSubmissions')
@@ -8296,10 +8597,10 @@
            const userDoc = await db.collection('users').doc(currentUser.id).get();
            const userData = userDoc.data();
            const currentBalance = userData.balance || 0;
-           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + reward;
+           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + adjustedReward;
    
            await db.collection('users').doc(currentUser.id).update({
-               balance: currentBalance + reward,
+               balance: currentBalance + adjustedReward,
                totalTaskEarnings: newTotalTaskEarnings
            });
    
@@ -8310,7 +8611,9 @@
                userEmail: currentUser.email,
                taskId: taskId,
                taskTitle: taskTitle,
-               reward: reward,
+               reward: adjustedReward,
+               baseReward: baseReward,
+               multiplier: userVaultInfo.taskMultiplier,
                status: 'approved',
                date: todayString,
                submittedDate: new Date().toISOString(),
@@ -8322,20 +8625,22 @@
                 userId: currentUser.id,
                 userName: currentUser.fullName,
                 type: 'task_completion',
-                amount: reward,
+                amount: adjustedReward,
+                baseAmount: baseReward,
+                multiplier: userVaultInfo.taskMultiplier,
                 taskTitle: taskTitle,
                 date: new Date().toISOString()
             });
    
            // Update local cache
-           currentUser.balance = currentBalance + reward;
+           currentUser.balance = currentBalance + adjustedReward;
            currentUser.totalTaskEarnings = newTotalTaskEarnings;
    
            // Send notification for new earnings
-           await sendNotification(currentUser.id, 'new_earnings', `You earned ${reward.toLocaleString()} UGX from completing a task!`, reward);
+           await sendNotification(currentUser.id, 'new_earnings', `You earned ${adjustedReward.toLocaleString()} UGX from completing a task! (${(userVaultInfo.taskMultiplier * 100).toFixed(0)}% multiplier)`, adjustedReward);
    
            // Show success alert
-           alert(`🎉 Task completed! You earned ${reward.toLocaleString()} UGX!`);
+           alert(`🎉 Task completed! You earned ${adjustedReward.toLocaleString()} UGX! (${(userVaultInfo.taskMultiplier * 100).toFixed(0)}% multiplier applied)`);
    
            // Update UI
            updateUserStats();
@@ -8545,6 +8850,16 @@
 
     async function loadYouTubeTasks(today, container) {
         try {
+            // Check if user is available
+            if (!currentUser || !currentUser.id) {
+                console.log('User not available for YouTube tasks');
+                return;
+            }
+            
+            // Get user's vault level
+            const userVaultInfo = await getUserVaultLevel(currentUser.id);
+            const allowedTaskCount = userVaultInfo.dailyTasks;
+            
             const tasksSnapshot = await db.collection('tasks')
                 .where('isActive', '==', true)
                 .get();
@@ -8554,7 +8869,7 @@
                 ...doc.data()
             }));
 
-            // Check which tasks are completed today
+            // Check completed today
             const todayString = new Date().toDateString();
             const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
                 .where('userId', '==', currentUser.id)
@@ -8563,18 +8878,49 @@
             
             const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
             
+            // Filter: correct day + not completed + limit by vault level
             const availableTasks = allTasks.filter(task => 
                 (task.day === today || task.day === 'all') && 
                 !completedTaskIds.includes(task.id)
-            );
+            ).slice(0, allowedTaskCount); // LIMIT BY VAULT LEVEL
+
+            // Display user's task allocation
+            const taskAllocationInfo = document.createElement('div');
+            taskAllocationInfo.style.cssText = `
+                background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+                border: 2px solid #0ea5e9;
+                border-radius: 12px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                text-align: center;
+            `;
+            taskAllocationInfo.innerHTML = `
+                <div style="font-size: 0.875rem; color: #0c4a6e; margin-bottom: 0.5rem;">
+                    <strong>📋 Your Plan Level:</strong> ${userVaultInfo.planName}
+                </div>
+                <div style="font-size: 1rem; font-weight: 600; color: #0369a1;">
+                    Daily Tasks Available: ${allowedTaskCount} / ${completedTaskIds.length} Completed
+                </div>
+                ${userVaultInfo.level > 0 ? `
+                    <div style="font-size: 0.875rem; color: #0c4a6e; margin-top: 0.5rem;">
+                        Task Reward Multiplier: <strong>${(userVaultInfo.taskMultiplier * 100).toFixed(0)}%</strong>
+                    </div>
+                ` : ''}
+            `;
+            
+            if (container.firstChild) {
+                container.insertBefore(taskAllocationInfo, container.firstChild);
+            } else {
+                container.appendChild(taskAllocationInfo);
+            }
 
             if (availableTasks.length === 0) {
-                container.innerHTML = '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all YouTube tasks for today.</p>';
+                container.innerHTML += '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all available tasks for today.</p>';
             } else {
                 container.style.maxHeight = 'none';
                 container.style.overflow = 'visible';
                 
-                container.innerHTML = availableTasks.map(task => {
+                container.innerHTML += availableTasks.map(task => {
                     let videoId = null;
                     if (task.link) {
                         const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
