@@ -1958,7 +1958,8 @@
                             <li><strong>Your bet must be unique</strong> (no other player bets the same amount)</li>
                             <li><strong>The LOWEST unique bet wins</strong></li>
                             <li><strong>Winner gets:</strong> Their bet × 10</li>
-                            <li><strong>Stake locked for:</strong> 1 hours</li>
+                            <li><strong>Round duration:</strong> 90 seconds betting + 30 seconds processing</li>
+                            <li><strong>New round starts:</strong> Every 2 minutes</li>
                         </ul>
                     </div>
                 </div>
@@ -1990,9 +1991,20 @@
                             <small style="color: var(--gray); margin-top: 0.5rem; display: block;">💡 Tip: Choose an unusual amount to be unique!</small>
                         </div>
                         
-                        <button class="btn btn-success btn-block" onclick="placeLUBBet()">
-                            🎲 Place Bet
-                        </button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                            <button class="btn btn-success" onclick="placeLUBBet()">
+                                🎲 Place Bet
+                            </button>
+                            <button id="autoBetBtn" class="btn btn-success" onclick="autoBetEnabled ? stopAutoBet() : startAutoBet()">
+                                🤖 Start Auto Bet
+                            </button>
+                        </div>
+                        
+                        <div id="autoBetStatus" style="display: none; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); border: 2px solid var(--success); border-radius: 12px; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: var(--success);">🤖 Auto-Bet Active</h4>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: var(--success); margin: 0.5rem 0;" id="autoBetAmountDisplay">0 UGX</div>
+                            <p style="margin: 0; color: var(--gray); font-size: 0.875rem;">Automatically betting every round</p>
+                        </div>
                     </div>
                 </div>
                 
@@ -3114,6 +3126,9 @@
     let allowManualRegistration = false;
 
     // LUB Game System Variables
+    let autoBetEnabled = false;
+    let autoBetAmount = 0;
+    let autoBetInterval = null;
 
     // Store referral code with expiry in localStorage
    function captureReferralCode() {
@@ -3429,18 +3444,12 @@
     let lubUpdateInterval = null;
     let processingRounds = new Set(); // Track rounds being processed to prevent double processing
 
-    // LUB Game Schedule Configuration
-    const LUB_SCHEDULE = {
-        rounds: [
-            { start: 8, end: 9, name: 'Morning Round' },     // 8:00 AM - 9:00 AM
-            { start: 10, end: 11, name: 'Late Morning Round' }, // 10:00 AM - 11:00 AM
-            { start: 12, end: 13, name: 'Afternoon Round' }, // 12:00 PM - 1:00 PM
-            { start: 14, end: 15, name: 'Mid Afternoon Round' }, // 2:00 PM - 3:00 PM
-            { start: 16, end: 17, name: 'Evening Round' },   // 4:00 PM - 5:00 PM
-            { start: 18, end: 19, name: 'Late Evening Round' }, // 6:00 PM - 7:00 PM
-            { start: 20, end: 21, name: 'Night Round' },     // 8:00 PM - 9:00 PM
-            { start: 21, end: 22, name: 'Final Round' }      // 9:00 PM - 10:00 PM
-        ]
+    // LUB Game Configuration - 30 rounds per hour (2 minutes per round)
+    const LUB_CONFIG = {
+        ROUND_DURATION: 90 * 1000, // 90 seconds (1.5 minutes) for betting
+        PROCESSING_DURATION: 30 * 1000, // 30 seconds for processing results
+        TOTAL_ROUND_TIME: 120 * 1000, // 2 minutes total per round
+        ROUNDS_PER_HOUR: 30
     };
 
     // Category-based spending system
@@ -3898,110 +3907,33 @@
         }, 200);
     }
 
-    // Get current scheduled round based on time
-    function getCurrentScheduledRound() {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        const currentTime = currentHour + (currentMinute / 60);
-        
-        console.log('Current time:', now.toLocaleString(), 'Hour:', currentHour, 'Minute:', currentMinute, 'Decimal:', currentTime);
-        
-        for (let round of LUB_SCHEDULE.rounds) {
-            console.log('Checking round:', round.name, 'Start:', round.start, 'End:', round.end);
-            if (currentTime >= round.start && currentTime < round.end) {
-                console.log('Found active round:', round.name);
-                return {
-                    ...round,
-                    startTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), round.start, 0, 0),
-                    endTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), round.end, 0, 0)
-                };
-            }
-        }
-        
-        console.log('No active round found');
-        return null; // No active round at current time
-    }
-
-    // Check if we're in a valid round time
-    function isInValidRoundTime() {
-        const result = getCurrentScheduledRound() !== null;
-        console.log('isInValidRoundTime:', result);
-        return result;
-    }
-
-    // Get next round start time
+    // Get next round start time (every 2 minutes)
     function getNextRoundStartTime() {
         const now = new Date();
-        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentSecond = now.getSeconds();
         
-        // Check if there's a round later today
-        for (let round of LUB_SCHEDULE.rounds) {
-            if (currentHour < round.start) {
-                return new Date(now.getFullYear(), now.getMonth(), now.getDate(), round.start, 0, 0);
-            }
-        }
+        // Calculate next round start (every 2 minutes)
+        const minutesSinceLastRound = (currentMinute % 2);
+        const secondsSinceLastRound = currentSecond;
+        const totalSecondsSinceLastRound = (minutesSinceLastRound * 60) + secondsSinceLastRound;
         
-        // Next round is tomorrow's first round
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), LUB_SCHEDULE.rounds[0].start, 0, 0);
+        const nextRoundInSeconds = (2 * 60) - totalSecondsSinceLastRound;
+        const nextRoundTime = new Date(now.getTime() + (nextRoundInSeconds * 1000));
+        
+        return nextRoundTime;
     }
 
-    // Admin function to manually start a round (bypasses schedule)
-    async function adminStartLUBRound() {
-        try {
-            if (!currentUser || !currentUser.isAdmin) {
-                throw new Error('Admin access required');
-            }
-            
-            const now = new Date();
-            const endTime = new Date(now.getTime() + (3 * 60 * 60 * 1000)); // 3 hours from now
-            
-            const roundData = {
-                roundNumber: Date.now(),
-                startTime: now.toISOString(),
-                endTime: endTime.toISOString(),
-                status: 'active',
-                participants: [],
-                totalStakes: 0,
-                totalPlayers: 0,
-                winner: null,
-                winningAmount: null,
-                createdDate: now.toISOString(),
-                roundName: 'Admin Started Round',
-                scheduledRound: false,
-                adminStarted: true
-            };
-            
-            await db.collection('lubGameRounds').add(roundData);
-            console.log('Admin started LUB round:', roundData.roundNumber);
-            
-            // Update the game section
-            await updateLUBGameSection();
-            
-            return roundData;
-        } catch (error) {
-            console.error('Error starting admin LUB round:', error);
-            throw error;
-        }
-    }
-
-    // Start a new LUB game round (only during scheduled times)
+    // Start a new LUB game round (every 2 minutes)
     async function startNewLUBRound() {
         try {
-            const scheduledRound = getCurrentScheduledRound();
-            
-            if (!scheduledRound) {
-                throw new Error('Cannot start LUB round outside scheduled times');
-            }
-            
             const now = new Date();
+            const endTime = new Date(now.getTime() + LUB_CONFIG.ROUND_DURATION);
             
             const roundData = {
                 roundNumber: Date.now(), // Unique round ID
-                startTime: scheduledRound.startTime.toISOString(),
-                endTime: scheduledRound.endTime.toISOString(),
+                startTime: now.toISOString(),
+                endTime: endTime.toISOString(),
                 status: 'active', // active, calculating, completed
                 participants: [],
                 totalStakes: 0,
@@ -4009,12 +3941,12 @@
                 winner: null,
                 winningAmount: null,
                 createdDate: now.toISOString(),
-                roundName: scheduledRound.name,
+                roundName: `Round #${Math.floor(Date.now() / 1000)}`,
                 scheduledRound: true
             };
             
             const docRef = await db.collection('lubGameRounds').add(roundData);
-            console.log(`New LUB ${scheduledRound.name} started:`, roundData.roundNumber);
+            console.log(`New LUB round started:`, roundData.roundNumber);
             
             return { id: docRef.id, ...roundData };
         } catch (error) {
@@ -4023,29 +3955,26 @@
         }
     }
 
-    // Get current active round
+
+    // Get current active round (new 2-minute system)
     async function getCurrentLUBRound() {
         try {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // First check for any active rounds (including admin-started ones)
-            const allActiveRoundsSnapshot = await db.collection('lubGameRounds')
-                .where('status', 'in', ['active', 'calculating'])
-                .where('createdDate', '>=', today.toISOString())
+            // Check for any active rounds
+            const activeRoundsSnapshot = await db.collection('lubGameRounds')
+                .where('status', '==', 'active')
                 .orderBy('createdDate', 'desc')
                 .limit(1)
                 .get();
             
-            if (!allActiveRoundsSnapshot.empty) {
-                const roundDoc = allActiveRoundsSnapshot.docs[0];
+            if (!activeRoundsSnapshot.empty) {
+                const roundDoc = activeRoundsSnapshot.docs[0];
                 const roundData = { id: roundDoc.id, ...roundDoc.data() };
                 
                 // Check if round has ended
                 const now = new Date();
                 const endTime = new Date(roundData.endTime);
                 
-                if (now >= endTime && roundData.status === 'active') {
+                if (now >= endTime) {
                     // Round ended - process results
                     await processLUBRoundResults(roundData.id);
                     return null; // Round ended, no active round
@@ -4054,41 +3983,8 @@
                 return roundData;
             }
             
-            // No active rounds - check if we're in a valid scheduled time
-            if (!isInValidRoundTime()) {
-                return null; // No round outside scheduled times
-            }
-            
-            const scheduledRound = getCurrentScheduledRound();
-            
-            // Look for today's scheduled round for this time slot
-            const scheduledRoundsSnapshot = await db.collection('lubGameRounds')
-                .where('status', 'in', ['active', 'calculating'])
-                .where('roundName', '==', scheduledRound.name)
-                .where('createdDate', '>=', today.toISOString())
-                .orderBy('createdDate', 'desc')
-                .limit(1)
-                .get();
-            
-            if (scheduledRoundsSnapshot.empty) {
-                // No active round for this time slot today - start new one
-                return await startNewLUBRound();
-            }
-            
-            const roundDoc = scheduledRoundsSnapshot.docs[0];
-            const roundData = { id: roundDoc.id, ...roundDoc.data() };
-            
-            // Check if round has ended
-            const now = new Date();
-            const endTime = new Date(roundData.endTime);
-            
-            if (now >= endTime && roundData.status === 'active') {
-                // Round ended - process results
-                await processLUBRoundResults(roundData.id);
-                return null; // Round ended, no active round
-            }
-            
-            return roundData;
+            // No active rounds - start a new one
+            return await startNewLUBRound();
         } catch (error) {
             console.error('Error getting current LUB round:', error);
             return null;
@@ -12666,16 +12562,16 @@
         }
     }
 
-    // Round Scheduler (Runs Every Minute)
+    // Round Scheduler (Runs Every 10 Seconds for 2-minute rounds)
     function startLUBRoundScheduler() {
-        // Check and process rounds every minute
+        // Check and process rounds every 10 seconds for faster response
         setInterval(async () => {
             try {
                 await checkAndProcessRounds();
             } catch (error) {
                 console.error('Error in round scheduler:', error);
             }
-        }, 60000); // Every 60 seconds
+        }, 10000); // Every 10 seconds
     }
 
     async function checkAndProcessRounds() {
@@ -13028,6 +12924,16 @@
 
             processingRounds.delete(roundId);
 
+            // Wait 30 seconds before starting next round
+            setTimeout(async () => {
+                try {
+                    await startNewLUBRound();
+                    console.log('Next round started automatically');
+                } catch (error) {
+                    console.error('Error starting next round:', error);
+                }
+            }, LUB_CONFIG.PROCESSING_DURATION);
+
         } catch (error) {
             console.error('Error processing LUB round:', error);
             processingRounds.delete(roundId);
@@ -13077,12 +12983,17 @@
                 const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
 
+                const isBettingPhase = timeRemaining > LUB_CONFIG.PROCESSING_DURATION;
+                const phaseText = isBettingPhase ? '🎲 Betting Phase' : '⏳ Processing Results';
+                const phaseColor = isBettingPhase ? 'var(--primary)' : 'var(--warning)';
+                
                 document.getElementById('gameStatus').innerHTML = `
                     <div style="text-align: center;">
-                        <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
-                            <h2 style="margin: 0 0 0.5rem 0; color: white;">🎲 Round Active</h2>
+                        <div style="background: linear-gradient(135deg, ${phaseColor}, ${isBettingPhase ? 'var(--secondary)' : '#f59e0b'}); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
+                            <h2 style="margin: 0 0 0.5rem 0; color: white;">${phaseText}</h2>
                             <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;">${hours}h ${minutes}m ${seconds}s</div>
                             <p style="margin: 0; opacity: 0.9;">Players: ${round.totalPlayers || 0} | Total Stakes: ${(round.totalStakes || 0).toLocaleString()} UGX</p>
+                            ${isBettingPhase ? '<p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">Place your bets now!</p>' : '<p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">Results being calculated...</p>'}
                         </div>
                     </div>
                 `;
@@ -13166,13 +13077,140 @@
         }
     }
 
-    // Helper function to get next round start time (you may need to implement this based on your round scheduling)
+    // Auto-bet functionality
+    async function startAutoBet() {
+        try {
+            if (!currentUser.isActivated) {
+                showAlert('lubGameAlert', 'You must activate your account to use auto-bet.', 'error');
+                return;
+            }
+
+            const betAmount = parseInt(document.getElementById('lubBetAmount').value);
+            if (!betAmount || betAmount < 500) {
+                showAlert('lubGameAlert', 'Please enter a valid bet amount (minimum 500 UGX)', 'error');
+                return;
+            }
+
+            // Check if user has sufficient funds
+            const balances = await getUserCategoryBalances(currentUser.id);
+            if (balances.depositEarnings < betAmount) {
+                showAlert('lubGameAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+                return;
+            }
+
+            autoBetEnabled = true;
+            autoBetAmount = betAmount;
+
+            // Update UI
+            document.getElementById('autoBetBtn').textContent = 'Stop Auto Bet';
+            document.getElementById('autoBetBtn').classList.remove('btn-success');
+            document.getElementById('autoBetBtn').classList.add('btn-error');
+            document.getElementById('lubBetAmount').disabled = true;
+            document.getElementById('autoBetStatus').style.display = 'block';
+            document.getElementById('autoBetAmountDisplay').textContent = `${betAmount.toLocaleString()} UGX`;
+
+            showAlert('lubGameAlert', `Auto-bet started! Betting ${betAmount.toLocaleString()} UGX every round.`, 'success');
+
+            // Start auto-betting
+            await performAutoBet();
+
+        } catch (error) {
+            console.error('Error starting auto-bet:', error);
+            showAlert('lubGameAlert', 'Failed to start auto-bet: ' + error.message, 'error');
+        }
+    }
+
+    async function stopAutoBet() {
+        try {
+            // Only allow stopping when round is not running (during processing phase)
+            const round = await getCurrentLUBRound();
+            if (round) {
+                const now = new Date();
+                const endTime = new Date(round.endTime);
+                const timeRemaining = endTime - now;
+                
+                if (timeRemaining > 0) {
+                    showAlert('lubGameAlert', 'Cannot stop auto-bet while round is active. Please wait for the round to end.', 'error');
+                    return;
+                }
+            }
+
+            autoBetEnabled = false;
+            autoBetAmount = 0;
+
+            // Update UI
+            document.getElementById('autoBetBtn').textContent = 'Start Auto Bet';
+            document.getElementById('autoBetBtn').classList.remove('btn-error');
+            document.getElementById('autoBetBtn').classList.add('btn-success');
+            document.getElementById('lubBetAmount').disabled = false;
+            document.getElementById('autoBetStatus').style.display = 'none';
+
+            showAlert('lubGameAlert', 'Auto-bet stopped successfully.', 'success');
+
+        } catch (error) {
+            console.error('Error stopping auto-bet:', error);
+            showAlert('lubGameAlert', 'Failed to stop auto-bet: ' + error.message, 'error');
+        }
+    }
+
+    async function performAutoBet() {
+        if (!autoBetEnabled) return;
+
+        try {
+            const round = await getCurrentLUBRound();
+            if (!round) {
+                // No active round, wait and try again
+                setTimeout(performAutoBet, 5000);
+                return;
+            }
+
+            // Check if user already bet in this round
+            const existingBetQuery = await db.collection('lubGameBets')
+                .where('roundId', '==', round.id)
+                .where('userId', '==', currentUser.id)
+                .get();
+
+            if (!existingBetQuery.empty) {
+                // Already bet in this round, wait for next round
+                setTimeout(performAutoBet, 10000);
+                return;
+            }
+
+            // Check if user still has sufficient funds
+            const balances = await getUserCategoryBalances(currentUser.id);
+            if (balances.depositEarnings < autoBetAmount) {
+                showAlert('lubGameAlert', `Auto-bet stopped: Insufficient funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+                await stopAutoBet();
+                return;
+            }
+
+            // Place the bet
+            await processLUBBetPlacement('depositEarnings', 'Deposit Earnings', autoBetAmount, round);
+            
+            // Wait for next round
+            setTimeout(performAutoBet, 10000);
+
+        } catch (error) {
+            console.error('Error in auto-bet:', error);
+            setTimeout(performAutoBet, 10000);
+        }
+    }
+
+    // Helper function to get next round start time
     function getNextRoundStartTime() {
-        // This is a placeholder - implement based on your round scheduling logic
         const now = new Date();
-        const nextHour = new Date(now);
-        nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-        return nextHour;
+        const currentMinute = now.getMinutes();
+        const currentSecond = now.getSeconds();
+        
+        // Calculate next round start (every 2 minutes)
+        const minutesSinceLastRound = (currentMinute % 2);
+        const secondsSinceLastRound = currentSecond;
+        const totalSecondsSinceLastRound = (minutesSinceLastRound * 60) + secondsSinceLastRound;
+        
+        const nextRoundInSeconds = (2 * 60) - totalSecondsSinceLastRound;
+        const nextRoundTime = new Date(now.getTime() + (nextRoundInSeconds * 1000));
+        
+        return nextRoundTime;
     }
 
     // ==================== END LUB GAME SYSTEM ====================
