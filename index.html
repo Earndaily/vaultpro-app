@@ -3452,6 +3452,28 @@
         ROUNDS_PER_HOUR: 30
     };
 
+    // Check if current time is within valid round times
+    function isInValidRoundTime() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTimeDecimal = currentHour + (currentMinute / 60);
+        
+        // Define valid round times (8 AM to 6 PM)
+        const validTimes = [
+            { start: 8, end: 9 },    // 8:00 AM - 9:00 AM
+            { start: 10, end: 11 },  // 10:00 AM - 11:00 AM
+            { start: 12, end: 13 },  // 12:00 PM - 1:00 PM
+            { start: 14, end: 15 },  // 2:00 PM - 3:00 PM
+            { start: 16, end: 17 },  // 4:00 PM - 5:00 PM
+            { start: 18, end: 19 }   // 6:00 PM - 7:00 PM
+        ];
+        
+        return validTimes.some(timeSlot => 
+            currentTimeDecimal >= timeSlot.start && currentTimeDecimal < timeSlot.end
+        );
+    }
+
     // Category-based spending system
     const FUND_CATEGORIES = {
         taskEarnings: 'Task Earnings',
@@ -4424,11 +4446,11 @@
             if (!round) {
                 // Show schedule information when no active round
                 const nextRoundTime = getNextRoundStartTime();
-                const now = new Date();
-                const timeUntilNext = nextRoundTime - now;
-                const currentTime = now.toLocaleTimeString();
-                const currentHour = now.getHours();
-                const currentMinute = now.getMinutes();
+                const nowForSchedule = new Date();
+                const timeUntilNext = nextRoundTime - nowForSchedule;
+                const currentTimeString = nowForSchedule.toLocaleTimeString();
+                const currentHour = nowForSchedule.getHours();
+                const currentMinute = nowForSchedule.getMinutes();
                 const currentTimeDecimal = currentHour + (currentMinute / 60);
                 
                 // Check if we're in a valid round time but no round exists
@@ -4506,10 +4528,32 @@
                     // Show bet section when in valid time but no round
                     document.getElementById('placeBetSection').classList.remove('hidden');
                     document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Round starting soon - place your bet!</p>';
+                    
+                    // Try to start a new round if none exists
+                    try {
+                        await startNewLUBRound();
+                        console.log('Started new LUB round');
+                        // Refresh the section after starting a new round
+                        setTimeout(() => updateLUBGameSection(), 1000);
+                    } catch (error) {
+                        console.log('Could not start new round:', error.message);
+                        // Even if round creation fails, show betting interface
+                        document.getElementById('placeBetSection').classList.remove('hidden');
+                    }
                 } else {
                     // Hide bet section when no active round and not in valid time
                     document.getElementById('placeBetSection').classList.add('hidden');
                     document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active round - check schedule above</p>';
+                }
+                
+                // Additional fallback: Always show betting during business hours (8 AM - 7 PM)
+                const currentTime = new Date();
+                const currentHourForFallback = currentTime.getHours();
+                if (currentHourForFallback >= 8 && currentHourForFallback < 19) {
+                    document.getElementById('placeBetSection').classList.remove('hidden');
+                    if (document.getElementById('myActiveLUBBet').innerHTML.includes('No active round')) {
+                        document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Place your bet below - round will start automatically</p>';
+                    }
                 }
                 
                 // ALWAYS load history regardless of round status
