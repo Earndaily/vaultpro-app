@@ -3226,80 +3226,80 @@
             amount: 45000, 
             days: 30, 
             level: 1,
-            dailyTasks: 1,
-            taskMultiplier: 1.0
+            dailyTasks: 2,
+            taskReward: 975  // 975 UGX per task, 2 tasks/day = 58,500/month (30% profit)
         },
         rising: { 
             name: '🌅 Rising', 
             amount: 180000, 
             days: 30, 
             level: 2,
-            dailyTasks: 2,
-            taskMultiplier: 1.1
+            dailyTasks: 4,
+            taskReward: 2100  // 2,100 UGX per task, 4 tasks/day = 252,000/month (40% profit)
         },
         nova: { 
             name: '💡 Nova', 
             amount: 600000, 
             days: 30, 
             level: 3,
-            dailyTasks: 3,
-            taskMultiplier: 1.2
+            dailyTasks: 6,
+            taskReward: 3500  // 3,500 UGX per task, 6 tasks/day = 630,000/month (45% profit)
         },
         mastermind: { 
             name: '🧠 Mastermind', 
             amount: 1800000, 
             days: 30, 
             level: 4,
-            dailyTasks: 4,
-            taskMultiplier: 1.3
+            dailyTasks: 8,
+            taskReward: 6750  // 6,750 UGX per task, 8 tasks/day = 1,620,000/month (50% profit)
         },
         titan: { 
             name: '💪 Titan', 
             amount: 5000000, 
             days: 30, 
             level: 5,
-            dailyTasks: 5,
-            taskMultiplier: 1.4
+            dailyTasks: 10,
+            taskReward: 12500  // 12,500 UGX per task, 10 tasks/day = 3,750,000/month (55% profit)
         },
         king: { 
             name: '👑 King', 
             amount: 10000000, 
             days: 30, 
             level: 6,
-            dailyTasks: 6,
-            taskMultiplier: 1.5
+            dailyTasks: 12,
+            taskReward: 18333  // 18,333 UGX per task, 12 tasks/day = 6,600,000/month (60% profit)
         },
         emperor: { 
             name: '🦅 Emperor', 
             amount: 20000000, 
             days: 30, 
             level: 7,
-            dailyTasks: 7,
-            taskMultiplier: 1.6
+            dailyTasks: 15,
+            taskReward: 26000  // 26,000 UGX per task, 15 tasks/day = 11,700,000/month (65% profit)
         },
         icon: { 
             name: '💫 Icon', 
             amount: 35000000, 
             days: 30, 
             level: 8,
-            dailyTasks: 8,
-            taskMultiplier: 1.7
+            dailyTasks: 18,
+            taskReward: 34028  // 34,028 UGX per task, 18 tasks/day = 18,375,000/month (70% profit)
         },
         supreme: { 
             name: '🔱 Supreme', 
             amount: 60000000, 
             days: 30, 
             level: 9,
-            dailyTasks: 9,
-            taskMultiplier: 1.8
+            dailyTasks: 22,
+            taskReward: 40909  // 40,909 UGX per task, 22 tasks/day = 27,000,000/month (75% profit)
         },
         legendary: { 
             name: '🕊️ Legendary', 
             amount: 90000000, 
             days: 30, 
             level: 10,
-            dailyTasks: 10,
-            taskMultiplier: 2.0
+            dailyTasks: 25,
+            taskReward: 45000  // 45,000 UGX per task, 25 tasks/day = 33,750,000/month (80% profit)
         }
     };
 
@@ -3534,13 +3534,12 @@
     // Get user's highest vault level for task allocation
     async function getUserVaultLevel(userId) {
         try {
-            // Check if database is available
             if (!db) {
                 console.log('Database not available for vault level check');
                 return {
                     level: 0,
                     dailyTasks: 1,
-                    taskMultiplier: 1.0,
+                    taskReward: 100,  // Beginner gets 100 UGX per task
                     planName: 'Beginner'
                 };
             }
@@ -3549,19 +3548,19 @@
             const activeVaults = vaultsSnapshot.docs.map(doc => doc.data()).filter(v => v.status === 'active');
             
             if (activeVaults.length === 0) {
-                // No active vaults - user gets 1 task (beginner)
                 return {
                     level: 0,
                     dailyTasks: 1,
-                    taskMultiplier: 1.0,
+                    taskReward: 100,  // Beginner: 1 task, 100 UGX = 3,000/month (no profit)
                     planName: 'Beginner'
                 };
             }
             
             // Get highest level vault
             let highestLevel = 0;
-            let highestMultiplier = 1.0;
+            let highestTaskReward = 100;
             let highestTasks = 1;
+            let highestPlanName = 'Beginner';
             
             activeVaults.forEach(vault => {
                 const planKey = Object.keys(vaultPlans).find(key => 
@@ -3573,7 +3572,8 @@
                     if (plan.level > highestLevel) {
                         highestLevel = plan.level;
                         highestTasks = plan.dailyTasks;
-                        highestMultiplier = plan.taskMultiplier;
+                        highestTaskReward = plan.taskReward;
+                        highestPlanName = plan.name;
                     }
                 }
             });
@@ -3581,15 +3581,15 @@
             return {
                 level: highestLevel,
                 dailyTasks: highestTasks,
-                taskMultiplier: highestMultiplier,
-                planName: activeVaults[activeVaults.length - 1].planName
+                taskReward: highestTaskReward,
+                planName: highestPlanName
             };
         } catch (error) {
             console.error('Error getting user vault level:', error);
             return {
                 level: 0,
                 dailyTasks: 1,
-                taskMultiplier: 1.0,
+                taskReward: 100,  // Beginner: 1 task, 100 UGX = 3,000/month (no profit)
                 planName: 'Beginner'
             };
         }
@@ -6490,13 +6490,23 @@
     // Display user's task allocation in dashboard
     async function displayUserTaskAllocation() {
         try {
-            // Check if user is available
             if (!currentUser || !currentUser.id) {
                 console.log('User not available for task allocation display');
                 return;
             }
             
             const userVaultInfo = await getUserVaultLevel(currentUser.id);
+            
+            // Get today's completed tasks count
+            const todayString = new Date().toDateString();
+            const todaySubmissionsSnapshot = await db.collection('taskSubmissions')
+                .where('userId', '==', currentUser.id)
+                .where('date', '==', todayString)
+                .get();
+            
+            const completedCount = todaySubmissionsSnapshot.size;
+            const remainingTasks = userVaultInfo.dailyTasks - completedCount;
+            
             const allocationDiv = document.createElement('div');
             allocationDiv.style.cssText = `
                 background: linear-gradient(135deg, #f0fdf4, #dcfce7);
@@ -6511,9 +6521,18 @@
                         <h4 style="margin: 0 0 0.5rem 0; color: #166534;">📋 Your Task Allocation</h4>
                         <p style="margin: 0; color: #15803d; font-size: 0.875rem;">
                             Plan: <strong>${userVaultInfo.planName}</strong> | 
-                            Daily Tasks: <strong>${userVaultInfo.dailyTasks}</strong> | 
-                            Reward Multiplier: <strong>${(userVaultInfo.taskMultiplier * 100).toFixed(0)}%</strong>
+                            Daily Tasks: <strong>${completedCount}/${userVaultInfo.dailyTasks}</strong> | 
+                            Reward per Task: <strong>${userVaultInfo.taskReward.toLocaleString()} UGX</strong>
                         </p>
+                        ${remainingTasks > 0 ? `
+                            <p style="margin: 0.5rem 0 0 0; color: #059669; font-size: 0.875rem;">
+                                ⚡ ${remainingTasks} task${remainingTasks > 1 ? 's' : ''} remaining today
+                            </p>
+                        ` : `
+                            <p style="margin: 0.5rem 0 0 0; color: #f59e0b; font-size: 0.875rem;">
+                                ✅ All tasks completed for today!
+                            </p>
+                        `}
                     </div>
                     <div style="text-align: right;">
                         <button class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="showSection('vault')">
@@ -6524,7 +6543,12 @@
             `;
             
             const homeSection = document.getElementById('homeSection');
-            if (homeSection && homeSection.querySelector('#taskAllocationInfo') === null) {
+            if (homeSection) {
+                const existingAllocation = document.getElementById('taskAllocationInfo');
+                if (existingAllocation) {
+                    existingAllocation.remove();
+                }
+                
                 allocationDiv.id = 'taskAllocationInfo';
                 homeSection.insertBefore(allocationDiv, homeSection.firstChild);
             }
@@ -8576,34 +8600,42 @@
                return;
            }
 
-           // Get user's vault level and apply multiplier
+           // Get user's vault level
            const userVaultInfo = await getUserVaultLevel(currentUser.id);
-           const adjustedReward = Math.floor(baseReward * userVaultInfo.taskMultiplier);
+           
+           // Use the level-specific task reward instead of multiplier
+           const taskReward = userVaultInfo.taskReward;
            
            // Check if already completed today
            const todayString = new Date().toDateString();
            const submissionQuery = await db.collection('taskSubmissions')
                .where('userId', '==', currentUser.id)
-               .where('taskId', '==', taskId)
                .where('date', '==', todayString)
                .get();
-   
+
            if (!submissionQuery.empty) {
                alert('You have already completed this task today!');
                return;
            }
-   
+
+           // Check if user has reached their daily task limit
+           const todayTaskCount = submissionQuery.size;
+           if (todayTaskCount >= userVaultInfo.dailyTasks) {
+               alert(`You have completed all ${userVaultInfo.dailyTasks} tasks for today. Come back tomorrow!`);
+               return;
+           }
+
            // Update user balance and earnings
            const userDoc = await db.collection('users').doc(currentUser.id).get();
            const userData = userDoc.data();
            const currentBalance = userData.balance || 0;
-           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + adjustedReward;
-   
+           const newTotalTaskEarnings = (userData.totalTaskEarnings || 0) + taskReward;
+
            await db.collection('users').doc(currentUser.id).update({
-               balance: currentBalance + adjustedReward,
+               balance: currentBalance + taskReward,
                totalTaskEarnings: newTotalTaskEarnings
            });
-   
+
            // Record task submission
            await db.collection('taskSubmissions').add({
                userId: currentUser.id,
@@ -8611,41 +8643,40 @@
                userEmail: currentUser.email,
                taskId: taskId,
                taskTitle: taskTitle,
-               reward: adjustedReward,
-               baseReward: baseReward,
-               multiplier: userVaultInfo.taskMultiplier,
+               reward: taskReward,
+               vaultLevel: userVaultInfo.level,
+               vaultPlanName: userVaultInfo.planName,
                status: 'approved',
                date: todayString,
                submittedDate: new Date().toISOString(),
                approvedDate: new Date().toISOString()
            });
-   
-            // Record transaction
-            await db.collection('transactions').add({
-                userId: currentUser.id,
-                userName: currentUser.fullName,
-                type: 'task_completion',
-                amount: adjustedReward,
-                baseAmount: baseReward,
-                multiplier: userVaultInfo.taskMultiplier,
-                taskTitle: taskTitle,
-                date: new Date().toISOString()
-            });
-   
+
+           // Record transaction
+           await db.collection('transactions').add({
+               userId: currentUser.id,
+               userName: currentUser.fullName,
+               type: 'task_completion',
+               amount: taskReward,
+               vaultLevel: userVaultInfo.level,
+               taskTitle: taskTitle,
+               date: new Date().toISOString()
+           });
+
            // Update local cache
-           currentUser.balance = currentBalance + adjustedReward;
+           currentUser.balance = currentBalance + taskReward;
            currentUser.totalTaskEarnings = newTotalTaskEarnings;
-   
+
            // Send notification for new earnings
-           await sendNotification(currentUser.id, 'new_earnings', `You earned ${adjustedReward.toLocaleString()} UGX from completing a task! (${(userVaultInfo.taskMultiplier * 100).toFixed(0)}% multiplier)`, adjustedReward);
-   
+           await sendNotification(currentUser.id, 'new_earnings', `You earned ${taskReward.toLocaleString()} UGX from completing a task! (${userVaultInfo.planName} level)`, taskReward);
+
            // Show success alert
-           alert(`🎉 Task completed! You earned ${adjustedReward.toLocaleString()} UGX! (${(userVaultInfo.taskMultiplier * 100).toFixed(0)}% multiplier applied)`);
-   
+           alert(`🎉 Task completed! You earned ${taskReward.toLocaleString()} UGX! (${userVaultInfo.planName}: ${todayTaskCount + 1}/${userVaultInfo.dailyTasks} tasks today)`);
+
            // Update UI
            updateUserStats();
            updateTasksSection();
-   
+
        } catch (error) {
            console.error('Error awarding task reward:', error);
            alert('Failed to award reward: ' + error.message);
@@ -8850,7 +8881,6 @@
 
     async function loadYouTubeTasks(today, container) {
         try {
-            // Check if user is available
             if (!currentUser || !currentUser.id) {
                 console.log('User not available for YouTube tasks');
                 return;
@@ -8859,6 +8889,7 @@
             // Get user's vault level
             const userVaultInfo = await getUserVaultLevel(currentUser.id);
             const allowedTaskCount = userVaultInfo.dailyTasks;
+            const taskReward = userVaultInfo.taskReward;
             
             const tasksSnapshot = await db.collection('tasks')
                 .where('isActive', '==', true)
@@ -8877,12 +8908,22 @@
                 .get();
             
             const completedTaskIds = todaySubmissionsSnapshot.docs.map(doc => doc.data().taskId);
+            const completedCount = completedTaskIds.length;
             
-            // Filter: correct day + not completed + limit by vault level
-            const availableTasks = allTasks.filter(task => 
+            // Filter: correct day + not completed
+            let availableTasks = allTasks.filter(task => 
                 (task.day === today || task.day === 'all') && 
                 !completedTaskIds.includes(task.id)
-            ).slice(0, allowedTaskCount); // LIMIT BY VAULT LEVEL
+            );
+            
+            // Check if user has reached their daily limit
+            const remainingTasks = allowedTaskCount - completedCount;
+            const hasReachedLimit = remainingTasks <= 0;
+            
+            if (!hasReachedLimit) {
+                // Limit available tasks to remaining tasks
+                availableTasks = availableTasks.slice(0, remainingTasks);
+            }
 
             // Display user's task allocation
             const taskAllocationInfo = document.createElement('div');
@@ -8898,57 +8939,78 @@
                 <div style="font-size: 0.875rem; color: #0c4a6e; margin-bottom: 0.5rem;">
                     <strong>📋 Your Plan Level:</strong> ${userVaultInfo.planName}
                 </div>
-                <div style="font-size: 1rem; font-weight: 600; color: #0369a1;">
-                    Daily Tasks Available: ${allowedTaskCount} / ${completedTaskIds.length} Completed
+                <div style="font-size: 1rem; font-weight: 600; color: #0369a1; margin-bottom: 0.5rem;">
+                    Daily Tasks: ${completedCount} / ${allowedTaskCount} Completed
                 </div>
-                ${userVaultInfo.level > 0 ? `
-                    <div style="font-size: 0.875rem; color: #0c4a6e; margin-top: 0.5rem;">
-                        Task Reward Multiplier: <strong>${(userVaultInfo.taskMultiplier * 100).toFixed(0)}%</strong>
+                <div style="font-size: 0.875rem; color: #0c4a6e;">
+                    Reward per Task: <strong>${taskReward.toLocaleString()} UGX</strong>
+                </div>
+                ${hasReachedLimit ? `
+                    <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem;">
+                        <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
+                            ✅ <strong>All tasks completed for today!</strong> Come back tomorrow for more.
+                        </p>
                     </div>
                 ` : ''}
             `;
             
-            if (container.firstChild) {
-                container.insertBefore(taskAllocationInfo, container.firstChild);
-            } else {
-                container.appendChild(taskAllocationInfo);
+            container.innerHTML = '';
+            container.appendChild(taskAllocationInfo);
+
+            if (hasReachedLimit) {
+                const completedMessage = document.createElement('p');
+                completedMessage.className = 'text-center';
+                completedMessage.style.cssText = 'color: var(--success); padding: 2rem;';
+                completedMessage.textContent = '🎉 Great job! You\'ve completed all your tasks for today. Check back tomorrow!';
+                container.appendChild(completedMessage);
+                return;
             }
 
             if (availableTasks.length === 0) {
-                container.innerHTML += '<p class="text-center" style="color: var(--success); padding: 2rem;">🎉 Great job! You\'ve completed all available tasks for today.</p>';
-            } else {
-                container.style.maxHeight = 'none';
-                container.style.overflow = 'visible';
+                const noTasksMessage = document.createElement('p');
+                noTasksMessage.className = 'text-center';
+                noTasksMessage.style.cssText = 'color: var(--gray); padding: 2rem;';
+                noTasksMessage.textContent = 'No more tasks available for today.';
+                container.appendChild(noTasksMessage);
+                return;
+            }
+
+            container.style.maxHeight = 'none';
+            container.style.overflow = 'visible';
+            
+            const tasksHTML = availableTasks.map(task => {
+                let videoId = null;
+                if (task.link) {
+                    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                    const match = task.link.match(youtubeRegex);
+                    if (match) videoId = match[1];
+                }
                 
-                container.innerHTML += availableTasks.map(task => {
-                    let videoId = null;
-                    if (task.link) {
-                        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-                        const match = task.link.match(youtubeRegex);
-                        if (match) videoId = match[1];
-                    }
-                    
-                    return `
-                        <div class="task-card" id="task-${task.id}">
-                            <div class="task-info">
-                                <h4>${task.title}</h4>
-                                <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
-                                <p style="color: var(--success); font-weight: 600;">Reward: ${task.reward.toLocaleString()} UGX</p>
-                            </div>
-                            ${videoId ? `<div id="video-container-${task.id}" class="video-container hidden"><div id="player-${task.id}"></div></div>` : ''}
-                            <div class="task-action">
-                                <button class="btn btn-success" id="btn-${task.id}" onclick="startYouTubeTask('${task.id}', ${task.reward}, ${task.timer || 60}, '${videoId || ''}')">
-                                    Watch Video & Earn
-                                </button>
-                                <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
-                                    <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
-                                </div>
+                return `
+                    <div class="task-card" id="task-${task.id}">
+                        <div class="task-info">
+                            <h4>${task.title}</h4>
+                            <p style="color: var(--gray); font-size: 0.875rem; margin: 0.5rem 0;">${task.description}</p>
+                            <p style="color: var(--success); font-weight: 600;">Reward: ${taskReward.toLocaleString()} UGX</p>
+                        </div>
+                        ${videoId ? `<div id="video-container-${task.id}" class="video-container hidden"><div id="player-${task.id}"></div></div>` : ''}
+                        <div class="task-action">
+                            <button class="btn btn-success" id="btn-${task.id}" onclick="startYouTubeTask('${task.id}', ${taskReward}, ${task.timer || 60}, '${videoId || ''}')">
+                                Watch Video & Earn
+                            </button>
+                            <div id="timer-${task.id}" class="task-timer hidden" style="text-align: center; margin-top: 1rem;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="countdown-${task.id}">0</div>
+                                <div style="font-size: 0.875rem; color: var(--gray);">seconds watched</div>
                             </div>
                         </div>
-                    `;
-                }).join('');
-            }
+                    </div>
+                `;
+            }).join('');
+            
+            const tasksContainer = document.createElement('div');
+            tasksContainer.innerHTML = tasksHTML;
+            container.appendChild(tasksContainer);
+            
         } catch (error) {
             console.error('Error loading YouTube tasks:', error);
         }
