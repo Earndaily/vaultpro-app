@@ -4004,10 +4004,11 @@
                 status: 'pending' // pending, won, lost
             });
             
-            // Update round stats
+            // Update round stats - use Firestore increment for atomic updates
             await db.collection('lubGameRounds').doc(round.id).update({
                 totalPlayers: (round.totalPlayers || 0) + 1,
-                totalStakes: (round.totalStakes || 0) + betAmount
+                totalStakes: (round.totalStakes || 0) + betAmount,
+                lastBetAt: new Date().toISOString()
             });
             
             // Record transaction with source category
@@ -4133,8 +4134,16 @@
                     amount: totalLosses,
                     description: `LUB Game Round #${roundId.slice(-6)} - All bets lost (No unique bets)`,
                     roundId: roundId,
+                    sourceCategory: 'adminEarnings',
+                    categoryName: 'Admin Earnings',
+                    totalPlayers: betsSnapshot.size,
                     date: new Date().toISOString()
                 });
+                
+                console.log(`LUB Game Round ${roundId.slice(-6)} completed (no winner):`);
+                console.log(`- No unique bets found`);
+                console.log(`- Total players: ${betsSnapshot.size}`);
+                console.log(`- Admin earnings: ${totalLosses} UGX`);
                 
                 console.log('No unique bets. Admin earned:', totalLosses);
                 
@@ -4170,6 +4179,26 @@
                         db.collection('lubGameBets').doc(doc.id).update({ status: 'lost' })
                     );
                     await Promise.all(updatePromises);
+                    
+                    // Record admin earnings transaction for this case too
+                    await db.collection('transactions').add({
+                        userId: 'admin',
+                        userName: 'Administrator',
+                        type: 'lub_game_admin_earnings',
+                        amount: totalLosses,
+                        description: `LUB Game Round #${roundId.slice(-6)} - All bets lost (Duplicate lowest amounts)`,
+                        roundId: roundId,
+                        sourceCategory: 'adminEarnings',
+                        categoryName: 'Admin Earnings',
+                        totalPlayers: betsSnapshot.size,
+                        date: new Date().toISOString()
+                    });
+                    
+                    console.log(`LUB Game Round ${roundId.slice(-6)} completed (no winner - duplicates):`);
+                    console.log(`- Multiple people bet the same lowest amount`);
+                    console.log(`- Total players: ${betsSnapshot.size}`);
+                    console.log(`- Admin earnings: ${totalLosses} UGX`);
+                    
                     processingRounds.delete(roundId);
                     return;
                 }
@@ -4181,10 +4210,12 @@
             // Calculate admin earnings (all losing bets)
             const adminEarnings = totalLosses - winningBet.amount;
             
-            // Update winner's balance
+            // Update winner's balance using category-based system
             const winnerDoc = await db.collection('users').doc(winningBet.bet.userId).get();
-            const winnerBalance = winnerDoc.data().balance || 0;
+            const winnerData = winnerDoc.data();
+            const winnerBalance = winnerData.balance || 0;
             
+            // Update the main balance
             await db.collection('users').doc(winningBet.bet.userId).update({
                 balance: winnerBalance + prize
             });
@@ -4214,7 +4245,7 @@
                 adminEarnings: adminEarnings
             });
             
-            // Record winner transaction
+            // Record winner transaction with proper category tracking
             await db.collection('transactions').add({
                 userId: winningBet.bet.userId,
                 userName: winningBet.bet.userName,
@@ -4222,6 +4253,8 @@
                 amount: prize,
                 betAmount: winningBet.amount,
                 roundId: roundId,
+                sourceCategory: 'lubGameEarnings',
+                categoryName: 'LUB Game Earnings',
                 date: new Date().toISOString()
             });
             
@@ -4235,12 +4268,27 @@
                 roundId: roundId,
                 winnerBet: winningBet.amount,
                 totalPlayers: betsSnapshot.size,
+                sourceCategory: 'adminEarnings',
+                categoryName: 'Admin Earnings',
                 date: new Date().toISOString()
             });
+            
+            console.log(`LUB Game Round ${roundId.slice(-6)} completed:`);
+            console.log(`- Winner: ${winningBet.bet.userName} (${winningBet.bet.userId})`);
+            console.log(`- Winning bet: ${winningBet.amount} UGX`);
+            console.log(`- Prize: ${prize} UGX`);
+            console.log(`- Total players: ${betsSnapshot.size}`);
+            console.log(`- Admin earnings: ${adminEarnings} UGX`);
             
             console.log('LUB round results processed.');
             console.log('Winner:', winningBet.bet.userName, '- Prize:', prize);
             console.log('Admin earned from losing bets:', adminEarnings);
+            
+            // Refresh the LUB game section for all users
+            setTimeout(() => {
+                updateLUBGameSection();
+                loadLUBGameHistory();
+            }, 1000);
             
             // Round completed - next round will start at scheduled time
             console.log('Round completed. Next round will start at scheduled time.');
@@ -4250,6 +4298,53 @@
         } finally {
             // Always remove from processing set
             processingRounds.delete(roundId);
+        }
+    }
+    
+    // Manual function to process current round (for testing)
+    async function manualProcessLUBRound() {
+        try {
+            console.log('Manual process LUB round called');
+            
+            // Check if user is admin
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Admin access required');
+                return;
+            }
+            
+            const round = await getCurrentLUBRound();
+            console.log('Current round:', round);
+            
+            if (!round) {
+                alert('No active round found');
+                return;
+            }
+            
+            if (round.status !== 'active') {
+                alert(`Round is not active. Current status: ${round.status}`);
+                return;
+            }
+            
+            const now = new Date();
+            const endTime = new Date(round.endTime);
+            
+            console.log('Current time:', now);
+            console.log('Round end time:', endTime);
+            console.log('Time remaining:', endTime - now);
+            
+            if (now < endTime) {
+                if (!confirm(`Round is still active. Time remaining: ${Math.floor((endTime - now) / 60000)} minutes. Are you sure you want to process it now?`)) {
+                    return;
+                }
+            }
+            
+            console.log('Processing round:', round.id);
+            await processLUBRoundResults(round.id);
+            alert('Round processed successfully');
+            
+        } catch (error) {
+            console.error('Error manually processing round:', error);
+            alert('Error processing round: ' + error.message);
         }
     }
 
@@ -4385,10 +4480,19 @@
                     `;
                 }
                 
-                // Show participants
+                // Show participants - get real-time data from bets
                 document.getElementById('currentParticipantsSection').classList.remove('hidden');
-                document.getElementById('totalPlayers').textContent = round.totalPlayers || 0;
-                document.getElementById('totalStakes').textContent = (round.totalStakes || 0).toLocaleString();
+                
+                // Get real-time participant count and stakes from bets
+                const currentBetsQuery = await db.collection('lubGameBets')
+                    .where('roundId', '==', round.id)
+                    .get();
+                
+                const totalPlayers = currentBetsQuery.size;
+                const totalStakes = currentBetsQuery.docs.reduce((sum, doc) => sum + (doc.data().betAmount || 0), 0);
+                
+                document.getElementById('totalPlayers').textContent = totalPlayers;
+                document.getElementById('totalStakes').textContent = totalStakes.toLocaleString();
                 
             } else {
                 // Round ended - calculating
@@ -5837,7 +5941,10 @@
         updateFeatureAccess();
 
         // Section-specific updates
-        if (section === 'referrals') updateReferralsSection();
+        if (section === 'home') {
+            updateUserStats();
+        }
+        else if (section === 'referrals') updateReferralsSection();
         else if (section === 'wallet') updateWalletSection();
         else if (section === 'stake') {
             loadCandidates();
@@ -6147,10 +6254,13 @@
            document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
            document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Update task earnings display using category balances
+           // Update task earnings display to show TODAY'S earnings only
            const taskEarningsEl = document.getElementById('taskEarnings');
            if (taskEarningsEl) {
-               taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
+               const todayTaskEarnings = await calculateTodayTaskEarnings();
+               const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
+               const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+               taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
            }
 
            // Update LUB Game earnings display using category balances
