@@ -3992,6 +3992,8 @@
                const doc = activeRound.docs[0];
                const round = { id: doc.id, ...doc.data() };
                
+               console.log('Found active round:', round.id, 'Status:', round.status);
+               
                // Check if round expired
                const now = new Date();
                const endTime = new Date(round.endTime);
@@ -4049,9 +4051,6 @@
          showCategorySelectionModal(betAmount, async (sourceCategory, categoryName) => {
              await processLUBBetPlacement(betAmount, round);
          }, 'lub_game_bet');
-               
-               await processLUBBetPlacement(betAmount, round);
-           }, 'lub_game_bet');
            
        } catch (error) {
            console.error('Error placing bet:', error);
@@ -4061,6 +4060,22 @@
 
     async function processLUBBetPlacement(betAmount, round) {
         try {
+            // Validate round has required properties
+            if (!round || !round.id) {
+                console.error('Round object missing or missing id property:', round);
+                showAlert('lubGameAlert', 'Invalid round data. Please try again.', 'error');
+                return;
+            }
+            
+            // Additional validation to ensure round.id is a valid string
+            if (typeof round.id !== 'string' || round.id.trim() === '') {
+                console.error('Round id is not a valid string:', round.id, 'Type:', typeof round.id);
+                showAlert('lubGameAlert', 'Invalid round ID. Please try again.', 'error');
+                return;
+            }
+            
+            console.log('Processing bet for round:', round.id, 'Round data:', round);
+            
             // Verify category has sufficient funds
             const balances = await getUserCategoryBalances(currentUser.id);
             
@@ -4072,13 +4087,6 @@
             
             if (balances[sourceCategory] < betAmount) {
                 showAlert('lubGameAlert', `Insufficient funds in ${categoryName}. Available: ${balances[sourceCategory].toLocaleString()} UGX`, 'error');
-                return;
-            }
-            
-            // Get current round
-            const round = await getCurrentLUBRound();
-            if (!round) {
-                showAlert('lubGameAlert', 'No active round available', 'error');
                 return;
             }
             
@@ -4103,15 +4111,21 @@
             });
             
             // Place bet
-            await db.collection('lubGameBets').add({
-                roundId: round.id,
-                userId: currentUser.id,
-                userName: currentUser.fullName,
-                userEmail: currentUser.email,
-                betAmount: betAmount,
-                placedAt: new Date().toISOString(),
-                status: 'pending' // pending, won, lost
-            });
+            try {
+                await db.collection('lubGameBets').add({
+                    roundId: round.id,
+                    userId: currentUser.id,
+                    userName: currentUser.fullName,
+                    userEmail: currentUser.email,
+                    betAmount: betAmount,
+                    placedAt: new Date().toISOString(),
+                    status: 'pending' // pending, won, lost
+                });
+            } catch (firebaseError) {
+                console.error('Firebase error adding bet:', firebaseError);
+                console.error('Round data being used:', round);
+                throw new Error(`Failed to save bet: ${firebaseError.message}`);
+            }
             
             // Update round stats
             await db.collection('lubGameRounds').doc(round.id).update({
@@ -12485,7 +12499,9 @@
 
             if (!activeRoundSnapshot.empty) {
                 const roundDoc = activeRoundSnapshot.docs[0];
-                return { id: roundDoc.id, ...roundDoc.data() };
+                const round = { id: roundDoc.id, ...roundDoc.data() };
+                console.log('Found active round (no auto-creation):', round.id, 'Status:', round.status);
+                return round;
             }
 
             return null;
@@ -12519,7 +12535,7 @@
 
             // Show category selection - deposits only for LUB
             showCategorySelectionModal(betAmount, async (sourceCategory, categoryName) => {
-                await processLUBBetPlacement(sourceCategory, categoryName, betAmount, round);
+                await processLUBBetPlacement(betAmount, round);
             }, 'lub_game_bet');
 
         } catch (error) {
@@ -12530,6 +12546,22 @@
 
    async function processLUBBetPlacement(betAmount, round) {
        try {
+           // Validate round has required properties
+           if (!round || !round.id) {
+               console.error('Round object missing or missing id property:', round);
+               showAlert('lubGameAlert', 'Invalid round data. Please try again.', 'error');
+               return;
+           }
+           
+           // Additional validation to ensure round.id is a valid string
+           if (typeof round.id !== 'string' || round.id.trim() === '') {
+               console.error('Round id is not a valid string:', round.id, 'Type:', typeof round.id);
+               showAlert('lubGameAlert', 'Invalid round ID. Please try again.', 'error');
+               return;
+           }
+           
+           console.log('Processing bet for round:', round.id, 'Round data:', round);
+           
            // Verify funds
            const balances = await getUserCategoryBalances(currentUser.id);
            
@@ -12547,15 +12579,21 @@
            });
            
            // Create bet
-           await db.collection('lubGameBets').add({
-               roundId: round.id,
-               userId: currentUser.id,
-               userName: currentUser.fullName,
-               userEmail: currentUser.email,
-               betAmount: betAmount,
-               placedAt: new Date().toISOString(),
-               status: 'pending'
-           });
+           try {
+               await db.collection('lubGameBets').add({
+                   roundId: round.id,
+                   userId: currentUser.id,
+                   userName: currentUser.fullName,
+                   userEmail: currentUser.email,
+                   betAmount: betAmount,
+                   placedAt: new Date().toISOString(),
+                   status: 'pending'
+               });
+           } catch (firebaseError) {
+               console.error('Firebase error adding bet:', firebaseError);
+               console.error('Round data being used:', round);
+               throw new Error(`Failed to save bet: ${firebaseError.message}`);
+           }
            
            // Update round stats
            await db.collection('lubGameRounds').doc(round.id).update({
@@ -12798,104 +12836,6 @@
         }
     }
 
-    // Update LUB Game Display Section
-    async function updateLUBGameSection() {
-        try {
-            const round = await getCurrentLUBRound();
-
-            if (!round) {
-                // No active round
-                const nextRoundTime = getNextRoundStartTime();
-                const now = new Date();
-                const timeUntilNext = nextRoundTime - now;
-
-                if (timeUntilNext > 0) {
-                    const hours = Math.floor(timeUntilNext / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60));
-
-                    document.getElementById('gameStatus').innerHTML = `
-                        <div style="text-align: center;">
-                            <div style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
-                                <h2 style="margin: 0 0 0.5rem 0; color: white;">⏰ Next Round</h2>
-                                <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0;">${hours}h ${minutes}m</div>
-                                <p style="margin: 0; opacity: 0.9;">Starts at ${nextRoundTime.toLocaleTimeString()}</p>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                document.getElementById('placeBetSection').classList.add('hidden');
-                document.getElementById('currentParticipantsSection').classList.add('hidden');
-                document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Waiting for next round...</p>';
-
-                return;
-            }
-
-            // Active round exists
-            const now = new Date();
-            const endTime = new Date(round.endTime);
-            const timeRemaining = endTime - now;
-
-            if (timeRemaining > 0) {
-                const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-
-                const isBettingPhase = timeRemaining > LUB_CONFIG.PROCESSING_DURATION;
-                const phaseText = isBettingPhase ? '🎲 Betting Phase' : '⏳ Processing Results';
-                const phaseColor = isBettingPhase ? 'var(--primary)' : 'var(--warning)';
-                
-                document.getElementById('gameStatus').innerHTML = `
-                    <div style="text-align: center;">
-                        <div style="background: linear-gradient(135deg, ${phaseColor}, ${isBettingPhase ? 'var(--secondary)' : '#f59e0b'}); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
-                            <h2 style="margin: 0 0 0.5rem 0; color: white;">${phaseText}</h2>
-                            <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;">${hours}h ${minutes}m ${seconds}s</div>
-                            <p style="margin: 0; opacity: 0.9;">Players: ${round.totalPlayers || 0} | Total Stakes: ${(round.totalStakes || 0).toLocaleString()} UGX</p>
-                            ${isBettingPhase ? '<p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">Place your bets now!</p>' : '<p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">Results being calculated...</p>'}
-                        </div>
-                    </div>
-                `;
-
-                // Update wallet balance
-                const categoryBalances = await getUserCategoryBalances(currentUser.id);
-                const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                    categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-                const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-                document.getElementById('lubWalletBalance').textContent = totalAvailable.toLocaleString();
-
-                // Check if user has bet
-                const userBetQuery = await db.collection('lubGameBets')
-                    .where('roundId', '==', round.id)
-                    .where('userId', '==', currentUser.id)
-                    .get();
-
-                if (userBetQuery.empty) {
-                    document.getElementById('placeBetSection').classList.remove('hidden');
-                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No bet placed yet</p>';
-                } else {
-                    document.getElementById('placeBetSection').classList.add('hidden');
-                    const userBet = userBetQuery.docs[0].data();
-
-                    document.getElementById('myActiveLUBBet').innerHTML = `
-                        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); border: 2px solid var(--success); border-radius: 12px; padding: 1.5rem; text-align: center;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: var(--success);">✅ Bet Placed</h4>
-                            <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin: 1rem 0;">${userBet.betAmount.toLocaleString()} UGX</div>
-                            <p style="margin: 0; color: var(--gray); font-size: 0.875rem;">Potential prize: ${(userBet.betAmount * 10).toLocaleString()} UGX</p>
-                        </div>
-                    `;
-                }
-
-                document.getElementById('currentParticipantsSection').classList.remove('hidden');
-                document.getElementById('totalPlayers').textContent = round.totalPlayers || 0;
-                document.getElementById('totalStakes').textContent = (round.totalStakes || 0).toLocaleString();
-            }
-
-            await loadLUBGameHistory();
-
-        } catch (error) {
-            console.error('Error updating LUB game section:', error);
-        }
-    }
 
     // Load History
     async function loadLUBGameHistory() {
@@ -13057,7 +12997,7 @@
             }
 
             // Place the bet
-            await processLUBBetPlacement('depositEarnings', 'Deposit Earnings', autoBetAmount, round);
+            await processLUBBetPlacement(autoBetAmount, round);
             
             // Wait for next round
             setTimeout(performAutoBet, 10000);
