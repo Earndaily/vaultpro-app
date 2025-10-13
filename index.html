@@ -1973,7 +1973,7 @@
                 </div>
                 
                 <!-- Place Bet Section -->
-                <div id="placeBetSection" class="hidden">
+                <div id="placeBetSection">
                     <h3>Place Your Bet</h3>
                     <div id="lubGameAlert"></div>
                     
@@ -1995,7 +1995,7 @@
                             <button class="btn btn-success" onclick="placeLUBBet()">
                                 🎲 Place Bet
                             </button>
-                            <button id="autoBetBtn" class="btn btn-success" onclick="autoBetEnabled ? stopAutoBet() : startAutoBet()">
+                            <button id="autoBetBtn" class="btn btn-success" onclick="toggleAutoBet()">
                                 🤖 Start Auto Bet
                             </button>
                         </div>
@@ -3999,17 +3999,25 @@
                 if (now >= endTime) {
                     // Round ended - process results
                     await processLUBRoundResults(roundData.id);
-                    return null; // Round ended, no active round
+                    // After processing, create new round immediately
+                    return await startNewLUBRound();
                 }
                 
                 return roundData;
             }
             
-            // No active rounds - start a new one
+            // No active rounds - start a new one automatically
+            console.log('No active round found, starting new round');
             return await startNewLUBRound();
         } catch (error) {
             console.error('Error getting current LUB round:', error);
-            return null;
+            // If error, try to start new round
+            try {
+                return await startNewLUBRound();
+            } catch (startError) {
+                console.error('Error starting new round:', startError);
+                return null;
+            }
         }
     }
 
@@ -4443,132 +4451,38 @@
         try {
             const round = await getCurrentLUBRound();
             
+            // Always update wallet balance first
+            const categoryBalances = await getUserCategoryBalances(currentUser.id);
+            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
+                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
+            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            
+            const walletBalanceEl = document.getElementById('lubWalletBalance');
+            if (walletBalanceEl) {
+                walletBalanceEl.textContent = totalAvailable.toLocaleString();
+            }
+            
             if (!round) {
-                // Show schedule information when no active round
-                const nextRoundTime = getNextRoundStartTime();
-                const nowForSchedule = new Date();
-                const timeUntilNext = nextRoundTime - nowForSchedule;
-                const currentTimeString = nowForSchedule.toLocaleTimeString();
-                const currentHour = nowForSchedule.getHours();
-                const currentMinute = nowForSchedule.getMinutes();
-                const currentTimeDecimal = currentHour + (currentMinute / 60);
+                // Show waiting message but KEEP bet section visible
+                document.getElementById('gameStatus').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 12px;">
+                        <h3 style="color: var(--gray);">⏰ Waiting for next round</h3>
+                        <p style="color: var(--gray); margin: 0.5rem 0;">A new round will start soon. Place your bet now!</p>
+                    </div>
+                `;
                 
-                // Check if we're in a valid round time but no round exists
-                const isInValidTime = isInValidRoundTime();
+                // SHOW bet section even when no round
+                document.getElementById('placeBetSection').classList.remove('hidden');
+                document.getElementById('currentParticipantsSection').classList.add('hidden');
+                document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active bet - round starting soon</p>';
                 
-                if (timeUntilNext > 0) {
-                    const hours = Math.floor(timeUntilNext / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60));
-                    
-                    document.getElementById('gameStatus').innerHTML = `
-                        <div style="text-align: center;">
-                            <div style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 1rem;">
-                                <h2 style="margin: 0 0 0.5rem 0; color: white;">⏰ Game Schedule</h2>
-                                <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0;">Next Round in ${hours}h ${minutes}m</div>
-                                <p style="margin: 0; opacity: 0.9;">Starts at ${nextRoundTime.toLocaleTimeString()}</p>
-                            </div>
-                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1rem;" onclick="toggleLUBCollapsible('dailyScheduleContent')">
-                                    <h3 style="margin: 0; color: var(--primary);">📅 Daily Schedule</h3>
-                                    <span id="dailyScheduleContentToggle" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
-                                </div>
-                                <div id="dailyScheduleContent" style="display: none;">
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Morning Round</strong><br>
-                                            <small>8:00 AM - 9:00 AM</small>
-                                            ${currentTimeDecimal >= 8 && currentTimeDecimal < 9 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Late Morning Round</strong><br>
-                                            <small>10:00 AM - 11:00 AM</small>
-                                            ${currentTimeDecimal >= 10 && currentTimeDecimal < 11 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Afternoon Round</strong><br>
-                                            <small>12:00 PM - 1:00 PM</small>
-                                            ${currentTimeDecimal >= 12 && currentTimeDecimal < 13 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Mid Afternoon Round</strong><br>
-                                            <small>2:00 PM - 3:00 PM</small>
-                                            ${currentTimeDecimal >= 14 && currentTimeDecimal < 15 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Evening Round</strong><br>
-                                            <small>4:00 PM - 5:00 PM</small>
-                                            ${currentTimeDecimal >= 16 && currentTimeDecimal < 17 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Late Evening Round</strong><br>
-                                            <small>6:00 PM - 7:00 PM</small>
-                                            ${currentTimeDecimal >= 18 && currentTimeDecimal < 19 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Night Round</strong><br>
-                                            <small>8:00 PM - 9:00 PM</small>
-                                            ${currentTimeDecimal >= 20 && currentTimeDecimal < 21 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; border: ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '2px solid #10b981' : '1px solid #e5e7eb'};">
-                                            <strong>Final Round</strong><br>
-                                            <small>9:00 PM - 10:00 PM</small>
-                                            ${currentTimeDecimal >= 21 && currentTimeDecimal < 22 ? '<br><small style="color: #10b981;">🔴 ACTIVE NOW</small>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('gameStatus').innerHTML = '<p class="text-center" style="color: var(--error);">No active round</p>';
-                }
-                
-                // If we're in a valid time but no round exists, show betting interface
-                if (isInValidTime) {
-                    // Show bet section when in valid time but no round
-                    document.getElementById('placeBetSection').classList.remove('hidden');
-                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Round starting soon - place your bet!</p>';
-                    
-                    // Try to start a new round if none exists
-                    try {
-                        await startNewLUBRound();
-                        console.log('Started new LUB round');
-                        // Refresh the section after starting a new round
-                        setTimeout(() => updateLUBGameSection(), 1000);
-                    } catch (error) {
-                        console.log('Could not start new round:', error.message);
-                        // Even if round creation fails, show betting interface
-                        document.getElementById('placeBetSection').classList.remove('hidden');
-                    }
-                } else {
-                    // Hide bet section when no active round and not in valid time
-                    document.getElementById('placeBetSection').classList.add('hidden');
-                    document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">No active round - check schedule above</p>';
-                }
-                
-                // Additional fallback: Always show betting during business hours (8 AM - 7 PM)
-                const currentTime = new Date();
-                const currentHourForFallback = currentTime.getHours();
-                if (currentHourForFallback >= 8 && currentHourForFallback < 19) {
-                    document.getElementById('placeBetSection').classList.remove('hidden');
-                    if (document.getElementById('myActiveLUBBet').innerHTML.includes('No active round')) {
-                        document.getElementById('myActiveLUBBet').innerHTML = '<p class="text-center" style="color: var(--gray); padding: 1rem;">Place your bet below - round will start automatically</p>';
-                    }
-                }
-                
-                // ALWAYS load history regardless of round status
                 await loadLUBGameHistory();
                 return;
             }
             
             currentLUBRound = round;
             
-            // Update wallet balance using category-based calculation
-            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
-            document.getElementById('lubWalletBalance').textContent = totalAvailable.toLocaleString();
+            // Wallet balance already updated above, no need to recalculate
             
             // Calculate time remaining
             const now = new Date();
@@ -13197,10 +13111,24 @@
         }
     }
 
+    async function toggleAutoBet() {
+        if (autoBetEnabled) {
+            await stopAutoBet();
+        } else {
+            await startAutoBet();
+        }
+    }
+
     async function performAutoBet() {
         if (!autoBetEnabled) return;
 
         try {
+            // ADD THIS: Update UI to show waiting
+            const statusDiv = document.getElementById('autoBetStatus');
+            if (statusDiv) {
+                statusDiv.querySelector('p').textContent = 'Waiting for round...';
+            }
+            
             const round = await getCurrentLUBRound();
             if (!round) {
                 // No active round, wait and try again
