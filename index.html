@@ -24,15 +24,90 @@
         --radius: 16px;
         --shadow: 0 10px 30px rgba(0,0,0,0.1);
         --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        /* Light mode (default) */
+        --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --bg-card: white;
+        --bg-secondary: #f9fafb;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --border-color: #e5e7eb;
+        --shadow-color: rgba(0,0,0,0.1);
+    }
+
+    [data-theme="dark"] {
+        /* Dark mode */
+        --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        --bg-card: #1f2937;
+        --bg-secondary: #111827;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --text-muted: #9ca3af;
+        --border-color: #374151;
+        --shadow-color: rgba(0,0,0,0.3);
+    }
+
+    /* Dark mode specific styles */
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .btn {
+        background: var(--primary);
+        color: white;
+        border: 1px solid var(--primary);
+    }
+
+    [data-theme="dark"] .btn:hover {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+
+    [data-theme="dark"] .btn-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .btn-secondary:hover {
+        background: var(--border-color);
+    }
+
+    [data-theme="dark"] .nav-link {
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .nav-link:hover {
+        background: var(--bg-secondary);
+    }
+
+    [data-theme="dark"] .stat-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    [data-theme="dark"] .plan-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+    }
+
+    [data-theme="dark"] .plan-card:hover {
+        background: var(--bg-secondary);
     }
 
     body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--bg-primary);
         min-height: 100vh;
         line-height: 1.6;
-        color: var(--dark);
+        color: var(--text-primary);
         padding-bottom: env(safe-area-inset-bottom);
+        transition: var(--transition);
     }
    /* Video Container Styles */
       .video-container {
@@ -62,12 +137,14 @@
 
     /* Card System */
     .card {
-        background: white;
+        background: var(--bg-card);
         border-radius: var(--radius);
         padding: clamp(1.5rem, 3vw, 2.5rem);
-        box-shadow: var(--shadow);
+        box-shadow: 0 10px 30px var(--shadow-color);
         margin-bottom: 1.5rem;
         animation: slideUp 0.4s ease-out;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
     }
 
     @keyframes slideUp {
@@ -1261,6 +1338,9 @@
                     🔔
                     <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
                 </div>
+                <div class="dark-mode-toggle" onclick="toggleDarkMode()" style="position: relative; cursor: pointer; font-size: 1.2rem; padding: 0.5rem; border-radius: 50%; transition: all 0.3s ease; background: var(--bg-secondary); border: 1px solid var(--border-color);" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Toggle Dark Mode">
+                    <span id="darkModeIcon">🌙</span>
+                </div>
             </div>
             <div class="nav-links">
                 <div class="nav-link" onclick="showSection('home')">Home</div>
@@ -1558,103 +1638,123 @@
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
-                    <div class="plan-card" onclick="selectPlan('seed')">
-                        <div class="plan-name">🌱 Seed</div>
+                    <div class="plan-card" onclick="selectPlan('newbie')">
+                        <div class="plan-name">🌟 Newbie</div>
+                        <div class="plan-amount">100 UGX</div>
+                        <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
+                            <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">1 task/day • 100 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 3,000 UGX</div>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('beginner')">
+                        <div class="plan-name">🌱 Beginner</div>
                         <div class="plan-amount">45,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">5 tasks/day • 390 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 58,500 UGX (30% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">3 tasks/day • 150 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 13,500 UGX</div>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-card" onclick="selectPlan('seed')">
+                        <div class="plan-name">🌱 Seed</div>
+                        <div class="plan-amount">180,000 UGX</div>
+                        <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
+                            <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">10 tasks/day • 180 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 54,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('rising')">
                         <div class="plan-name">🌅 Rising</div>
-                        <div class="plan-amount">180,000 UGX</div>
+                        <div class="plan-amount">600,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">10 tasks/day • 840 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 252,000 UGX (40% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">25 tasks/day • 800 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 600,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('nova')">
                         <div class="plan-name">💡 Nova</div>
-                        <div class="plan-amount">600,000 UGX</div>
+                        <div class="plan-amount">1,350,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">15 tasks/day • 1,400 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 630,000 UGX (45% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">45 tasks/day • 1,000 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 1,350,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('mastermind')">
                         <div class="plan-name">🧠 Mastermind</div>
-                        <div class="plan-amount">1,800,000 UGX</div>
+                        <div class="plan-amount">4,050,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">20 tasks/day • 2,700 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 1,620,000 UGX (50% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">70 tasks/day • 1,929 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 4,050,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('titan')">
                         <div class="plan-name">💪 Titan</div>
-                        <div class="plan-amount">5,000,000 UGX</div>
+                        <div class="plan-amount">8,775,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">25 tasks/day • 5,000 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 3,750,000 UGX (55% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">100 tasks/day • 2,925 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 8,775,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('king')">
                         <div class="plan-name">👑 King</div>
-                        <div class="plan-amount">10,000,000 UGX</div>
+                        <div class="plan-amount">16,650,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">30 tasks/day • 7,333 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 6,600,000 UGX (60% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">135 tasks/day • 4,107 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 16,650,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('emperor')">
                         <div class="plan-name">🦅 Emperor</div>
-                        <div class="plan-amount">20,000,000 UGX</div>
+                        <div class="plan-amount">29,700,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">35 tasks/day • 11,143 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 11,700,000 UGX (65% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">175 tasks/day • 5,657 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 29,700,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('icon')">
                         <div class="plan-name">💫 Icon</div>
-                        <div class="plan-amount">35,000,000 UGX</div>
+                        <div class="plan-amount">48,600,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">40 tasks/day • 15,313 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 18,375,000 UGX (70% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">220 tasks/day • 7,364 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 48,600,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('supreme')">
                         <div class="plan-name">🔱 Supreme</div>
-                        <div class="plan-amount">60,000,000 UGX</div>
+                        <div class="plan-amount">74,250,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">45 tasks/day • 20,000 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 27,000,000 UGX (75% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">265 tasks/day • 9,340 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 74,250,000 UGX</div>
                         </div>
                     </div>
                     
                     <div class="plan-card" onclick="selectPlan('legendary')">
                         <div class="plan-name">🕊️ Legendary</div>
-                        <div class="plan-amount">90,000,000 UGX</div>
+                        <div class="plan-amount">110,000,000 UGX</div>
                         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
                             <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">50 tasks/day • 22,500 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 33,750,000 UGX (80% profit)</div>
+                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">300 tasks/day • 12,222 UGX each</div>
+                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 110,000,000 UGX</div>
                         </div>
                     </div>
                 </div>
@@ -3255,85 +3355,101 @@
     }
 
     const vaultPlans = {
-        seed: { 
-            name: '🌱 Seed', 
+        newbie: { 
+            name: '🌟 Newbie', 
+            amount: 100, 
+            days: 30, 
+            level: 0,
+            dailyTasks: 1,
+            taskReward: 100  // 100 UGX per task, 1 task/day = 3,000/month
+        },
+        beginner: { 
+            name: '🌱 Beginner', 
             amount: 45000, 
             days: 30, 
             level: 1,
-            dailyTasks: 5,
-            taskReward: 390  // 390 UGX per task, 5 tasks/day = 58,500/month (30% profit)
+            dailyTasks: 3,
+            taskReward: 150  // 150 UGX per task, 3 tasks/day = 13,500/month
         },
-        rising: { 
-            name: '🌅 Rising', 
+        seed: { 
+            name: '🌱 Seed', 
             amount: 180000, 
             days: 30, 
             level: 2,
             dailyTasks: 10,
-            taskReward: 840  // 840 UGX per task, 10 tasks/day = 252,000/month (40% profit)
+            taskReward: 180  // 180 UGX per task, 10 tasks/day = 54,000/month
         },
-        nova: { 
-            name: '💡 Nova', 
+        rising: { 
+            name: '🌅 Rising', 
             amount: 600000, 
             days: 30, 
             level: 3,
-            dailyTasks: 15,
-            taskReward: 1400  // 1,400 UGX per task, 15 tasks/day = 630,000/month (45% profit)
+            dailyTasks: 25,
+            taskReward: 800  // 800 UGX per task, 25 tasks/day = 600,000/month
+        },
+        nova: { 
+            name: '💡 Nova', 
+            amount: 1350000, 
+            days: 30, 
+            level: 4,
+            dailyTasks: 45,
+            taskReward: 1000  // 1,000 UGX per task, 45 tasks/day = 1,350,000/month
         },
         mastermind: { 
             name: '🧠 Mastermind', 
-            amount: 1800000, 
+            amount: 4050000, 
             days: 30, 
-            level: 4,
-            dailyTasks: 20,
-            taskReward: 2700  // 2,700 UGX per task, 20 tasks/day = 1,620,000/month (50% profit)
+            level: 5,
+            dailyTasks: 70,
+            taskReward: 1929  // 1,929 UGX per task, 70 tasks/day = 4,050,000/month
         },
         titan: { 
             name: '💪 Titan', 
-            amount: 5000000, 
+            amount: 8775000, 
             days: 30, 
-            level: 5,
-            dailyTasks: 25,
-            taskReward: 5000  // 5,000 UGX per task, 25 tasks/day = 3,750,000/month (55% profit)
+            level: 6,
+            dailyTasks: 100,
+            taskReward: 2925  // 2,925 UGX per task, 100 tasks/day = 8,775,000/month
         },
         king: { 
             name: '👑 King', 
-            amount: 10000000, 
+            amount: 16650000, 
             days: 30, 
-            level: 6,
-            dailyTasks: 30,
-            taskReward: 7333  // 7,333 UGX per task, 30 tasks/day = 6,600,000/month (60% profit)
+            level: 7,
+            dailyTasks: 135,
+            taskReward: 4107  // 4,107 UGX per task, 135 tasks/day = 16,650,000/month
         },
         emperor: { 
             name: '🦅 Emperor', 
-            amount: 20000000, 
+            amount: 29700000, 
             days: 30, 
-            level: 7,
-            dailyTasks: 35,
-            taskReward: 11143  // 11,143 UGX per task, 35 tasks/day = 11,700,000/month (65% profit)
+            level: 8,
+            dailyTasks: 175,
+            taskReward: 5657  // 5,657 UGX per task, 175 tasks/day = 29,700,000/month
         },
         icon: { 
             name: '💫 Icon', 
-            amount: 35000000, 
+            amount: 48600000, 
             days: 30, 
-            level: 8,
-            dailyTasks: 40,
-            taskReward: 15313  // 15,313 UGX per task, 40 tasks/day = 18,375,000/month (70% profit)
+            level: 9,
+            dailyTasks: 220,
+            taskReward: 7364  // 7,364 UGX per task, 220 tasks/day = 48,600,000/month
         },
         supreme: { 
             name: '🔱 Supreme', 
-            amount: 60000000, 
+            amount: 74250000, 
             days: 30, 
-            level: 9,
-            dailyTasks: 45,
-            taskReward: 20000  // 20,000 UGX per task, 45 tasks/day = 27,000,000/month (75% profit)
+            level: 10,
+            dailyTasks: 265,
+            taskReward: 9340  // 9,340 UGX per task, 265 tasks/day = 74,250,000/month
         },
         legendary: { 
             name: '🕊️ Legendary', 
-            amount: 90000000, 
+            amount: 110000000, 
             days: 30, 
-            level: 10,
-            dailyTasks: 50,
-            taskReward: 22500  // 22,500 UGX per task, 50 tasks/day = 33,750,000/month (80% profit)
+            level: 11,
+            dailyTasks: 300,
+            taskReward: 12222  // 12,222 UGX per task, 300 tasks/day = 110,000,000/month
         }
     };
 
@@ -3618,7 +3734,7 @@
             let highestLevel = 0;
             let highestTaskReward = 100;
             let highestTasks = 1;
-            let highestPlanName = 'Beginner';
+            let highestPlanName = 'Newbie';
             
             activeVaults.forEach(vault => {
                 const planKey = Object.keys(vaultPlans).find(key => 
@@ -4511,9 +4627,12 @@
                    <div style="text-align: center; padding: 2rem;">
                        <h3>⏰ Waiting for Next Round</h3>
                        <p style="color: var(--gray);">New round starts every 2 minutes</p>
-                       <button class="btn btn-success" onclick="startNewLUBRound().then(() => updateLUBGameSection())">
-                           Start Round Now
+                       <button class="btn btn-success" onclick="startNewLUBRound().then(() => updateLUBGameSection())" style="font-size: 1.2rem; padding: 1rem 2rem;">
+                           🎲 Start Round Now
                        </button>
+                       <p style="color: var(--gray); font-size: 0.875rem; margin-top: 1rem;">
+                           Rounds run for 90 seconds betting + 30 seconds processing
+                       </p>
                    </div>
                `;
                
@@ -4529,8 +4648,24 @@
            const endTime = new Date(round.endTime);
            const timeLeft = Math.max(0, endTime - now);
            
+           console.log('Round timing debug:', {
+               now: now.toISOString(),
+               endTime: endTime.toISOString(),
+               timeLeft: timeLeft,
+               roundId: round.id
+           });
+           
            const minutes = Math.floor(timeLeft / 60000);
            const seconds = Math.floor((timeLeft % 60000) / 1000);
+           
+           // If time is up, process the round
+           if (timeLeft <= 0) {
+               console.log('Round time expired, processing...');
+               await processLUBRoundResults(round.id);
+               // Refresh the section after processing
+               setTimeout(() => updateLUBGameSection(), 1000);
+               return;
+           }
            
            document.getElementById('gameStatus').innerHTML = `
                <div style="text-align: center;">
@@ -4538,6 +4673,10 @@
                        <h2 style="margin: 0 0 0.5rem 0; color: white;">🎲 Round Active</h2>
                        <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;">${minutes}:${seconds.toString().padStart(2, '0')}</div>
                        <p style="margin: 0; opacity: 0.9;">Players: ${round.totalPlayers || 0} | Stakes: ${(round.totalStakes || 0).toLocaleString()} UGX</p>
+                       <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">
+                           <div>Round ID: ${round.id}</div>
+                           <div>Ends: ${endTime.toLocaleTimeString()}</div>
+                       </div>
                    </div>
                </div>
            `;
@@ -4854,8 +4993,46 @@
         }, 60000); // Check every minute
     }
 
+    // Dark Mode Functions
+    function toggleDarkMode() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        // Set the new theme
+        document.documentElement.setAttribute('data-theme', newTheme);
+        
+        // Update the icon
+        const icon = document.getElementById('darkModeIcon');
+        if (icon) {
+            icon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // Save preference to localStorage
+        localStorage.setItem('theme', newTheme);
+        
+        // Show feedback
+        showAlert('lubGameAlert', `Switched to ${newTheme} mode`, 'success');
+    }
+
+    function initializeTheme() {
+        // Get saved theme or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        
+        // Apply the theme
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // Update the icon
+        const icon = document.getElementById('darkModeIcon');
+        if (icon) {
+            icon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        }
+    }
+
     // Initialize app
     async function init() {
+        // Initialize theme first
+        initializeTheme();
+        
         document.getElementById('loadingScreen').classList.remove('hidden');
         
         if (!firebaseInitialized) {
@@ -12596,27 +12773,6 @@
     }
 
     // Get Current Round (No Auto-Creation)
-    async function getCurrentLUBRound() {
-        try {
-            // Only return active rounds, don't create new ones
-            const activeRoundSnapshot = await db.collection('lubGameRounds')
-                .where('status', '==', 'active')
-                .limit(1)
-                .get();
-
-            if (!activeRoundSnapshot.empty) {
-                const roundDoc = activeRoundSnapshot.docs[0];
-                const round = { id: roundDoc.id, ...roundDoc.data() };
-                console.log('Found active round (no auto-creation):', round.id, 'Status:', round.status);
-                return round;
-            }
-
-            return null;
-        } catch (error) {
-            console.error('Error getting current round:', error);
-            return null;
-        }
-    }
 
     // Place LUB Bet (Clean Version)
     async function placeLUBBet() {
