@@ -3950,7 +3950,7 @@
        try {
            console.log('🎮 Starting new LUB round...');
            
-           // Check if one already exists that was just created
+           // Check if one already exists
            const recentRounds = await db.collection('lubGameRounds')
                .where('status', '==', 'active')
                .get();
@@ -3959,22 +3959,28 @@
                console.log('ℹ️ Active round already exists');
                return recentRounds.docs[0].data();
            }
-
+   
            const now = new Date();
            const endTime = new Date(now.getTime() + LUB_CONFIG.ROUND_DURATION_MS);
-
-           const roundRef = await db.collection('lubGameRounds').add({
+   
+           // Generate a unique round number
+           const roundNumber = Date.now();
+   
+           const roundData = {
                status: 'active',
-               startTime: now,
-               endTime: endTime,
+               startTime: now.toISOString(),
+               endTime: endTime.toISOString(),
                totalPlayers: 0,
                totalStakes: 0,
-               createdAt: now
-           });
-
-           console.log('✅ Round started:', roundRef.id);
-           return { id: roundRef.id, status: 'active', endTime };
-
+               roundNumber: roundNumber,
+               createdAt: now.toISOString()
+           };
+   
+           const roundRef = await db.collection('lubGameRounds').add(roundData);
+   
+           console.log('✅ Round started:', roundRef.id, 'Ends at:', endTime.toLocaleTimeString());
+           return { id: roundRef.id, ...roundData };
+   
        } catch (error) {
            console.error('❌ Error starting round:', error);
            throw error;
@@ -3984,31 +3990,20 @@
 
    async function getCurrentLUBRound() {
        try {
-           const activeRound = await db.collection('lubGameRounds')
+           const activeRoundSnapshot = await db.collection('lubGameRounds')
                .where('status', '==', 'active')
                .orderBy('createdAt', 'desc')
                .limit(1)
                .get();
-           
-           if (!activeRound.empty) {
-               const doc = activeRound.docs[0];
-               const round = { id: doc.id, ...doc.data() };
-               
-               console.log('Found active round:', round.id, 'Status:', round.status);
-               
-               // Check if round expired
-               const now = new Date();
-               const endTime = new Date(round.endTime);
-               
-               if (now > endTime) {
-                   console.log('⏰ Round expired, processing...');
-                   await processLUBRoundResults(round.id);
-                   return null; // Return null, new round will be created
-               }
-               
-               return round;
+   
+           if (!activeRoundSnapshot.empty) {
+               const roundDoc = activeRoundSnapshot.docs[0];
+               currentLUBRound = { id: roundDoc.id, ...roundDoc.data() };
+               console.log('Found active round:', currentLUBRound.id);
+               return currentLUBRound;
            }
-           
+   
+           currentLUBRound = null;
            return null;
        } catch (error) {
            console.error('Error getting current round:', error);
@@ -4506,14 +4501,10 @@
            let round = await getCurrentLUBRound();
            
            if (!round) {
-               // No active round
                document.getElementById('gameStatus').innerHTML = `
                    <div style="text-align: center; padding: 2rem;">
                        <h3>⏰ Waiting for Next Round</h3>
                        <p style="color: var(--gray);">New round starts every 2 minutes</p>
-                       <button class="btn btn-success" onclick="startNewLUBRound().then(() => updateLUBGameSection())">
-                           Start Round Now
-                       </button>
                    </div>
                `;
                
@@ -4524,7 +4515,7 @@
                return;
            }
            
-           // Active round exists
+           // Active round exists - calculate time remaining
            const now = new Date();
            const endTime = new Date(round.endTime);
            const timeLeft = Math.max(0, endTime - now);
@@ -4536,7 +4527,7 @@
                <div style="text-align: center;">
                    <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 2rem; border-radius: 12px;">
                        <h2 style="margin: 0 0 0.5rem 0; color: white;">🎲 Round Active</h2>
-                       <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+                       <div style="font-size: 3rem; font-weight: 800; margin: 1rem 0;" id="roundTimer">${minutes}:${seconds.toString().padStart(2, '0')}</div>
                        <p style="margin: 0; opacity: 0.9;">Players: ${round.totalPlayers || 0} | Stakes: ${(round.totalStakes || 0).toLocaleString()} UGX</p>
                    </div>
                </div>
@@ -4568,6 +4559,26 @@
            
        } catch (error) {
            console.error('Error updating LUB section:', error);
+       }
+   }
+
+
+   // Update countdown in real-time
+   function updateLUBCountdown() {
+       const timerEl = document.getElementById('roundTimer');
+       if (!timerEl || !currentLUBRound) return;
+       
+       const now = new Date();
+       const endTime = new Date(currentLUBRound.endTime);
+       const timeLeft = Math.max(0, endTime - now);
+       
+       const minutes = Math.floor(timeLeft / 60000);
+       const seconds = Math.floor((timeLeft % 60000) / 1000);
+       
+       timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+       
+       if (timeLeft <= 0) {
+           timerEl.textContent = 'Processing...';
        }
    }
 
@@ -4621,18 +4632,23 @@
         }
     }
 
-    // Start auto-update for LUB game
-    function startLUBGameAutoUpdate() {
-        if (lubUpdateInterval) {
-            clearInterval(lubUpdateInterval);
-        }
-        
-        lubUpdateInterval = setInterval(() => {
-            if (!document.getElementById('lubGameSection').classList.contains('hidden')) {
-                updateLUBGameSection();
-            }
-        }, 1000); // Update every second for countdown
-    }
+      function startLUBGameAutoUpdate() {
+          if (lubUpdateInterval) {
+              clearInterval(lubUpdateInterval);
+          }
+          
+          // Update every second for smooth countdown
+          lubUpdateInterval = setInterval(() => {
+              if (!document.getElementById('lubGameSection').classList.contains('hidden')) {
+                  updateLUBCountdown();
+                  
+                  // Full update every 10 seconds
+                  if (Date.now() % 10000 < 1000) {
+                      updateLUBGameSection();
+                  }
+              }
+          }, 1000);
+      }
 
     // Stop auto-update
     function stopLUBGameAutoUpdate() {
@@ -12518,17 +12534,19 @@
        try {
            console.log('🎮 Initializing LUB Game System...');
            
-           // Start first round if none exists
+           // Check for active rounds first
            const activeRounds = await db.collection('lubGameRounds')
                .where('status', '==', 'active')
                .get();
            
            if (activeRounds.empty) {
-               console.log('Starting initial round...');
+               console.log('No active rounds found, starting new round...');
                await startNewLUBRound();
+           } else {
+               console.log('Active round exists:', activeRounds.docs[0].id);
            }
            
-           // CRITICAL: Start continuous monitoring
+           // Start the monitoring system
            startRoundMonitoring();
            
            console.log('✅ LUB Game System initialized');
@@ -12541,27 +12559,32 @@
    function startRoundMonitoring() {
        console.log('🔄 Starting round monitoring...');
        
+       // Check every 5 seconds for expired rounds
        setInterval(async () => {
            try {
                const activeRounds = await db.collection('lubGameRounds')
                    .where('status', '==', 'active')
-                   .orderBy('endTime', 'asc')
                    .get();
                
                const now = new Date();
                
                for (const roundDoc of activeRounds.docs) {
                    const round = roundDoc.data();
-                   const endTime = new Date(round.endTime);
+                   const endTime = round.endTime ? new Date(round.endTime) : null;
                    
-                   // If round has ended, process it
-                   if (now >= endTime && round.status === 'active') {
+                   if (!endTime) {
+                       console.error('Round missing endTime:', roundDoc.id);
+                       continue;
+                   }
+                   
+                   // Check if round has ended
+                   if (now >= endTime) {
                        console.log('⏰ Round expired, processing:', roundDoc.id);
                        await processLUBRoundResults(roundDoc.id);
                    }
                }
                
-               // If no active rounds, start a new one
+               // If no active rounds exist, start a new one
                if (activeRounds.empty) {
                    console.log('📢 No active rounds, starting new one');
                    await startNewLUBRound();
@@ -12570,7 +12593,7 @@
            } catch (error) {
                console.error('❌ Error in round monitoring:', error);
            }
-       }, 10000); // Check every 10 seconds
+       }, 5000); // Check every 5 seconds
    }
 
     async function checkAndProcessRounds() {
