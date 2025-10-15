@@ -1766,16 +1766,6 @@
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
-                    <div class="plan-card" onclick="selectPlan('beginner')">
-                        <div class="plan-name">🌱 Beginner</div>
-                        <div class="plan-amount">45,000 UGX</div>
-                        <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
-                            <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📋 Task Allocation</div>
-                            <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">3 tasks/day • 150 UGX each</div>
-                            <div style="font-size: 0.8rem; color: #0c4a6e;">Monthly: 13,500 UGX (30% profit)</div>
-                        </div>
-                    </div>
-                    
                     <div class="plan-card" onclick="selectPlan('seed')">
                         <div class="plan-name">🌱 Seed</div>
                         <div class="plan-amount">45,000 UGX</div>
@@ -1942,8 +1932,9 @@
                 <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--success);">
                     <h4 style="color: var(--success); margin: 0 0 0.5rem 0;">💰 Referral Rewards</h4>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
-                        <li><strong>4000 UGX</strong> for each direct referral</li>
-                        
+                        <li><strong>4,000 UGX</strong> for each direct referral</li>
+                        <li><strong>10% bonus</strong> from every vault plan purchase by your referrals</li>
+                        <li><strong>Weekly prizes</strong> for top referrers</li>
                     </ul>
                 </div>
                 
@@ -3259,14 +3250,6 @@
     }
 
     const vaultPlans = {
-        beginner: { 
-            name: '🌱 Beginner', 
-            amount: 45000, 
-            days: 30, 
-            level: 1,
-            dailyTasks: 3,
-            taskReward: 150  // 150 UGX per task, 3 tasks/day = 13,500/month (30% profit)
-        },
         seed: { 
             name: '🌱 Seed', 
             amount: 45000, 
@@ -7111,68 +7094,32 @@
                 // Show processing message
                 purchaseBtn.textContent = 'Processing referral rewards...';
                 
-                if (isFirstPurchase) {
-                    // First vault purchase: 2% referrer bonus
-                    const referralBonus = planData.amount * 0.02;
-                    
-                    const referrerDoc = await db.collection('users').doc(currentUser.referredBy).get();
-                    const referrerBalance = referrerDoc.data().balance || 0;
-                    await db.collection('users').doc(currentUser.referredBy).update({
-                        balance: referrerBalance + referralBonus
-                    });
+                // All vault purchases: 10% referrer bonus
+                const referralBonus = planData.amount * 0.10;
+                
+                const referrerDoc = await db.collection('users').doc(currentUser.referredBy).get();
+                const referrerBalance = referrerDoc.data().balance || 0;
+                await db.collection('users').doc(currentUser.referredBy).update({
+                    balance: referrerBalance + referralBonus
+                });
 
-                    const refDoc = await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).get();
-                    const currentEarnings = refDoc.data().earnings || 0;
-                    await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).update({
-                        earnings: currentEarnings + referralBonus
-                    });
+                const refDoc = await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).get();
+                const currentEarnings = refDoc.data().earnings || 0;
+                await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).update({
+                    earnings: currentEarnings + referralBonus
+                });
 
-                    await db.collection('transactions').add({
-                        userId: currentUser.referredBy,
-                        userName: referrerDoc.data().fullName,
-                        type: 'referral',
-                        amount: referralBonus,
-                        description: 'Referral bonus from first vault purchase (2%)',
-                        date: new Date().toISOString()
-                    });
-                } else {
-                    // Vault upgrade: 7% referrer + 15% admin
-                    const referralBonus = planData.amount * 0.07;
-                    const adminCommission = planData.amount * 0.15;
-                    
-                    // Give referrer bonus
-                    const referrerDoc = await db.collection('users').doc(currentUser.referredBy).get();
-                    const referrerBalance = referrerDoc.data().balance || 0;
-                    await db.collection('users').doc(currentUser.referredBy).update({
-                        balance: referrerBalance + referralBonus
-                    });
+                await db.collection('transactions').add({
+                    userId: currentUser.referredBy,
+                    userName: referrerDoc.data().fullName,
+                    type: 'referral',
+                    amount: referralBonus,
+                    description: `Referral bonus from vault purchase (10%) - ${planData.name}`,
+                    date: new Date().toISOString()
+                });
 
-                    const refDoc = await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).get();
-                    const currentEarnings = refDoc.data().earnings || 0;
-                    await db.collection('users').doc(currentUser.referredBy).collection('referrals').doc(currentUser.id).update({
-                        earnings: currentEarnings + referralBonus
-                    });
-
-                    // Record referrer transaction
-                    await db.collection('transactions').add({
-                        userId: currentUser.referredBy,
-                        userName: referrerDoc.data().fullName,
-                        type: 'referral',
-                        amount: referralBonus,
-                        description: 'Referral bonus from vault upgrade (7%)',
-                        date: new Date().toISOString()
-                    });
-
-                    // Record admin commission
-                    await db.collection('transactions').add({
-                        userId: 'admin',
-                        userName: 'Administrator',
-                        type: 'admin_commission',
-                        amount: adminCommission,
-                        description: 'Admin commission from vault upgrade (15%)',
-                        date: new Date().toISOString()
-                    });
-                }
+                // Send notification to referrer
+                await sendNotification(currentUser.referredBy, 'referral_bonus', null, referralBonus);
             }
 
             // Show success message
