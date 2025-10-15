@@ -335,6 +335,217 @@
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
         color: var(--primary);
     }
+    
+    /* Dark Mode Toggle */
+    .dark-mode-toggle {
+        display: none; /* Hidden by default */
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-size: 1.2rem;
+        margin-left: 0.5rem;
+    }
+    
+    .dark-mode-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Show dark mode toggle only on screens (not mobile) */
+    @media (min-width: 768px) {
+        .dark-mode-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+    
+    /* Dark Mode Styles */
+    .dark-mode {
+        --primary: #60a5fa;
+        --primary-dark: #3b82f6;
+        --secondary: #a78bfa;
+        --success: #34d399;
+        --warning: #fbbf24;
+        --error: #f87171;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --gray: #9ca3af;
+        --white: #111827;
+        --black: #f9fafb;
+        --border: #374151;
+        --shadow: rgba(0, 0, 0, 0.5);
+    }
+    
+    .dark-mode body {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f172a 100%);
+        color: #f9fafb;
+    }
+    
+    .dark-mode .card {
+        background: #1f2937;
+        border: 1px solid #374151;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .navbar {
+        background: rgba(31, 41, 55, 0.95);
+        border-bottom: 1px solid #374151;
+    }
+    
+    .dark-mode .nav-link {
+        color: #f9fafb;
+    }
+    
+    .dark-mode .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .dark-mode .stat-card {
+        background: #1f2937;
+        border: 1px solid #374151;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .stat-label {
+        color: #9ca3af;
+    }
+    
+    .dark-mode .stat-value {
+        color: #f9fafb;
+    }
+    
+    .dark-mode .stat-unit {
+        color: #9ca3af;
+    }
+    
+    .dark-mode input, .dark-mode select, .dark-mode textarea {
+        background: #374151;
+        border: 1px solid #4b5563;
+        color: #f9fafb;
+    }
+    
+    .dark-mode input:focus, .dark-mode select:focus, .dark-mode textarea:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
+    
+    .dark-mode .btn {
+        background: #3b82f6;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .btn:hover {
+        background: #2563eb;
+    }
+    
+    .dark-mode .btn-success {
+        background: #059669;
+    }
+    
+    .dark-mode .btn-success:hover {
+        background: #047857;
+    }
+    
+    .dark-mode .btn-warning {
+        background: #d97706;
+    }
+    
+    .dark-mode .btn-warning:hover {
+        background: #b45309;
+    }
+    
+    .dark-mode .btn-error {
+        background: #dc2626;
+    }
+    
+    .dark-mode .btn-error:hover {
+        background: #b91c1c;
+    }
+    
+    .dark-mode .table {
+        background: #1f2937;
+        border: 1px solid #374151;
+    }
+    
+    .dark-mode .table th {
+        background: #374151;
+        color: #f9fafb;
+        border-bottom: 1px solid #4b5563;
+    }
+    
+    .dark-mode .table td {
+        border-bottom: 1px solid #374151;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .table tbody tr:nth-child(even) {
+        background-color: #374151;
+    }
+    
+    .dark-mode .table tbody tr:hover {
+        background-color: #4b5563;
+    }
+    
+    .dark-mode .modal-content {
+        background: #1f2937;
+        border: 1px solid #374151;
+    }
+    
+    .dark-mode .modal-header {
+        border-bottom: 1px solid #374151;
+    }
+    
+    .dark-mode .modal-close {
+        color: #f9fafb;
+    }
+    
+    .dark-mode .collapsible-header {
+        background: #374151;
+        border: 1px solid #4b5563;
+    }
+    
+    .dark-mode .collapsible-content {
+        background: #1f2937;
+        border: 1px solid #374151;
+    }
+    
+    .dark-mode .bottom-nav {
+        background: rgba(31, 41, 55, 0.95);
+        border-top: 1px solid #374151;
+    }
+    
+    .dark-mode .bottom-nav-item {
+        color: #9ca3af;
+    }
+    
+    .dark-mode .bottom-nav-item.active {
+        color: #60a5fa;
+    }
+    
+    .dark-mode .alert {
+        background: #374151;
+        border: 1px solid #4b5563;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .alert-success {
+        background: #064e3b;
+        border-color: #047857;
+        color: #a7f3d0;
+    }
+    
+    .dark-mode .alert-error {
+        background: #7f1d1d;
+        border-color: #dc2626;
+        color: #fecaca;
+    }
+    
+    .dark-mode .alert-warning {
+        background: #78350f;
+        border-color: #d97706;
+        color: #fed7aa;
+    }
 
     /* Bottom Navigation */
     .bottom-nav {
@@ -1271,6 +1482,9 @@
                 <div class="nav-link" onclick="showSection('wallet')">Wallet</div>
                 <div class="nav-link" onclick="showSection('stake')">Stake</div>
                 <div class="nav-link" onclick="logout()">Logout</div>
+                <div class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                    <span id="darkModeIcon">🌙</span>
+                </div>
             </div>
         </div>
 
@@ -13016,6 +13230,51 @@
     }
 
     // ==================== END LUB GAME SYSTEM ====================
+    
+    // ==================== DARK MODE FUNCTIONALITY ====================
+    
+    // Dark Mode Toggle Function
+    function toggleDarkMode() {
+        const body = document.body;
+        const darkModeIcon = document.getElementById('darkModeIcon');
+        
+        if (body.classList.contains('dark-mode')) {
+            // Switch to light mode
+            body.classList.remove('dark-mode');
+            darkModeIcon.textContent = '🌙';
+            localStorage.setItem('darkMode', 'false');
+        } else {
+            // Switch to dark mode
+            body.classList.add('dark-mode');
+            darkModeIcon.textContent = '☀️';
+            localStorage.setItem('darkMode', 'true');
+        }
+    }
+    
+    // Load dark mode preference on page load
+    function loadDarkModePreference() {
+        const darkMode = localStorage.getItem('darkMode');
+        const darkModeIcon = document.getElementById('darkModeIcon');
+        
+        if (darkMode === 'true') {
+            document.body.classList.add('dark-mode');
+            if (darkModeIcon) {
+                darkModeIcon.textContent = '☀️';
+            }
+        } else {
+            document.body.classList.remove('dark-mode');
+            if (darkModeIcon) {
+                darkModeIcon.textContent = '🌙';
+            }
+        }
+    }
+    
+    // Initialize dark mode when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDarkModePreference();
+    });
+    
+    // ==================== END DARK MODE FUNCTIONALITY ====================
 </script>
 
 <!-- Notification System -->
