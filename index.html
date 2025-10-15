@@ -1614,7 +1614,7 @@
                                     💰 Weekly Prize: 50,000 UGX
                                 </div>
                                 <div style="font-size: 0.875rem; color: #92400e;">
-                                    Top referrer wins every Sunday at midnight!
+                                    Top referrer with at least 8 activated referrals wins every Sunday at midnight!
                                 </div>
                                 <div id="weekResetTimer" style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem;">
                                     Resets in: <span id="timeUntilReset">Loading...</span>
@@ -1934,7 +1934,7 @@
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--gray);">
                         <li><strong>4,000 UGX</strong> for each direct referral</li>
                         <li><strong>10% bonus</strong> from every vault plan purchase by your referrals</li>
-                        <li><strong>Weekly prizes</strong> for top referrers</li>
+                        <li><strong>Weekly prizes</strong> for top referrers (minimum 8 activated referrals)</li>
                     </ul>
                 </div>
                 
@@ -3477,6 +3477,13 @@
         depositEarnings: 'Deposit Earnings'
     };
 
+    // Payment methods for vault purchases
+    const PAYMENT_METHODS = {
+        walletBalance: 'Wallet Balance',
+        mobileMoney: 'Mobile Money',
+        bitcoin: 'Bitcoin'
+    };
+
     // Get user's category balances (earnings only, excluding deposits)
     async function getUserCategoryBalances(userId) {
         try {
@@ -4838,7 +4845,7 @@
                }
            }
            
-           if (topReferrer && topReferrer.weeklyReferrals > 0) {
+           if (topReferrer && topReferrer.weeklyReferrals >= 8) {
                const prizeAmount = 50000;
                const currentBalance = topReferrer.userData.balance || 0;
                
@@ -6661,13 +6668,9 @@
                     statusBadge = '<span class="status-badge status-matured">Matured - Ready to Withdraw!</span>';
                     actionButtons = `
                         <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                            <button class="btn" style="background: var(--success); padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
-                                    onclick="withdrawVault('${v.id}', 'full')">
-                                Withdraw All
-                            </button>
                             <button class="btn" style="background: var(--primary); padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
-                                    onclick="withdrawVault('${v.id}', 'profit_only')">
-                                Profit Only
+                                    onclick="withdrawVaultProfit('${v.id}')">
+                                Withdraw Profit
                             </button>
                             <button class="btn" style="background: var(--warning); padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
                                     onclick="reinvestVault('${v.id}')">
@@ -6704,7 +6707,114 @@
         }).join('');
     }
 
-    // Vault withdrawal and re-investment functions
+    // Vault profit withdrawal function (follows same rules as task earnings)
+    async function withdrawVaultProfit(vaultId) {
+        try {
+            const vaultDoc = await db.collection('users').doc(currentUser.id).collection('vaults').doc(vaultId).get();
+            const vault = vaultDoc.data();
+            
+            if (!vault) {
+                alert('Vault not found');
+                return;
+            }
+            
+            const now = new Date();
+            const maturityDate = new Date(vault.maturityDate);
+            
+            if (now < maturityDate) {
+                alert('Vault has not matured yet');
+                return;
+            }
+            
+            if (vault.withdrawalOption) {
+                alert('Vault profit has already been withdrawn');
+                return;
+            }
+            
+            // Apply same withdrawal rules as task earnings (Friday and Saturday only)
+            const dayOfWeek = now.getDay();
+            if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const daysUntilWeekend = dayOfWeek < 5 ? 5 - dayOfWeek : 6 - dayOfWeek;
+                alert(`Vault profits can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}. Next available: Friday (${daysUntilWeekend} days)`);
+                return;
+            }
+            
+            // Only allow profit withdrawal, not the original capital
+            const withdrawalAmount = vault.expectedProfit;
+            const description = 'Vault profit withdrawal (profit only, capital remains invested)';
+            
+            // Calculate admin commission (5% of withdrawal, same as task earnings)
+            const adminCommission = withdrawalAmount * 0.05;
+            const netWithdrawalAmount = withdrawalAmount - adminCommission;
+            
+            // Update user balance
+            const userDoc = await db.collection('users').doc(currentUser.id).get();
+            const currentBalance = userDoc.data().balance || 0;
+            await db.collection('users').doc(currentUser.id).update({
+                balance: currentBalance + netWithdrawalAmount
+            });
+            
+            // Mark vault as withdrawn (profit only)
+            await db.collection('users').doc(currentUser.id).collection('vaults').doc(vaultId).update({
+                withdrawalOption: 'profit_only',
+                withdrawnDate: now.toISOString(),
+                withdrawnAmount: netWithdrawalAmount
+            });
+            
+            // Record user withdrawal transaction
+            await db.collection('transactions').add({
+                userId: currentUser.id,
+                userName: currentUser.fullName,
+                type: 'vault_withdrawal',
+                amount: netWithdrawalAmount,
+                adminFee: adminCommission,
+                description: description + ` (Net after 5% admin fee)`,
+                date: new Date().toISOString()
+            });
+            
+            // Record admin commission transaction
+            await db.collection('transactions').add({
+                userId: 'admin',
+                userName: 'Administrator',
+                type: 'admin_commission',
+                amount: adminCommission,
+                description: `Admin commission from vault profit withdrawal (5% of ${withdrawalAmount.toLocaleString()} UGX)`,
+                date: new Date().toISOString()
+            });
+            
+            // Send vault profit withdrawal notification
+            await sendNotification(currentUser.id, 'vault_matured', `Your vault profit has been withdrawn! You received ${netWithdrawalAmount.toLocaleString()} UGX!`, netWithdrawalAmount);
+            
+            alert(`Successfully withdrew ${netWithdrawalAmount.toLocaleString()} UGX profit from vault! (Admin fee: ${adminCommission.toLocaleString()} UGX)\n\nNote: Your original investment of ${vault.amount.toLocaleString()} UGX remains in the vault.`);
+            updateUserStats();
+            updateVaultSection();
+            
+            // Check for recent withdrawals to show success card
+            await checkRecentWithdrawal();
+            
+            // Update dashboard and other sections in real-time
+            try {
+                // Update dashboard if visible
+                if (document.getElementById('dashboardPage') && !document.getElementById('dashboardPage').classList.contains('hidden')) {
+                    await updateDashboard();
+                }
+                
+                // Update withdraw section if visible
+                if (document.getElementById('withdrawSection') && !document.getElementById('withdrawSection').classList.contains('hidden')) {
+                    await updateWithdrawSection();
+                }
+            } catch (dashboardError) {
+                console.error('Error updating dashboard after vault profit withdrawal:', dashboardError);
+            }
+            
+        } catch (error) {
+            console.error('Error withdrawing vault profit:', error);
+            alert('Error withdrawing vault profit: ' + error.message);
+        }
+    }
+
+    // Vault withdrawal and re-investment functions (DEPRECATED - kept for backward compatibility)
     async function withdrawVault(vaultId, withdrawalType) {
         try {
             const vaultDoc = await db.collection('users').doc(currentUser.id).collection('vaults').doc(vaultId).get();
@@ -7002,10 +7112,217 @@
 
         const planData = vaultPlans[selectedPlan];
         
-        // Show category selection modal
-        showCategorySelectionModal(planData.amount, async (sourceCategory, categoryName) => {
+        // Show payment method selection modal for vault purchases
+        showVaultPaymentModal(planData.amount, planData.name);
+    }
+
+    function showVaultPaymentModal(amount, planName) {
+        const modal = document.createElement('div');
+        modal.className = 'modal show';
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px; width: 90%; margin: auto; border-radius: 16px;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem; border: none; position: relative;">
+                    <h3 style="margin: 0; font-size: 1.25rem;">💳 Select Payment Method</h3>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem;">Choose how to pay for ${planName}</p>
+                    <button class="modal-close" onclick="this.closest('.modal').remove()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">&times;</button>
+                </div>
+                
+                <div class="modal-body" style="padding: 1.5rem; background: #f8fafc;">
+                    <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; color: #0c4a6e;">Plan Amount:</span>
+                            <span style="font-weight: 700; color: #0c4a6e; font-size: 1.2rem;">${amount.toLocaleString()} UGX</span>
+                        </div>
+                    </div>
+                    
+                    <div id="paymentOptions" style="display: grid; gap: 0.75rem;"></div>
+                    <div id="paymentAlert" style="display: none; margin-top: 1rem;"></div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // Populate payment options
+        populateVaultPaymentOptions(amount, planName, modal);
+    }
+
+    async function populateVaultPaymentOptions(amount, planName, modal) {
+        const paymentOptions = modal.querySelector('#paymentOptions');
+        const paymentAlert = modal.querySelector('#paymentAlert');
+        
+        try {
+            // Wallet Balance Option
+            const balances = await getUserCategoryBalances(currentUser.id);
+            const totalBalance = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
+            const hasSufficientBalance = totalBalance >= amount;
+            
+            // Wallet Balance Option
+            const walletOption = document.createElement('div');
+            walletOption.style.cssText = `
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                border: 2px solid ${hasSufficientBalance ? '#e5e7eb' : '#f3f4f6'};
+                border-radius: 12px;
+                background: ${hasSufficientBalance ? '#ffffff' : '#f9fafb'};
+                cursor: ${hasSufficientBalance ? 'pointer' : 'not-allowed'};
+                transition: all 0.2s;
+            `;
+            
+            walletOption.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                    <div style="font-size: 2rem;">💰</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Wallet Balance</div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">Available: ${totalBalance.toLocaleString()} UGX</div>
+                        ${!hasSufficientBalance ? '<div style="font-size: 0.8rem; color: #ef4444; margin-top: 0.25rem;">Insufficient funds</div>' : ''}
+                    </div>
+                    <div style="font-size: 1.5rem; color: ${hasSufficientBalance ? '#10b981' : '#9ca3af'};">
+                        ${hasSufficientBalance ? '✓' : '✗'}
+                    </div>
+                </div>
+            `;
+            
+            if (hasSufficientBalance) {
+                walletOption.addEventListener('click', () => {
+                    modal.remove();
+                    processVaultPurchaseWithWallet(amount, planName);
+                });
+            }
+            
+            // Mobile Money Option
+            const mobileOption = document.createElement('div');
+            mobileOption.style.cssText = `
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                background: #ffffff;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            
+            mobileOption.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                    <div style="font-size: 2rem;">📱</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Mobile Money</div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">Pay via MTN/Airtel Mobile Money</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #10b981;">→</div>
+                </div>
+            `;
+            
+            mobileOption.addEventListener('click', () => {
+                modal.remove();
+                // Redirect to deposit page
+                showSection('wallet');
+                showAlert('walletAlert', 'Please deposit funds first, then return to purchase your vault plan.', 'info');
+            });
+            
+            // Bitcoin Option
+            const bitcoinOption = document.createElement('div');
+            bitcoinOption.style.cssText = `
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                background: #ffffff;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            
+            bitcoinOption.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                    <div style="font-size: 2rem;">₿</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Bitcoin</div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">Pay with Bitcoin cryptocurrency</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #10b981;">→</div>
+                </div>
+            `;
+            
+            bitcoinOption.addEventListener('click', () => {
+                modal.remove();
+                showVaultPurchasePopup('Bitcoin payment initiated. Please contact support for Bitcoin payment instructions.', 'info');
+            });
+            
+            paymentOptions.appendChild(walletOption);
+            paymentOptions.appendChild(mobileOption);
+            paymentOptions.appendChild(bitcoinOption);
+            
+        } catch (error) {
+            console.error('Error populating payment options:', error);
+            paymentAlert.style.display = 'block';
+            paymentAlert.innerHTML = `
+                <div style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem;">
+                    Error loading payment options. Please try again.
+                </div>
+            `;
+        }
+    }
+
+    async function processVaultPurchaseWithWallet(amount, planName) {
+        const balances = await getUserCategoryBalances(currentUser.id);
+        const totalBalance = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
+        
+        if (totalBalance < amount) {
+            showVaultPurchasePopup('Insufficient wallet balance. Please deposit more funds.', 'error');
+            return;
+        }
+        
+        // Show category selection for wallet balance
+        showCategorySelectionModal(amount, async (sourceCategory, categoryName) => {
             await processVaultPurchase(sourceCategory, categoryName);
         }, 'vault_purchase');
+    }
+
+    function showVaultPurchasePopup(message, type) {
+        const popup = document.createElement('div');
+        popup.className = 'modal show';
+        popup.style.display = 'flex';
+        popup.style.zIndex = '10000';
+        
+        const bgColor = type === 'error' ? '#fee2e2' : type === 'success' ? '#dcfce7' : '#dbeafe';
+        const borderColor = type === 'error' ? '#fecaca' : type === 'success' ? '#bbf7d0' : '#bfdbfe';
+        const textColor = type === 'error' ? '#991b1b' : type === 'success' ? '#166534' : '#1e40af';
+        const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+        
+        popup.innerHTML = `
+            <div class="modal-content" style="max-width: 400px; width: 90%; margin: auto; border-radius: 16px;">
+                <div class="modal-header" style="background: ${bgColor}; border: 2px solid ${borderColor}; color: ${textColor}; border-radius: 16px; padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">${icon}</div>
+                    <h3 style="margin: 0; font-size: 1.25rem;">${type === 'error' ? 'Payment Failed' : type === 'success' ? 'Payment Successful' : 'Information'}</h3>
+                    <p style="margin: 1rem 0 0 0; font-size: 0.95rem;">${message}</p>
+                    <button class="btn btn-primary" onclick="this.closest('.modal').remove()" style="margin-top: 1rem; padding: 0.75rem 1.5rem;">
+                        ${type === 'success' ? 'Continue' : 'Close'}
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // Auto close after 5 seconds for success messages
+        if (type === 'success') {
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.remove();
+                }
+            }, 5000);
+        }
     }
 
     async function processVaultPurchase(sourceCategory, categoryName) {
@@ -7126,8 +7443,8 @@
             purchaseBtn.textContent = '✅ Success!';
             purchaseBtn.style.background = '#10b981';
             
-            // Show success alert
-            showPurchaseSuccess(`🎉 Vault "${planData.name}" purchased successfully! Expected profit: ${profit.toLocaleString()} UGX`);
+            // Show success popup
+            showVaultPurchasePopup(`🎉 Vault "${planData.name}" purchased successfully! Expected profit: ${profit.toLocaleString()} UGX`, 'success');
 
             // Reset selection and update UI after a short delay
             setTimeout(() => {
@@ -9909,9 +10226,23 @@
                 return { eligible: true, reason: '' };
             
             case 'vault':
-                // Vault earnings need 30 days from vault purchase
-                // This would need to be checked against individual vault purchase dates
-                return { eligible: true, reason: 'Vault earnings eligible after 30 days from purchase' };
+                // Vault profits follow same rules as task earnings (Friday and Saturday only)
+                const dayOfWeek = now.getDay();
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    let daysUntilWeekend;
+                    if (dayOfWeek < 5) {
+                        daysUntilWeekend = 5 - dayOfWeek;
+                    } else {
+                        daysUntilWeekend = 6 - dayOfWeek;
+                    }
+                    
+                    return { 
+                        eligible: false, 
+                        reason: `Vault profits can only be withdrawn on Fridays and Saturdays. Today is ${dayNames[dayOfWeek]}. Next available: Friday (${daysUntilWeekend} days)` 
+                    };
+                }
+                return { eligible: true, reason: 'Vault profits eligible for withdrawal on weekends' };
             
             default:
                 return { eligible: false, reason: 'Unknown fund source' };
@@ -10051,27 +10382,9 @@
 
             // Apply category-specific withdrawal rules
             if (category === 'vault') {
-                // Vault profits: 30-day waiting period + weekend + last two weeks
-                const activationDate = new Date(userData.activationDate || userData.joinedDate);
-                const thirtyDaysLater = new Date(activationDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-
-                if (now < thirtyDaysLater) {
-                    const daysLeft = Math.ceil((thirtyDaysLater - now) / (24 * 60 * 60 * 1000));
-                    alert(`Vault profits can only be withdrawn after 30 days. You must wait ${daysLeft} more days.`);
-                    return;
-                }
-
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    alert('Vault profits can only be withdrawn on weekends (Saturday and Sunday)');
-                    return;
-                }
-
-                const currentDate = now.getDate();
-                const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                const lastTwoWeeksStart = lastDayOfMonth - 13;
-
-                if (currentDate < lastTwoWeeksStart) {
-                    alert('Vault profits can only be withdrawn in the last two weeks of the month');
+                // Vault profits follow same rules as task earnings (Friday and Saturday only)
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    alert('Vault profits can only be withdrawn on Fridays and Saturdays');
                     return;
                 }
             } else if (category === 'lubGame' || category === 'task') {
