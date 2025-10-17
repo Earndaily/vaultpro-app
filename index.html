@@ -1756,7 +1756,7 @@
         </div>
 
         <!-- Vault Pro Plan Structure Table -->
-        <div class="card" style="margin: 1rem 0;">
+        <div class="card" id="vaultPlanStructureTable" style="margin: 1rem 0;">
             <h2 style="text-align: center; color: #667eea; font-size: 2em; margin-bottom: 30px;">VAULT PRO PLAN STRUCTURE</h2>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -6186,6 +6186,16 @@
         // Update feature access when switching sections
         updateFeatureAccess();
 
+        // Show/hide vault plan structure table only on home page
+        const planStructureTable = document.getElementById('vaultPlanStructureTable');
+        if (planStructureTable) {
+            if (section === 'home') {
+                planStructureTable.style.display = 'block';
+            } else {
+                planStructureTable.style.display = 'none';
+            }
+        }
+
         // Section-specific updates
         if (section === 'home') {
             try {
@@ -7176,12 +7186,8 @@
                else if (planName.includes('supreme')) planAmount = 60000000;
                else if (planName.includes('legendary')) planAmount = 90000000;
                
-               // Check activation status
+               // Check activation status only
                if (!userData || !userData.isActivated) {
-                   card.classList.add('disabled');
-                   card.style.opacity = '0.6';
-                   card.style.cursor = 'not-allowed';
-               } else if (totalAvailable < planAmount) {
                    card.classList.add('disabled');
                    card.style.opacity = '0.6';
                    card.style.cursor = 'not-allowed';
