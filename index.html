@@ -6244,8 +6244,15 @@
 
             alert('✅ Activation payment proof submitted successfully! Please wait for admin approval. You will receive a notification once your account is activated.');
             
-            // Reset form and close modal
-            document.getElementById('activationPaymentForm').reset();
+            // Reset form elements and close modal
+            document.getElementById('paymentNumberUsed').value = '';
+            document.getElementById('paymentProof').value = '';
+            document.getElementById('paymentNotes').value = '';
+            document.getElementById('filePreview').classList.add('hidden');
+            document.getElementById('step3NextBtn').classList.add('hidden');
+            
+            // Reset to step 1
+            resetActivationSteps();
             closeActivationModal();
             
             // Update deposit section to show the request
