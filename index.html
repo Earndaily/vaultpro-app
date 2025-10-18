@@ -3810,6 +3810,18 @@
         }
     }
 
+    // Get user's actual balance from database (primary source of truth)
+    async function getUserActualBalance(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userData = userDoc.data();
+            return userData.balance || 0;
+        } catch (error) {
+            console.error('Error getting user actual balance:', error);
+            return 0;
+        }
+    }
+
     // Get user's highest vault level for task allocation
     async function getUserVaultLevel(userId) {
         try {
@@ -3919,13 +3931,12 @@
         }
     }
 
-    // Get total available balance (including deposits)
+    // Get total available balance (using actual balance as primary source)
     async function getTotalAvailableBalance(userId) {
         try {
-            const categoryBalances = await getUserCategoryBalances(userId);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            return totalEarnings + categoryBalances.depositEarnings;
+            // Use the actual balance from the database as the primary source
+            const actualBalance = await getUserActualBalance(userId);
+            return actualBalance;
         } catch (error) {
             console.error('Error getting total available balance:', error);
             return 0;
@@ -3987,6 +3998,7 @@
         
         try {
             const balances = await getUserCategoryBalances(currentUser.id);
+            const actualBalance = await getUserActualBalance(currentUser.id);
             let hasSufficientFunds = false;
             
             // Determine which categories to show
@@ -3998,7 +4010,7 @@
             
             categoriesToShow.forEach(([key, name]) => {
                 const balance = balances[key] || 0;
-                const isSufficient = balance >= amount;
+                const isSufficient = actualBalance >= amount;
                 
                 if (isSufficient) hasSufficientFunds = true;
                 
@@ -4760,11 +4772,8 @@
 
    async function updateLUBGameSection() {
        try {
-           // Update wallet balance
-           const balances = await getUserCategoryBalances(currentUser.id);
-           const total = balances.taskEarnings + balances.referralEarnings + 
-                        balances.lubGameEarnings + balances.vaultEarnings + 
-                        balances.depositEarnings;
+           // Update wallet balance using actual balance
+           const total = await getUserActualBalance(currentUser.id);
            
            document.getElementById('lubWalletBalance').textContent = total.toLocaleString();
            
@@ -5950,8 +5959,9 @@
             if (element.id === 'registerBtn' || element.id === 'loginBtn' || 
                 element.classList.contains('nav-link') || element.classList.contains('bottom-nav-item') ||
                 element.classList.contains('activation-payment-element') ||
-                element.closest('#activationModal')) {
-                // Keep navigation, login/register buttons, activation payment, and modal elements enabled
+                element.closest('#activationModal') ||
+                element.closest('#activationOnlyPage')) {
+                // Keep navigation, login/register buttons, activation payment, modal elements, and activation-only page elements enabled
                 return;
             }
             
@@ -6495,11 +6505,8 @@
             const pointsBalance = userData.pointsBalance || 0;
             const activationFeePaid = userData.activationFeePaid || 0;
             
-            // Use category-based balance calculation for consistency
-            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            // Use actual balance as primary source
+            const totalAvailable = await getUserActualBalance(currentUser.id);
             
             document.getElementById('walletBalance').textContent = totalAvailable.toLocaleString();
             document.getElementById('walletPointsBalance').textContent = pointsBalance.toLocaleString();
@@ -6639,7 +6646,7 @@
            currentUser = { id: currentUser.id, ...userDoc.data() };
    
            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
-           const vaults = vaultsSnapshot.docs.map(doc => doc.data());
+           const vaults = vaultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
    
            const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
            const referrals = referralsSnapshot.docs.map(doc => doc.data());
@@ -6665,13 +6672,11 @@
                return sum + amount;
            }, 0);
    
-           // Replace the totalBalance calculation with category-based system:
-           const categoryBalances = await getUserCategoryBalances(currentUser.id);
-           const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                               categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-           const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+           // Use actual balance as primary source
+           const totalAvailable = await getUserActualBalance(currentUser.id);
            
-           // Use remaining deposit balance instead of total deposits
+           // Get category balances for deposit display
+           const categoryBalances = await getUserCategoryBalances(currentUser.id);
            const totalDeposits = categoryBalances.depositEarnings;
 
            const activeVaults = vaults.length;
@@ -7332,11 +7337,8 @@
            const userDoc = await db.collection('users').doc(currentUser.id).get();
            const userData = userDoc.data();
            
-           // Use category-based balance calculation instead of usableBalance
-           const categoryBalances = await getUserCategoryBalances(currentUser.id);
-           const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                               categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-           const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+           // Use actual balance as primary source
+           const totalAvailable = await getUserActualBalance(currentUser.id);
            
            document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
            
@@ -7419,6 +7421,12 @@
 
     async function purchaseVault() {
         if (!selectedPlan) return;
+
+        // Prevent multiple clicks
+        const purchaseBtn = document.getElementById('purchaseBtn');
+        if (purchaseBtn && purchaseBtn.disabled) {
+            return;
+        }
 
         // Check if user is activated
         if (currentUser) {
@@ -7595,8 +7603,7 @@
     }
 
     async function processVaultPurchaseWithWallet(amount, planName) {
-        const balances = await getUserCategoryBalances(currentUser.id);
-        const totalBalance = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
+        const totalBalance = await getUserActualBalance(currentUser.id);
         
         if (totalBalance < amount) {
             showVaultPurchasePopup('Insufficient wallet balance. Please deposit more funds.', 'error');
@@ -7645,7 +7652,18 @@
         }
     }
 
+    // Global flag to prevent multiple simultaneous vault purchases
+    let isProcessingVaultPurchase = false;
+
     async function processVaultPurchase(sourceCategory, categoryName) {
+        // Prevent multiple simultaneous purchases
+        if (isProcessingVaultPurchase) {
+            console.log('Vault purchase already in progress, ignoring duplicate call');
+            return;
+        }
+        
+        isProcessingVaultPurchase = true;
+        
         const purchaseBtn = document.getElementById('purchaseBtn');
         const originalText = purchaseBtn.textContent;
         
@@ -7662,10 +7680,10 @@
             // Show processing message
             purchaseBtn.textContent = 'Checking balance...';
 
-            // Verify category has sufficient funds
-            const balances = await getUserCategoryBalances(currentUser.id);
-            if (balances[sourceCategory] < planData.amount) {
-                showPurchaseError(`Insufficient funds in ${categoryName}. Available: ${balances[sourceCategory].toLocaleString()} UGX`);
+            // Verify user has sufficient funds
+            const actualBalance = await getUserActualBalance(currentUser.id);
+            if (actualBalance < planData.amount) {
+                showPurchaseError(`Insufficient funds. Available: ${actualBalance.toLocaleString()} UGX`);
                 purchaseBtn.disabled = false;
                 purchaseBtn.textContent = originalText;
                 purchaseBtn.style.background = '';
@@ -7778,16 +7796,19 @@
                 updateVaultSection();
                 showSection('home');
                 
-                // Reset button
-                purchaseBtn.disabled = false;
-                purchaseBtn.textContent = originalText;
-                purchaseBtn.style.background = '';
-                purchaseBtn.style.cursor = '';
-            }, 2000);
+            // Reset button
+            purchaseBtn.disabled = false;
+            purchaseBtn.textContent = originalText;
+            purchaseBtn.style.background = '';
+            purchaseBtn.style.cursor = '';
+        }, 2000);
 
         } catch (error) {
             console.error("Purchase error:", error);
             showPurchaseError('Purchase failed: ' + error.message);
+        } finally {
+            // Reset the processing flag
+            isProcessingVaultPurchase = false;
         }
     }
 
@@ -8375,8 +8396,9 @@
                 return;
             }
             
-            if (balances.depositEarnings < stakeAmount) {
-                showAlert('stakeConfirmAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+            const actualBalance = await getUserActualBalance(currentUser.id);
+            if (actualBalance < stakeAmount) {
+                showAlert('stakeConfirmAlert', `Insufficient funds. Available: ${actualBalance.toLocaleString()} UGX`, 'error');
                 return;
             }
 
@@ -10374,11 +10396,8 @@
             const pointsBalance = userData.pointsBalance || 0;
             const activationFeePaid = userData.activationFeePaid || 0;
             
-            // Use category-based balance calculation for consistency
-            const categoryBalances = await getUserCategoryBalances(currentUser.id);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            // Use actual balance as primary source
+            const totalAvailable = await getUserActualBalance(currentUser.id);
             
             const withdrawBalanceEl = document.getElementById('withdrawBalance');
             const withdrawPointsBalanceEl = document.getElementById('withdrawPointsBalance');
@@ -10860,11 +10879,8 @@
                     const userData = userDoc.data();
                     const activationFeePaid = userData.activationFeePaid || 0;
                     
-                    // Use category-based balance calculation for consistency
-                    const categoryBalances = await getUserCategoryBalances(currentUser.id);
-                    const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                        categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-                    const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+                    // Use actual balance as primary source
+                    const totalAvailable = await getUserActualBalance(currentUser.id);
                     withdrawBalanceEl.textContent = totalAvailable.toLocaleString();
                 }
                 return;
@@ -12817,11 +12833,8 @@
                 return;
             }
 
-            // Force recalculate category balances
-            const categoryBalances = await getUserCategoryBalances(userId);
-            const totalEarnings = categoryBalances.taskEarnings + categoryBalances.referralEarnings + 
-                                categoryBalances.lubGameEarnings + categoryBalances.vaultEarnings;
-            const totalAvailable = totalEarnings + categoryBalances.depositEarnings;
+            // Use actual balance as primary source
+            const totalAvailable = await getUserActualBalance(userId);
 
             // Update user's total balance
             await db.collection('users').doc(userId).update({
@@ -13380,13 +13393,13 @@
            
            console.log('Processing bet for round:', round.id, 'Round data:', round);
            
-           // Verify funds
-           const balances = await getUserCategoryBalances(currentUser.id);
-           
-           if (balances.depositEarnings < betAmount) {
-               showAlert('lubGameAlert', `Insufficient funds: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
-               return;
-           }
+            // Verify funds
+            const actualBalance = await getUserActualBalance(currentUser.id);
+            
+            if (actualBalance < betAmount) {
+                showAlert('lubGameAlert', `Insufficient funds: ${actualBalance.toLocaleString()} UGX`, 'error');
+                return;
+            }
            
            // Deduct balance
            const userDoc = await db.collection('users').doc(currentUser.id).get();
@@ -13708,9 +13721,9 @@
             }
 
             // Check if user has sufficient funds
-            const balances = await getUserCategoryBalances(currentUser.id);
-            if (balances.depositEarnings < betAmount) {
-                showAlert('lubGameAlert', `Insufficient deposit funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+            const actualBalance = await getUserActualBalance(currentUser.id);
+            if (actualBalance < betAmount) {
+                showAlert('lubGameAlert', `Insufficient funds. Available: ${actualBalance.toLocaleString()} UGX`, 'error');
                 return;
             }
 
@@ -13807,9 +13820,9 @@
             }
 
             // Check if user still has sufficient funds
-            const balances = await getUserCategoryBalances(currentUser.id);
-            if (balances.depositEarnings < autoBetAmount) {
-                showAlert('lubGameAlert', `Auto-bet stopped: Insufficient funds. Available: ${balances.depositEarnings.toLocaleString()} UGX`, 'error');
+            const actualBalance = await getUserActualBalance(currentUser.id);
+            if (actualBalance < autoBetAmount) {
+                showAlert('lubGameAlert', `Auto-bet stopped: Insufficient funds. Available: ${actualBalance.toLocaleString()} UGX`, 'error');
                 await stopAutoBet();
                 return;
             }
