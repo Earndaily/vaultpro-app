@@ -698,6 +698,79 @@
         border: 2px solid transparent;
     }
 
+    /* Rainbow Effect for Active Plan */
+    .plan-card.rainbow-active {
+        position: relative;
+        overflow: hidden;
+        animation: rainbowGlow 3s ease-in-out infinite;
+    }
+
+    .plan-card.rainbow-active::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        background: linear-gradient(45deg, 
+            #ff0000, #ff7f00, #ffff00, #00ff00, 
+            #0000ff, #4b0082, #9400d3, #ff0000);
+        background-size: 400% 400%;
+        border-radius: 16px;
+        z-index: -1;
+        animation: rainbowShift 2s linear infinite;
+    }
+
+    .plan-card.rainbow-active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        border-radius: 13px;
+        z-index: 0;
+    }
+
+    .plan-card.rainbow-active > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    @keyframes rainbowShift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    @keyframes rainbowGlow {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+        16.66% {
+            box-shadow: 0 0 20px rgba(255, 127, 0, 0.3);
+        }
+        33.33% {
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+        }
+        50% {
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        66.66% {
+            box-shadow: 0 0 20px rgba(0, 0, 255, 0.3);
+        }
+        83.33% {
+            box-shadow: 0 0 20px rgba(75, 0, 130, 0.3);
+        }
+    }
+
     .status-matured {
         background: #e0e7ff;
         color: #3730a3;
@@ -1932,14 +2005,6 @@
 
         <!-- Vault Plans Section -->
         <div id="vaultSection" class="hidden">
-            <!-- Active Vaults Section -->
-            <div class="card" id="activeVaultsSection" style="display: none;">
-                <h2>🌟 Your Active Vaults</h2>
-                <p style="color: var(--gray); margin-bottom: 1rem;">Your active vault plans with rotating light effects</p>
-                <div id="activeVaultsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
-                    <!-- Active vaults will be populated here -->
-                </div>
-            </div>
 
             <div class="card">
                 <h2>Choose Your Vault Plan</h2>
@@ -3981,7 +4046,7 @@
                     <div id="categoryOptions" style="display: grid; gap: 0.75rem;"></div>
                     <div id="categoryAlert" style="display: none; margin-top: 1rem;"></div>
                     
-                    <button id="confirmFundBtn" class="btn btn-success btn-block" style="margin-top: 1rem; display: none;" onclick="confirmFundSelection('${transactionType}', ${amount}, '${onConfirm.toString()}')">
+                    <button id="confirmFundBtn" class="btn btn-success btn-block" style="margin-top: 1rem; display: none;">
                         ✓ Confirm & Continue
                     </button>
                 </div>
@@ -4165,9 +4230,13 @@
         // Store selection for confirmation
         confirmBtn.dataset.selectedCategory = categoryKey;
         confirmBtn.dataset.selectedCategoryName = categoryName;
-        confirmBtn.dataset.onConfirm = onConfirm.toString();
         confirmBtn.dataset.transactionType = transactionType;
         confirmBtn.dataset.amount = amount;
+        
+        // Add event listener for confirm button
+        confirmBtn.onclick = () => {
+            confirmFundSelection(categoryKey, categoryName, amount, onConfirm, transactionType, modal);
+        };
         
         // User must manually click confirm button to proceed
     }
@@ -7277,60 +7346,32 @@
            
            document.getElementById('vaultBalance').textContent = totalAvailable.toLocaleString();
            
-           // Get active vaults
+           // Get active vaults to determine which plan should have rainbow effect
            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
            const activeVaults = vaultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(vault => vault.status === 'active');
            
-           // Update active vaults section
-           const activeVaultsSection = document.getElementById('activeVaultsSection');
-           const activeVaultsContainer = document.getElementById('activeVaultsContainer');
-           
-           if (activeVaults.length > 0) {
-               activeVaultsSection.style.display = 'block';
-               activeVaultsContainer.innerHTML = '';
-               
-               activeVaults.forEach(vault => {
-                   const vaultCard = document.createElement('div');
-                   vaultCard.className = 'vault-active-light';
-                   vaultCard.innerHTML = `
-                       <div class="plan-card" style="margin: 0;">
-                           <div class="plan-name">${vault.planName}</div>
-                           <div class="plan-amount">${vault.amount.toLocaleString()} UGX</div>
-                           <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #0ea5e9;">
-                               <div style="font-size: 0.875rem; color: #0c4a6e; font-weight: 600;">📅 Status</div>
-                               <div style="font-size: 0.8rem; color: #0369a1; margin: 0.25rem 0;">Active • ${vault.duration} days</div>
-                               <div style="font-size: 0.8rem; color: #0c4a6e;">Expected: ${vault.expectedProfit.toLocaleString()} UGX</div>
-                           </div>
-                           <div style="background: #f0fdf4; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border: 1px solid #10b981;">
-                               <div style="font-size: 0.875rem; color: #064e3b; font-weight: 600;">⏰ Maturity</div>
-                               <div style="font-size: 0.8rem; color: #059669;">${new Date(vault.maturityDate).toLocaleDateString()}</div>
-                           </div>
-                       </div>
-                   `;
-                   activeVaultsContainer.appendChild(vaultCard);
-               });
-           } else {
-               activeVaultsSection.style.display = 'none';
-           }
-           
+           // Remove rainbow effect from all plan cards first
            const planCards = document.querySelectorAll('.plan-card');
            planCards.forEach(card => {
+               card.classList.remove('rainbow-active');
+               
                const planName = card.querySelector('.plan-name').textContent.toLowerCase();
                let planAmount = 0;
                
                // Map plan names to amounts
-               if (planName.includes('seed')) planAmount = 45000;
-               else if (planName.includes('rising')) planAmount = 180000;
-               else if (planName.includes('nova')) planAmount = 600000;
-               else if (planName.includes('mastermind')) planAmount = 1800000;
-               else if (planName.includes('titan')) planAmount = 5000000;
-               else if (planName.includes('king')) planAmount = 10000000;
-               else if (planName.includes('emperor')) planAmount = 20000000;
-               else if (planName.includes('icon')) planAmount = 35000000;
-               else if (planName.includes('supreme')) planAmount = 60000000;
-               else if (planName.includes('legendary')) planAmount = 90000000;
+               if (planName.includes('beginner')) planAmount = 45000;
+               else if (planName.includes('seed')) planAmount = 180000;
+               else if (planName.includes('rising')) planAmount = 600000;
+               else if (planName.includes('nova')) planAmount = 1350000;
+               else if (planName.includes('mastermind')) planAmount = 4050000;
+               else if (planName.includes('titan')) planAmount = 8775000;
+               else if (planName.includes('king')) planAmount = 16650000;
+               else if (planName.includes('emperor')) planAmount = 29700000;
+               else if (planName.includes('icon')) planAmount = 48600000;
+               else if (planName.includes('supreme')) planAmount = 81000000;
+               else if (planName.includes('legendary')) planAmount = 135000000;
                
-               // Check activation status only
+               // Check activation status
                if (!userData || !userData.isActivated) {
                    card.classList.add('disabled');
                    card.style.opacity = '0.6';
@@ -7341,6 +7382,34 @@
                    card.style.cursor = 'pointer';
                }
            });
+           
+           // Apply rainbow effect to the currently active plan
+           if (activeVaults.length > 0) {
+               // Get the most recent active vault
+               const latestVault = activeVaults.sort((a, b) => new Date(b.startDate) - new Date(a.startDate))[0];
+               
+               // Find the corresponding plan card and apply rainbow effect
+               planCards.forEach(card => {
+                   const planName = card.querySelector('.plan-name').textContent.toLowerCase();
+                   const vaultPlanName = latestVault.planName.toLowerCase();
+                   
+                   // Check if this card matches the active vault plan
+                   if (planName.includes(vaultPlanName) || 
+                       (vaultPlanName.includes('beginner') && planName.includes('beginner')) ||
+                       (vaultPlanName.includes('seed') && planName.includes('seed')) ||
+                       (vaultPlanName.includes('rising') && planName.includes('rising')) ||
+                       (vaultPlanName.includes('nova') && planName.includes('nova')) ||
+                       (vaultPlanName.includes('mastermind') && planName.includes('mastermind')) ||
+                       (vaultPlanName.includes('titan') && planName.includes('titan')) ||
+                       (vaultPlanName.includes('king') && planName.includes('king')) ||
+                       (vaultPlanName.includes('emperor') && planName.includes('emperor')) ||
+                       (vaultPlanName.includes('icon') && planName.includes('icon')) ||
+                       (vaultPlanName.includes('supreme') && planName.includes('supreme')) ||
+                       (vaultPlanName.includes('legendary') && planName.includes('legendary'))) {
+                       card.classList.add('rainbow-active');
+                   }
+               });
+           }
        } catch (error) {
            console.error("Error updating vault section:", error);
        }
@@ -11023,11 +11092,14 @@
                 ...doc.data()
             }));
 
-            const tbody = document.getElementById('withdrawHistoryBody');
-            if (!tbody) return;
+            const tbody = document.getElementById('walletTransactionHistory');
+            if (!tbody) {
+                console.error("Wallet transaction history table body not found");
+                return;
+            }
             
             if (withdrawals.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No withdrawals yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No withdrawals yet</td></tr>';
                 return;
             }
 
@@ -11044,12 +11116,9 @@
 
                 return `
                     <tr>
-                        <td>${new Date(w.requestDate).toLocaleDateString()}<br>
-                            <small style="color: var(--gray);">${w.category || 'total'}</small>
-                        </td>
+                        <td>${new Date(w.requestDate).toLocaleDateString()}</td>
+                        <td>Withdrawal</td>
                         <td>${(w.grossAmount || w.amount).toLocaleString()} UGX</td>
-                        <td>${(w.fee || 0).toLocaleString()} UGX</td>
-                        <td style="color: var(--success); font-weight: 600;">${w.netAmount.toLocaleString()} UGX</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;
@@ -11291,7 +11360,12 @@
                 ...doc.data()
             }));
 
-            const tbody = document.getElementById('depositHistoryBody');
+            const tbody = document.getElementById('walletTransactionHistory');
+            if (!tbody) {
+                console.error("Wallet transaction history table body not found");
+                return;
+            }
+
             if (deposits.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center">No deposits yet</td></tr>';
                 return;
@@ -11311,8 +11385,8 @@
                 return `
                     <tr>
                         <td>${new Date(d.requestDate).toLocaleDateString()}</td>
+                        <td>Deposit</td>
                         <td>${d.amount.toLocaleString()} UGX</td>
-                        <td>${d.method.toUpperCase()}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;
