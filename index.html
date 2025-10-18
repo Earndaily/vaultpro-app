@@ -1461,6 +1461,25 @@
         </p>
     </div>
 
+    <!-- Activation Only Page (shown after registration) -->
+    <div id="activationOnlyPage" class="hidden" style="min-height: 100vh; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
+        <div style="text-align: center; max-width: 500px; width: 100%;">
+            <div style="font-size: 4rem; margin-bottom: 2rem;">🔒</div>
+            <h1 style="color: #374151; margin-bottom: 1rem; font-size: 2rem;">Account Created Successfully!</h1>
+            <p style="color: #6b7280; margin-bottom: 3rem; font-size: 1.1rem; line-height: 1.6;">
+                Your account has been created. To access all features and start earning, please activate your account by paying the 20,000 UGX registration fee.
+            </p>
+            
+            <button class="btn" style="background: #059669; color: white; padding: 1.5rem 3rem; font-size: 1.2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);" onclick="startActivationProcess()">
+                🚀 Activate Account Now
+            </button>
+            
+            <p style="color: #9ca3af; margin-top: 2rem; font-size: 0.9rem;">
+                After activation, you'll have access to all earning opportunities
+            </p>
+        </div>
+    </div>
+
     <!-- User Dashboard -->
     <div id="userDashboard" class="hidden">
         <div class="navbar">
@@ -2604,7 +2623,7 @@
                         <button type="button" class="btn" style="background: #6b7280; color: white; flex: 1; padding: 1rem; border-radius: 12px;" onclick="prevActivationStep()">
                             ← Back
                         </button>
-                        <button type="button" class="btn" style="background: #059669; color: white; flex: 2; padding: 1rem; border-radius: 12px;" onclick="submitActivationPayment()">
+                        <button type="button" class="btn" style="background: #059669; color: white; flex: 2; padding: 1rem; border-radius: 12px;" onclick="submitActivationPayment(event)">
                             🚀 Submit Activation
                         </button>
                     </div>
@@ -3696,17 +3715,56 @@
                 switch (transaction.type) {
                     case 'vault_purchase':
                         if (transaction.sourceCategory) {
-                            balances[transaction.sourceCategory] -= amount;
+                            // Map category names to balance keys
+                            let balanceKey = transaction.sourceCategory;
+                            if (transaction.sourceCategory === 'lubGame') {
+                                balanceKey = 'lubGameEarnings';
+                            } else if (transaction.sourceCategory === 'referral') {
+                                balanceKey = 'referralEarnings';
+                            } else if (transaction.sourceCategory === 'task') {
+                                balanceKey = 'taskEarnings';
+                            } else if (transaction.sourceCategory === 'vault') {
+                                balanceKey = 'vaultEarnings';
+                            } else if (transaction.sourceCategory === 'deposit') {
+                                balanceKey = 'depositEarnings';
+                            }
+                            balances[balanceKey] -= amount;
                         }
                         break;
                     case 'lub_game_bet':
                         if (transaction.sourceCategory) {
-                            balances[transaction.sourceCategory] -= amount;
+                            // Map category names to balance keys
+                            let balanceKey = transaction.sourceCategory;
+                            if (transaction.sourceCategory === 'lubGame') {
+                                balanceKey = 'lubGameEarnings';
+                            } else if (transaction.sourceCategory === 'referral') {
+                                balanceKey = 'referralEarnings';
+                            } else if (transaction.sourceCategory === 'task') {
+                                balanceKey = 'taskEarnings';
+                            } else if (transaction.sourceCategory === 'vault') {
+                                balanceKey = 'vaultEarnings';
+                            } else if (transaction.sourceCategory === 'deposit') {
+                                balanceKey = 'depositEarnings';
+                            }
+                            balances[balanceKey] -= amount;
                         }
                         break;
                     case 'stake_placed':
                         if (transaction.sourceCategory) {
-                            balances[transaction.sourceCategory] -= amount;
+                            // Map category names to balance keys
+                            let balanceKey = transaction.sourceCategory;
+                            if (transaction.sourceCategory === 'lubGame') {
+                                balanceKey = 'lubGameEarnings';
+                            } else if (transaction.sourceCategory === 'referral') {
+                                balanceKey = 'referralEarnings';
+                            } else if (transaction.sourceCategory === 'task') {
+                                balanceKey = 'taskEarnings';
+                            } else if (transaction.sourceCategory === 'vault') {
+                                balanceKey = 'vaultEarnings';
+                            } else if (transaction.sourceCategory === 'deposit') {
+                                balanceKey = 'depositEarnings';
+                            }
+                            balances[balanceKey] -= amount;
                         }
                         break;
                     case 'withdrawal_approved':
@@ -5520,9 +5578,9 @@
             // Clear referral code after successful registration
             clearStoredReferralCode();
             
+            // Show simplified activation page instead of dashboard
             setTimeout(() => {
-                currentUser = newUser;
-                showUserDashboard();
+                showActivationOnlyPage();
             }, 1500);
 
         } catch (error) {
@@ -5763,6 +5821,28 @@
         document.getElementById('registerPage').classList.remove('hidden');
     }
 
+    function showActivationOnlyPage() {
+        // Hide ALL sections and dashboards
+        document.getElementById('registerPage').classList.add('hidden');
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('userDashboard').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('referralLandingPage').classList.add('hidden');
+        document.getElementById('activationOnlyPage').classList.remove('hidden');
+        
+        // Hide all user sections
+        ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
+            const el = document.getElementById(section + 'Section');
+            if (el) el.classList.add('hidden');
+        });
+        
+        // Hide bottom navigation
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = 'none';
+        }
+    }
+
     function showLogin() {
         // Hide ALL sections and dashboards
         document.getElementById('registerPage').classList.add('hidden');
@@ -5770,6 +5850,7 @@
         document.getElementById('userDashboard').classList.add('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         document.getElementById('referralLandingPage').classList.add('hidden');
+        document.getElementById('activationOnlyPage').classList.add('hidden');
         
         // Hide all user sections
         ['home', 'vault', 'referrals', 'streak', 'tasks', 'wallet', 'profile', 'stake'].forEach(section => {
@@ -5795,6 +5876,7 @@
         document.getElementById('registerPage').classList.add('hidden');
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('referralLandingPage').classList.add('hidden');
+        document.getElementById('activationOnlyPage').classList.add('hidden');
         document.getElementById('userDashboard').classList.remove('hidden');
         document.getElementById('adminDashboard').classList.add('hidden');
         
