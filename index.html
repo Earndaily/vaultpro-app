@@ -272,6 +272,29 @@
         box-shadow: none;
     }
 
+    /* Plan Status Indicators */
+    .plan-card.plan-owned {
+        border-color: #10b981;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+    }
+
+    .plan-card.plan-upgrade-available {
+        border-color: #3b82f6;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+    }
+
+    .plan-card.plan-owned:hover {
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .plan-card.plan-upgrade-available:hover {
+        border-color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+    }
+
     .plan-name {
         font-size: 1.125rem;
         font-weight: 700;
@@ -6459,6 +6482,18 @@
                 updateUserStats();
                 console.log('Calling displayUserTaskAllocation...');
                 displayUserTaskAllocation();
+                
+                // Update task earnings display to ensure it's current when returning to home
+                const taskEarningsEl = document.getElementById('taskEarnings');
+                if (taskEarningsEl && currentUser) {
+                    calculateTodayTaskEarnings().then(todayTaskEarnings => {
+                        calculateTodayExternalTaskEarnings().then(todayExternalEarnings => {
+                            const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+                            taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
+                        });
+                    });
+                }
+                
                 console.log('Home section loaded');
             } catch (error) {
                 console.error('Error loading home section:', error);
@@ -6474,9 +6509,16 @@
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') {
             updateTasksSection();
+            // Update task earnings display to show TODAY'S earnings only (consistent with dashboard)
             const taskEarningsEl = document.getElementById('taskEarnings');
             if (taskEarningsEl && currentUser) {
-                taskEarningsEl.textContent = Number(currentUser.totalTaskEarnings || 0).toLocaleString();
+                // Calculate today's task earnings
+                calculateTodayTaskEarnings().then(todayTaskEarnings => {
+                    calculateTodayExternalTaskEarnings().then(todayExternalEarnings => {
+                        const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+                        taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
+                    });
+                });
             }
         }
         else if (section === 'profile') {
@@ -6713,76 +6755,67 @@
         return 'success';
     }
 
+    // Cache for user stats to reduce database calls
+    let userStatsCache = {
+        data: null,
+        timestamp: 0,
+        ttl: 30000 // 30 seconds cache
+    };
+
     // User stats
-   async function updateUserStats() {
+   async function updateUserStats(forceRefresh = false) {
        try {
+           const now = Date.now();
+           
+           // Use cache if available and not expired, unless force refresh
+           if (!forceRefresh && userStatsCache.data && (now - userStatsCache.timestamp) < userStatsCache.ttl) {
+               console.log('Using cached user stats');
+               updateUserStatsDisplay(userStatsCache.data);
+               return;
+           }
+
+           console.log('Fetching fresh user stats from database');
+           
            // Refresh user data from database first
            const userDoc = await db.collection('users').doc(currentUser.id).get();
            currentUser = { id: currentUser.id, ...userDoc.data() };
    
-           const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
-           const vaults = vaultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-   
-           const referralsSnapshot = await db.collection('users').doc(currentUser.id).collection('referrals').get();
-           const referrals = referralsSnapshot.docs.map(doc => doc.data());
-
-           // Calculate referral earnings from transactions instead
-           const referralTransactions = await db.collection('transactions')
-               .where('userId', '==', currentUser.id)
-               .where('type', 'in', ['referral', 'referral_bonus'])
-               .get();
-
-           const referralEarnings = referralTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
-
-           // Calculate total withdrawn amount from withdrawal transactions
-           const withdrawalTransactions = await db.collection('transactions')
-               .where('userId', '==', currentUser.id)
-               .where('type', 'in', ['withdrawal', 'withdrawal_approved'])
-               .get();
-
-           const totalWithdrawn = withdrawalTransactions.docs.reduce((sum, doc) => {
-               const transaction = doc.data();
-               // For withdrawal_approved, use the absolute value since it's stored as negative
-               const amount = transaction.type === 'withdrawal_approved' ? Math.abs(transaction.amount || 0) : (transaction.amount || 0);
-               return sum + amount;
-           }, 0);
-   
-           // Use actual balance as primary source
-           const totalAvailable = await getUserActualBalance(currentUser.id);
+           // Run database queries in parallel for better performance
+           const [vaultsSnapshot, referralsSnapshot, categoryBalances] = await Promise.all([
+               db.collection('users').doc(currentUser.id).collection('vaults').get(),
+               db.collection('users').doc(currentUser.id).collection('referrals').get(),
+               getUserCategoryBalances(currentUser.id)
+           ]);
            
-           // Get category balances for deposit display
-           const categoryBalances = await getUserCategoryBalances(currentUser.id);
+           const vaults = vaultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+           const referrals = referralsSnapshot.docs.map(doc => doc.data());
+           const totalAvailable = await getUserActualBalance(currentUser.id);
            const totalDeposits = categoryBalances.depositEarnings;
 
            const totalReferrals = referrals.length;
-   
-           document.getElementById('totalBalance').textContent = totalAvailable.toLocaleString();
-           document.getElementById('totalReferrals').textContent = totalReferrals;
-           document.getElementById('referralEarnings').textContent = categoryBalances.referralEarnings.toLocaleString();
-           document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
-           document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
-           document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
            
-           // Update task earnings display to show TODAY'S earnings only
-           const taskEarningsEl = document.getElementById('taskEarnings');
-           if (taskEarningsEl) {
-               const todayTaskEarnings = await calculateTodayTaskEarnings();
-               const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
-               const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
-               taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
-           }
-
-           // Update LUB Game earnings display using category balances
-           const lubEarningsEl = document.getElementById('lubGameEarnings');
-           if (lubEarningsEl) {
-               lubEarningsEl.textContent = categoryBalances.lubGameEarnings.toLocaleString();
-           }
-
-           // Update total withdrawn display
-           const totalWithdrawnEl = document.getElementById('totalWithdrawn');
-           if (totalWithdrawnEl) {
-               totalWithdrawnEl.textContent = totalWithdrawn.toLocaleString();
-           }
+           // Calculate today's task earnings
+           const todayTaskEarnings = await calculateTodayTaskEarnings();
+           const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
+           const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+           
+           // Prepare data for caching and display
+           const statsData = {
+               totalAvailable,
+               totalReferrals,
+               categoryBalances,
+               totalDeposits,
+               currentUser,
+               vaults,
+               totalTodayTaskEarnings
+           };
+           
+           // Cache the data
+           userStatsCache.data = statsData;
+           userStatsCache.timestamp = now;
+           
+           // Update display
+           updateUserStatsDisplay(statsData);
            
            // Update user name and activation status in navbar
            document.getElementById('userNameDisplay').textContent = currentUser.fullName;
@@ -6795,66 +6828,108 @@
            const baseUrl = window.location.href.split('?')[0];
            document.getElementById('userReferralLink').textContent = `${baseUrl}?ref=${currentUser.referralCode}`;
    
-           // Calculate user level based on vault subscriptions
-           function calculateUserLevel(vaults) {
-               // Check if user has any paid vault plans
-               const paidVaults = vaults.filter(vault => vault.paymentStatus === 'completed' || vault.status === 'active');
-               
-               if (paidVaults.length === 0) return { level: 'Newcomer', icon: '🌱', color: '#6b7280' };
-               
-               const totalInvested = paidVaults.reduce((sum, v) => sum + v.amount, 0);
-               
-               if (totalInvested >= 110000000) return { level: 'Legendary', icon: '🏆', color: '#9333ea' };
-               if (totalInvested >= 74250000) return { level: 'Supreme', icon: '👑', color: '#7c3aed' };
-               if (totalInvested >= 48600000) return { level: 'Icon', icon: '⭐', color: '#6366f1' };
-               if (totalInvested >= 29700000) return { level: 'Emperor', icon: '🦅', color: '#8b5cf6' };
-               if (totalInvested >= 16650000) return { level: 'King', icon: '👑', color: '#a855f7' };
-               if (totalInvested >= 8775000) return { level: 'Titan', icon: '💪', color: '#c026d3' };
-               if (totalInvested >= 4050000) return { level: 'Mastermind', icon: '🧠', color: '#d946ef' };
-               if (totalInvested >= 1350000) return { level: 'Nova', icon: '💡', color: '#e879f9' };
-               if (totalInvested >= 600000) return { level: 'Rising', icon: '🌅', color: '#f0abfc' };
-               if (totalInvested >= 180000) return { level: 'Seed', icon: '🌱', color: '#10b981' };
-               if (totalInvested >= 45000) return { level: 'Beginner', icon: '🌱', color: '#10b981' };
-               
-               return { level: 'Newcomer', icon: '🌱', color: '#6b7280' };
-           }
-
-           const userLevel = calculateUserLevel(vaults);
-           
-           // Update user level card
-           const userLevelCard = document.getElementById('userLevelCard');
-           if (userLevelCard) {
-               userLevelCard.style.background = `linear-gradient(135deg, ${userLevel.color}, ${userLevel.color}dd)`;
-               userLevelCard.querySelector('.stat-value').textContent = userLevel.icon;
-               userLevelCard.querySelector('.stat-unit').textContent = userLevel.level;
-           }
-   
-           // Update leaderboard
-           updateLeaderboard();
-   
-           
-           if (!document.getElementById('vaultSection').classList.contains('hidden')) {
-               updateVaultSection();
+           // Update leaderboard (only if not cached)
+           if (!userStatsCache.data) {
+               updateLeaderboard();
            }
            
-           // Auto-refresh vault countdown every minute
-           if (window.vaultCountdownInterval) clearInterval(window.vaultCountdownInterval);
-           window.vaultCountdownInterval = setInterval(() => {
-               if (!document.getElementById('homeSection').classList.contains('hidden')) {
-                   const vaultsSnapshot = db.collection('users').doc(currentUser.id).collection('vaults').get();
-                   vaultsSnapshot.then(snapshot => {
-                       const vaults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                   });
-               }
-           }, 60000); // Update every minute
-           
-           // Check for recent withdrawals
-           await checkRecentWithdrawal();
+           // Check for recent withdrawals (only if not cached)
+           if (!userStatsCache.data) {
+               await checkRecentWithdrawal();
+           }
            
        } catch (error) {
            console.error("Error updating user stats:", error);
        }
    }
+
+    // Update user stats display (optimized for performance)
+    function updateUserStatsDisplay(statsData) {
+        const {
+            totalAvailable,
+            totalReferrals,
+            categoryBalances,
+            totalDeposits,
+            currentUser,
+            vaults,
+            totalTodayTaskEarnings
+        } = statsData;
+
+        // Update basic stats
+        document.getElementById('totalBalance').textContent = totalAvailable.toLocaleString();
+        document.getElementById('totalReferrals').textContent = totalReferrals;
+        document.getElementById('referralEarnings').textContent = categoryBalances.referralEarnings.toLocaleString();
+        document.getElementById('totalDeposits').textContent = totalDeposits.toLocaleString();
+        document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
+        document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
+        
+        // Update task earnings display
+        const taskEarningsEl = document.getElementById('taskEarnings');
+        if (taskEarningsEl) {
+            taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
+        }
+
+        // Update LUB Game earnings display
+        const lubEarningsEl = document.getElementById('lubGameEarnings');
+        if (lubEarningsEl) {
+            lubEarningsEl.textContent = categoryBalances.lubGameEarnings.toLocaleString();
+        }
+
+        // Calculate user level based on vault subscriptions
+        function calculateUserLevel(vaults) {
+            const paidVaults = vaults.filter(vault => vault.paymentStatus === 'completed' || vault.status === 'active');
+            
+            if (paidVaults.length === 0) return { level: 'Newcomer', icon: '🌱', color: '#6b7280' };
+            
+            const totalInvested = paidVaults.reduce((sum, v) => sum + v.amount, 0);
+            
+            if (totalInvested >= 110000000) return { level: 'Legendary', icon: '🏆', color: '#9333ea' };
+            if (totalInvested >= 74250000) return { level: 'Supreme', icon: '👑', color: '#7c3aed' };
+            if (totalInvested >= 48600000) return { level: 'Icon', icon: '⭐', color: '#6366f1' };
+            if (totalInvested >= 29700000) return { level: 'Emperor', icon: '🦅', color: '#8b5cf6' };
+            if (totalInvested >= 16650000) return { level: 'King', icon: '👑', color: '#a855f7' };
+            if (totalInvested >= 8775000) return { level: 'Titan', icon: '💪', color: '#c026d3' };
+            if (totalInvested >= 4050000) return { level: 'Mastermind', icon: '🧠', color: '#d946ef' };
+            if (totalInvested >= 1350000) return { level: 'Nova', icon: '💡', color: '#e879f9' };
+            if (totalInvested >= 600000) return { level: 'Rising', icon: '🌅', color: '#f0abfc' };
+            if (totalInvested >= 180000) return { level: 'Seed', icon: '🌱', color: '#10b981' };
+            if (totalInvested >= 45000) return { level: 'Beginner', icon: '🌱', color: '#10b981' };
+            
+            return { level: 'Newcomer', icon: '🌱', color: '#6b7280' };
+        }
+
+        const userLevel = calculateUserLevel(vaults);
+        
+        // Update user level card
+        const userLevelCard = document.getElementById('userLevelCard');
+        if (userLevelCard) {
+            userLevelCard.style.background = `linear-gradient(135deg, ${userLevel.color}, ${userLevel.color}dd)`;
+            userLevelCard.querySelector('.stat-value').textContent = userLevel.icon;
+            userLevelCard.querySelector('.stat-unit').textContent = userLevel.level;
+        }
+    }
+
+    // Clear user stats cache (call this after important updates)
+    function clearUserStatsCache() {
+        userStatsCache.data = null;
+        userStatsCache.timestamp = 0;
+    }
+
+    // Update dashboard function
+    async function updateDashboard() {
+        try {
+            // Update user stats first (force refresh for dashboard)
+            await updateUserStats(true);
+            
+            // Update task allocation display
+            await displayUserTaskAllocation();
+            
+            // Update any other dashboard-specific elements
+            console.log('Dashboard updated successfully');
+        } catch (error) {
+            console.error('Error updating dashboard:', error);
+        }
+    }
 
     // Display user's task allocation in dashboard
     async function displayUserTaskAllocation() {
@@ -7350,10 +7425,19 @@
            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
            const activeVaults = vaultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(vault => vault.status === 'active');
            
-           // Remove rainbow effect from all plan cards first
+           // Get user's current vault level for comparison
+           const userVaultInfo = await getUserVaultLevel(currentUser.id);
+           
+           // Remove rainbow effect and existing indicators from all plan cards first
            const planCards = document.querySelectorAll('.plan-card');
            planCards.forEach(card => {
-               card.classList.remove('rainbow-active');
+               card.classList.remove('rainbow-active', 'plan-owned', 'plan-upgrade-available');
+               
+               // Remove existing status indicators
+               const existingStatus = card.querySelector('.plan-status');
+               if (existingStatus) {
+                   existingStatus.remove();
+               }
                
                const planName = card.querySelector('.plan-name').textContent.toLowerCase();
                let planAmount = 0;
@@ -7380,6 +7464,52 @@
                    card.classList.remove('disabled');
                    card.style.opacity = '1';
                    card.style.cursor = 'pointer';
+                   
+                   // Add visual indicators for plan status
+                   const planKey = Object.keys(vaultPlans).find(key => 
+                       vaultPlans[key].name.toLowerCase() === planName
+                   );
+                   
+                   if (planKey) {
+                       const planData = vaultPlans[planKey];
+                       
+                       // Check if user already has this exact plan
+                       if (userVaultInfo.planName === planData.name) {
+                           card.classList.add('plan-owned');
+                           const statusDiv = document.createElement('div');
+                           statusDiv.className = 'plan-status';
+                           statusDiv.style.cssText = `
+                               background: #10b981;
+                               color: white;
+                               padding: 0.25rem 0.5rem;
+                               border-radius: 4px;
+                               font-size: 0.75rem;
+                               font-weight: 600;
+                               margin-top: 0.5rem;
+                               text-align: center;
+                           `;
+                           statusDiv.textContent = '✓ You Own This Plan';
+                           card.appendChild(statusDiv);
+                       }
+                       // Check if user has a lower level plan and this is an upgrade
+                       else if (userVaultInfo.level > 0 && planData.level > userVaultInfo.level) {
+                           card.classList.add('plan-upgrade-available');
+                           const statusDiv = document.createElement('div');
+                           statusDiv.className = 'plan-status';
+                           statusDiv.style.cssText = `
+                               background: #3b82f6;
+                               color: white;
+                               padding: 0.25rem 0.5rem;
+                               border-radius: 4px;
+                               font-size: 0.75rem;
+                               font-weight: 600;
+                               margin-top: 0.5rem;
+                               text-align: center;
+                           `;
+                           statusDiv.textContent = '⬆️ Upgrade Available';
+                           card.appendChild(statusDiv);
+                       }
+                   }
                }
            });
            
@@ -7415,7 +7545,7 @@
        }
    }
 
-    function selectPlan(plan) {
+    async function selectPlan(plan) {
         // Prevent selection during processing
         if (isProcessingVaultPurchase) {
             console.log('Please wait for current purchase to complete');
@@ -7439,6 +7569,28 @@
             } else {
                 alert('You must login to purchase vault plans.');
                 return;
+            }
+        }
+        
+        // Check if user already has this plan
+        if (currentUser) {
+            try {
+                const userVaultInfo = await getUserVaultLevel(currentUser.id);
+                const planData = vaultPlans[plan];
+                
+                // Check if user already has this exact plan
+                if (userVaultInfo.planName === planData.name) {
+                    alert(`You already have the ${planData.name} plan! To upgrade, please select a higher-level plan.`);
+                    return;
+                }
+                
+                // Check if user has a higher level plan
+                if (userVaultInfo.level > planData.level) {
+                    alert(`You already have a higher-level plan (${userVaultInfo.planName}). You cannot downgrade to ${planData.name}.`);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking existing vault plans:', error);
             }
         }
         
@@ -7480,6 +7632,30 @@
             const userData = userDoc.data();
             if (!userData || !userData.isActivated) {
                 alert('You must activate your account before purchasing vault plans. Please activate your account first.');
+                return;
+            }
+        }
+
+        // Double-check if user already has this plan (additional validation)
+        if (currentUser) {
+            try {
+                const userVaultInfo = await getUserVaultLevel(currentUser.id);
+                const planData = vaultPlans[selectedPlan];
+                
+                // Check if user already has this exact plan
+                if (userVaultInfo.planName === planData.name) {
+                    alert(`You already have the ${planData.name} plan! To upgrade, please select a higher-level plan.`);
+                    return;
+                }
+                
+                // Check if user has a higher level plan
+                if (userVaultInfo.level > planData.level) {
+                    alert(`You already have a higher-level plan (${userVaultInfo.planName}). You cannot downgrade to ${planData.name}.`);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking existing vault plans:', error);
+                alert('Error checking your current plan. Please try again.');
                 return;
             }
         }
@@ -7739,6 +7915,28 @@
 
             // Show processing message
             purchaseBtn.textContent = 'Creating vault...';
+
+            // Final validation: Check if user already has this plan (database level check)
+            const userVaultInfo = await getUserVaultLevel(currentUser.id);
+            if (userVaultInfo.planName === planData.name) {
+                showPurchaseError(`You already have the ${planData.name} plan! To upgrade, please select a higher-level plan.`);
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = originalText;
+                purchaseBtn.style.background = '';
+                purchaseBtn.style.cursor = '';
+                isProcessingVaultPurchase = false;
+                return;
+            }
+            
+            if (userVaultInfo.level > planData.level) {
+                showPurchaseError(`You already have a higher-level plan (${userVaultInfo.planName}). You cannot downgrade to ${planData.name}.`);
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = originalText;
+                purchaseBtn.style.background = '';
+                purchaseBtn.style.cursor = '';
+                isProcessingVaultPurchase = false;
+                return;
+            }
 
             // Check if this is the user's first vault purchase or an upgrade (BEFORE adding new vault)
             let isFirstPurchase = false;
@@ -9378,6 +9576,7 @@
             alert(`🎉 Task completed! You earned ${taskReward.toLocaleString()} UGX! (${userVaultInfo.planName}: ${totalTodayTasks + 1}/${userVaultInfo.dailyTasks} tasks today)`);
 
            // Update UI
+           clearUserStatsCache(); // Clear cache to ensure fresh data
            updateUserStats();
            updateTasksSection();
 
@@ -10292,6 +10491,7 @@
             alert(`🎉 Task completed! You earned ${reward.toLocaleString()} UGX!`);
 
             // Update UI
+            clearUserStatsCache(); // Clear cache to ensure fresh data
             updateUserStats();
             updateTasksSection();
 
