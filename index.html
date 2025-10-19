@@ -272,6 +272,29 @@
         box-shadow: none;
     }
 
+    /* Plan Status Indicators */
+    .plan-card.plan-owned {
+        border-color: #10b981;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+    }
+
+    .plan-card.plan-upgrade-available {
+        border-color: #3b82f6;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+    }
+
+    .plan-card.plan-owned:hover {
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .plan-card.plan-upgrade-available:hover {
+        border-color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+    }
+
     .plan-name {
         font-size: 1.125rem;
         font-weight: 700;
@@ -7350,10 +7373,19 @@
            const vaultsSnapshot = await db.collection('users').doc(currentUser.id).collection('vaults').get();
            const activeVaults = vaultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(vault => vault.status === 'active');
            
-           // Remove rainbow effect from all plan cards first
+           // Get user's current vault level for comparison
+           const userVaultInfo = await getUserVaultLevel(currentUser.id);
+           
+           // Remove rainbow effect and existing indicators from all plan cards first
            const planCards = document.querySelectorAll('.plan-card');
            planCards.forEach(card => {
-               card.classList.remove('rainbow-active');
+               card.classList.remove('rainbow-active', 'plan-owned', 'plan-upgrade-available');
+               
+               // Remove existing status indicators
+               const existingStatus = card.querySelector('.plan-status');
+               if (existingStatus) {
+                   existingStatus.remove();
+               }
                
                const planName = card.querySelector('.plan-name').textContent.toLowerCase();
                let planAmount = 0;
@@ -7380,6 +7412,52 @@
                    card.classList.remove('disabled');
                    card.style.opacity = '1';
                    card.style.cursor = 'pointer';
+                   
+                   // Add visual indicators for plan status
+                   const planKey = Object.keys(vaultPlans).find(key => 
+                       vaultPlans[key].name.toLowerCase() === planName
+                   );
+                   
+                   if (planKey) {
+                       const planData = vaultPlans[planKey];
+                       
+                       // Check if user already has this exact plan
+                       if (userVaultInfo.planName === planData.name) {
+                           card.classList.add('plan-owned');
+                           const statusDiv = document.createElement('div');
+                           statusDiv.className = 'plan-status';
+                           statusDiv.style.cssText = `
+                               background: #10b981;
+                               color: white;
+                               padding: 0.25rem 0.5rem;
+                               border-radius: 4px;
+                               font-size: 0.75rem;
+                               font-weight: 600;
+                               margin-top: 0.5rem;
+                               text-align: center;
+                           `;
+                           statusDiv.textContent = '✓ You Own This Plan';
+                           card.appendChild(statusDiv);
+                       }
+                       // Check if user has a lower level plan and this is an upgrade
+                       else if (userVaultInfo.level > 0 && planData.level > userVaultInfo.level) {
+                           card.classList.add('plan-upgrade-available');
+                           const statusDiv = document.createElement('div');
+                           statusDiv.className = 'plan-status';
+                           statusDiv.style.cssText = `
+                               background: #3b82f6;
+                               color: white;
+                               padding: 0.25rem 0.5rem;
+                               border-radius: 4px;
+                               font-size: 0.75rem;
+                               font-weight: 600;
+                               margin-top: 0.5rem;
+                               text-align: center;
+                           `;
+                           statusDiv.textContent = '⬆️ Upgrade Available';
+                           card.appendChild(statusDiv);
+                       }
+                   }
                }
            });
            
@@ -7415,7 +7493,7 @@
        }
    }
 
-    function selectPlan(plan) {
+    async function selectPlan(plan) {
         // Prevent selection during processing
         if (isProcessingVaultPurchase) {
             console.log('Please wait for current purchase to complete');
@@ -7439,6 +7517,28 @@
             } else {
                 alert('You must login to purchase vault plans.');
                 return;
+            }
+        }
+        
+        // Check if user already has this plan
+        if (currentUser) {
+            try {
+                const userVaultInfo = await getUserVaultLevel(currentUser.id);
+                const planData = vaultPlans[plan];
+                
+                // Check if user already has this exact plan
+                if (userVaultInfo.planName === planData.name) {
+                    alert(`You already have the ${planData.name} plan! To upgrade, please select a higher-level plan.`);
+                    return;
+                }
+                
+                // Check if user has a higher level plan
+                if (userVaultInfo.level > planData.level) {
+                    alert(`You already have a higher-level plan (${userVaultInfo.planName}). You cannot downgrade to ${planData.name}.`);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking existing vault plans:', error);
             }
         }
         
@@ -7480,6 +7580,30 @@
             const userData = userDoc.data();
             if (!userData || !userData.isActivated) {
                 alert('You must activate your account before purchasing vault plans. Please activate your account first.');
+                return;
+            }
+        }
+
+        // Double-check if user already has this plan (additional validation)
+        if (currentUser) {
+            try {
+                const userVaultInfo = await getUserVaultLevel(currentUser.id);
+                const planData = vaultPlans[selectedPlan];
+                
+                // Check if user already has this exact plan
+                if (userVaultInfo.planName === planData.name) {
+                    alert(`You already have the ${planData.name} plan! To upgrade, please select a higher-level plan.`);
+                    return;
+                }
+                
+                // Check if user has a higher level plan
+                if (userVaultInfo.level > planData.level) {
+                    alert(`You already have a higher-level plan (${userVaultInfo.planName}). You cannot downgrade to ${planData.name}.`);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking existing vault plans:', error);
+                alert('Error checking your current plan. Please try again.');
                 return;
             }
         }
@@ -7739,6 +7863,28 @@
 
             // Show processing message
             purchaseBtn.textContent = 'Creating vault...';
+
+            // Final validation: Check if user already has this plan (database level check)
+            const userVaultInfo = await getUserVaultLevel(currentUser.id);
+            if (userVaultInfo.planName === planData.name) {
+                showPurchaseError(`You already have the ${planData.name} plan! To upgrade, please select a higher-level plan.`);
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = originalText;
+                purchaseBtn.style.background = '';
+                purchaseBtn.style.cursor = '';
+                isProcessingVaultPurchase = false;
+                return;
+            }
+            
+            if (userVaultInfo.level > planData.level) {
+                showPurchaseError(`You already have a higher-level plan (${userVaultInfo.planName}). You cannot downgrade to ${planData.name}.`);
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = originalText;
+                purchaseBtn.style.background = '';
+                purchaseBtn.style.cursor = '';
+                isProcessingVaultPurchase = false;
+                return;
+            }
 
             // Check if this is the user's first vault purchase or an upgrade (BEFORE adding new vault)
             let isFirstPurchase = false;
