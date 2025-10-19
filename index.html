@@ -6483,16 +6483,8 @@
                 console.log('Calling displayUserTaskAllocation...');
                 displayUserTaskAllocation();
                 
-                // Update task earnings display to ensure it's current when returning to home
-                const taskEarningsEl = document.getElementById('taskEarnings');
-                if (taskEarningsEl && currentUser) {
-                    calculateTodayTaskEarnings().then(todayTaskEarnings => {
-                        calculateTodayExternalTaskEarnings().then(todayExternalEarnings => {
-                            const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
-                            taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
-                        });
-                    });
-                }
+                // Task earnings are already updated by updateUserStats() above
+                // No need for additional calculation here
                 
                 console.log('Home section loaded');
             } catch (error) {
@@ -6509,17 +6501,8 @@
         else if (section === 'streak') updateStreakSection();
         else if (section === 'tasks') {
             updateTasksSection();
-            // Update task earnings display to show TODAY'S earnings only (consistent with dashboard)
-            const taskEarningsEl = document.getElementById('taskEarnings');
-            if (taskEarningsEl && currentUser) {
-                // Calculate today's task earnings
-                calculateTodayTaskEarnings().then(todayTaskEarnings => {
-                    calculateTodayExternalTaskEarnings().then(todayExternalEarnings => {
-                        const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
-                        taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
-                    });
-                });
-            }
+            // Task earnings are already updated by updateUserStats() in the main flow
+            // No need for additional calculation here
         }
         else if (section === 'profile') {
             if (currentUser && currentUser.id) {
@@ -6794,10 +6777,8 @@
 
            const totalReferrals = referrals.length;
            
-           // Calculate today's task earnings
-           const todayTaskEarnings = await calculateTodayTaskEarnings();
-           const todayExternalEarnings = await calculateTodayExternalTaskEarnings();
-           const totalTodayTaskEarnings = todayTaskEarnings + todayExternalEarnings;
+           // Task earnings are now calculated from category balances (all-time, not just today)
+           // This ensures consistency with the dashboard display
            
            // Prepare data for caching and display
            const statsData = {
@@ -6806,8 +6787,7 @@
                categoryBalances,
                totalDeposits,
                currentUser,
-               vaults,
-               totalTodayTaskEarnings
+               vaults
            };
            
            // Cache the data
@@ -6851,8 +6831,7 @@
             categoryBalances,
             totalDeposits,
             currentUser,
-            vaults,
-            totalTodayTaskEarnings
+            vaults
         } = statsData;
 
         // Update basic stats
@@ -6863,10 +6842,10 @@
         document.getElementById('currentStreak').textContent = currentUser.currentStreak || 0;
         document.getElementById('pointsBalance').textContent = currentUser.pointsBalance || 0;
         
-        // Update task earnings display
+        // Update task earnings display - use category balances instead of today-only calculation
         const taskEarningsEl = document.getElementById('taskEarnings');
         if (taskEarningsEl) {
-            taskEarningsEl.textContent = totalTodayTaskEarnings.toLocaleString();
+            taskEarningsEl.textContent = categoryBalances.taskEarnings.toLocaleString();
         }
 
         // Update LUB Game earnings display
