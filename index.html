@@ -975,6 +975,7 @@ function showUserDashboard(){
   updateUserStats();
   loadLeaderboard();
   startWeekTimer();
+  listenForWithdrawalApproval();
 }
 
 function showAdminDashboard(){
@@ -1157,7 +1158,40 @@ async function selectPlan(key){
   const vi=await getVaultLevel(CU.id);
   if(vi.planName===p.name){ toast('You already own this plan','💡','warning'); return; }
   if(vi.level>p.level){ toast('You have a higher plan','💡','warning'); return; }
+
+  // Check balance before allowing selection
+  const bal=CU.balance||0;
+  if(bal<p.amount){
+    const shortfall=(p.amount-bal).toLocaleString();
+    const det=$('selectedPlanDetails'); det.classList.remove('hidden');
+    $('purchaseSumContent').innerHTML=`
+      <div style="text-align:center;padding:10px 0">
+        <div style="font-size:2.5rem;margin-bottom:10px">💸</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:6px">Insufficient Balance</div>
+        <div style="font-size:.85rem;color:var(--muted);margin-bottom:14px">You need <strong style="color:var(--red)">${shortfall} UGX</strong> more to activate the ${p.emoji} ${p.name} plan.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--gold)">${bal.toLocaleString()}</div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">Your Balance</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--text)">${p.amount.toLocaleString()}</div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">Plan Cost</div>
+          </div>
+        </div>
+      </div>`;
+    $('purchaseBtn').textContent='💰 Deposit Funds';
+    $('purchaseBtn').onclick=()=>{ showSection('wallet'); showWalletTab('dep'); toast(`Deposit at least ${shortfall} UGX to activate ${p.name}`,'💡','info',6000); };
+    $('purchaseBtn').className='btn btn-green btn-full';
+    det.scrollIntoView({behavior:'smooth',block:'nearest'});
+    return;
+  }
+
   selectedPlan=key;
+  // Reset button to normal purchase state (may have been changed by a previous insufficient-balance selection)
+  $('purchaseBtn').textContent='Confirm Purchase';
+  $('purchaseBtn').onclick=purchaseVault;
+  $('purchaseBtn').className='btn btn-gold btn-full';
   const monthEarn=p.dailyTasks*p.taskReward*30;
   document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
   event.currentTarget.classList.add('selected');
@@ -1959,13 +1993,6 @@ function listenForWithdrawalApproval(){
 // BOOT
 // ============================================================
 window.addEventListener('load', init);
-
-// Override showUserDashboard to add listeners
-const _origSUD = showUserDashboard;
-function showUserDashboard(){
-  _origSUD();
-  listenForWithdrawalApproval();
-}
 </script>
 </body>
 </html>
