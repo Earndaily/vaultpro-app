@@ -246,7 +246,7 @@ th{font-weight:600;color:var(--gray);background:var(--light)}
 <img id="profileImage" style="width:80px;height:80px;border-radius:50%;object-fit:cover;display:none;margin:0 auto">
 <label style="position:absolute;bottom:0;right:0;background:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--primary)">📷<input type="file" accept="image/*" style="display:none" onchange="uploadProfilePicture(event)"></label></div>
 <h2 id="profileUserName" style="color:white;margin-bottom:.25rem">User</h2>
-<p id="profileUserEmail" style="opacity:.9;font-size:.875rem">user@example.com</p>
+<p id="profileUserEmail" style="opacity:.9;font-size:.875rem"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="572224322517322f363a273b327934383a">[email&#160;protected]</a></p>
 <p id="profileJoinedDate" style="opacity:.75;font-size:.75rem;margin-top:.25rem">Member since N/A</p>
 <div id="profileLevelBadge" class="level-badge" style="margin-top:.75rem;background:rgba(255,255,255,.2)">🌱 Newcomer</div></div>
 <div class="card"><h3 style="margin-bottom:1rem">Account Information</h3>
@@ -340,7 +340,7 @@ th{font-weight:600;color:var(--gray);background:var(--light)}
 <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
 <h3 style="margin:0">🔔 Notifications</h3><button onclick="hideNotificationCenter()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer">×</button></div>
 <div style="max-height:60vh;overflow-y:auto" id="notificationList"></div></div>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script>
@@ -656,8 +656,26 @@ populateVaultPaymentOptions(amount,planName,m)}
 async function populateVaultPaymentOptions(amount,planName,modal){
 const opts=modal.querySelector("#payOpts");
 const bal=await getUserActualBalance(currentUser.id);const ok=bal>=amount;
-opts.innerHTML=`<div style="padding:1rem;border:2px solid ${ok?"var(--border)":"#f3f4f6"};border-radius:12px;background:${ok?"#fff":"#f9fafb"};cursor:${ok?"pointer":"not-allowed"};margin-bottom:.75rem" ${ok?`onclick="this.closest('.modal').remove();processVaultPurchaseWithWallet(${amount},'${planName}')"`:""}><div style="display:flex;align-items:center;gap:1rem"><div style="font-size:2rem">💰</div><div style="flex:1"><div style="font-weight:600">Wallet Balance</div><div style="font-size:.875rem;color:var(--gray)">Available: ${bal.toLocaleString()} UGX</div>${!ok?"<div style="font-size:.8rem;color:#ef4444">Insufficient funds</div>":""}</div><div style="color:${ok?"var(--success)":"#9ca3af"}">${ok?"✓":"✗"}</div></div></div>
-<div style="padding:1rem;border:2px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:.75rem" onclick="this.closest('.modal').remove();showSection('wallet')"><div style="display:flex;align-items:center;gap:1rem"><div style="font-size:2rem">📱</div><div style="flex:1"><div style="font-weight:600">Mobile Money</div><div style="font-size:.875rem;color:var(--gray)">Deposit then purchase</div></div><div>→</div></div></div>`}
+const walletStyle="padding:1rem;border:2px solid "+(ok?"var(--border)":"#f3f4f6")+";border-radius:12px;background:"+(ok?"#fff":"#f9fafb")+";cursor:"+(ok?"pointer":"not-allowed")+";margin-bottom:.75rem";
+const clickAttr=ok?' onclick="this.closest(\'.modal\').remove();processVaultPurchaseWithWallet('+amount+',\''+planName+'\');"':"";
+const insufficientHtml=ok?"":'<div style="font-size:.8rem;color:#ef4444">Insufficient funds</div>';
+const checkColor=ok?"var(--success)":"#9ca3af";
+opts.innerHTML='<div style="'+walletStyle+'"'+clickAttr+'>'
++'<div style="display:flex;align-items:center;gap:1rem">'
++'<div style="font-size:2rem">💰</div>'
++'<div style="flex:1">'
++'<div style="font-weight:600">Wallet Balance</div>'
++'<div style="font-size:.875rem;color:var(--gray)">Available: '+bal.toLocaleString()+' UGX</div>'
++insufficientHtml
++'</div>'
++'<div style="color:'+checkColor+'">'+(ok?"✓":"✗")+'</div>'
++'</div></div>'
++'<div style="padding:1rem;border:2px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:.75rem" onclick="this.closest(\'.modal\').remove();showSection(\'wallet\');">'
++'<div style="display:flex;align-items:center;gap:1rem">'
++'<div style="font-size:2rem">📱</div>'
++'<div style="flex:1"><div style="font-weight:600">Mobile Money</div><div style="font-size:.875rem;color:var(--gray)">Deposit then purchase</div></div>'
++'<div>→</div>'
++'</div></div>'}
 
 async function processVaultPurchaseWithWallet(amount,planName){
 const bal=await getUserActualBalance(currentUser.id);
@@ -946,9 +964,4 @@ function toggleDarkMode(){const body=document.body,icon=document.getElementById(
 
 window.addEventListener("load",()=>{captureReferralCode();if(localStorage.getItem("darkMode")==="true"){document.body.classList.add("dark-mode");const i=document.getElementById("darkModeIcon");if(i)i.textContent="☀️"}init()});
 
-setInterval(()=>{const r=document.getElementById("registerPage");if(r&&!r.classList.contains("hidden")&&!document.getElementById("inviteCode")?.value&&!allowManualRegistration)showLogin()},1000);
-
-window.adminLogin=async()=>{try{const r=await auth.signInWithEmailAndPassword("admin@vaultpro.com","Admin@123");console.log("Admin:",r.user.email)}catch(e){console.error("Admin login failed:",e)}};
-</script>
-</body>
-</html>
+setInterval(()=>{const r=document.getElementById("registerPage");if(r&&!r.classList.contains("hidden")&&!document.getElementById("inviteCode")?.value&&!allowManualRegistration)showLogin()},1000
