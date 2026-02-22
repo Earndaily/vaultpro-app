@@ -281,6 +281,7 @@ tr:last-child td{border-bottom:none}
       <div class="stat-tile"><div class="stat-tile-icon">✅</div><div class="stat-tile-value" id="statTask">0</div><div class="stat-tile-label">Task Earnings</div></div>
       <div class="stat-tile"><div class="stat-tile-icon">💸</div><div class="stat-tile-value" id="statRef">0</div><div class="stat-tile-label">Referral Earn.</div></div>
       <div class="stat-tile"><div class="stat-tile-icon">💎</div><div class="stat-tile-value" id="statLevel">—</div><div class="stat-tile-label">Vault Level</div></div>
+      <div class="stat-tile" style="grid-column:span 2;background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.02));border-color:var(--border)"><div class="stat-tile-icon">🏆</div><div class="stat-tile-value" id="statWeeklyPrize" style="color:var(--gold)">0</div><div class="stat-tile-label">Weekly Prize Earnings</div></div>
     </div>
 
     <div class="card">
@@ -328,6 +329,26 @@ tr:last-child td{border-bottom:none}
       <div style="font-weight:700;margin-bottom:4px">Join Our WhatsApp Group</div>
       <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Get updates &amp; connect with investors</div>
       <a href="https://chat.whatsapp.com/KBvY0dutPIcHPLNzjBcJZQ" target="_blank" class="btn btn-green btn-full" style="text-decoration:none">Join Now</a>
+    </div>
+
+    <!-- Referral Career Levels -->
+    <div class="card" style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(201,168,76,.04));border-color:rgba(99,102,241,.2)">
+      <div class="collapsible-header" onclick="toggleCollapse('refLevelsHome')">
+        <div>
+          <div style="font-weight:700;font-size:.9rem">🎖️ Referral Career Levels</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Grow your network · Unlock salary &amp; status</div>
+        </div>
+        <span class="caret" id="refLevelsHomeCaret">▼</span>
+      </div>
+      <div class="collapsible-body" id="refLevelsHome">
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:9px" id="refLevelsHomeList">
+          <!-- Populated by JS -->
+        </div>
+        <div style="margin-top:14px;padding:11px 13px;background:var(--bg3);border-radius:var(--rs);font-size:.76rem;color:var(--muted);line-height:1.6">
+          <strong style="color:var(--gold);display:block;margin-bottom:4px">📌 How it works</strong>
+          Referral salary is credited monthly based on your level. Shareholders receive 20% of company funds. All levels require the referred users to have active vault subscriptions.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -454,7 +475,7 @@ tr:last-child td{border-bottom:none}
         <div style="font-weight:700;margin-bottom:14px">💸 Withdraw Funds</div>
         <div id="wdAlert"></div>
         <div class="fg"><label>Earnings Category</label>
-          <select id="wdCat"><option value="">Select category</option><option value="referral">Referral Earnings</option><option value="task">Task Earnings (Fri–Sat only)</option><option value="vault">Vault Earnings</option></select>
+          <select id="wdCat"><option value="">Select category</option><option value="referral">Referral Earnings</option><option value="task">Task Earnings (Fri–Sat only)</option><option value="vault">Vault Earnings</option><option value="weeklyPrize">🏆 Weekly Prize</option></select>
         </div>
         <div class="fg"><label>Amount (UGX)</label><input type="number" id="wdAmount" placeholder="Minimum 5,000"></div>
         <div class="fg">
@@ -591,9 +612,9 @@ tr:last-child td{border-bottom:none}
         <div class="admin-stat"><div class="admin-stat-val" id="aPending">0</div><div class="admin-stat-lbl">Pending W/D</div></div>
       </div>
       <div class="card">
-        <div style="font-weight:700;margin-bottom:7px">🏆 Award Weekly Prize</div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:13px">50,000 UGX to top referrer this week (min 8 referrals)</div>
-        <button class="btn btn-gold" onclick="awardWeeklyWinner()">Award Weekly Winner</button>
+        <div style="font-weight:700;margin-bottom:7px">🏆 Weekly Prize System</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:13px">50,000 UGX auto-credited each week to the top referrer who has 8+ referrals <strong style="color:var(--gold)">with active vault plans</strong>. Runs every Monday at midnight.</div>
+        <button class="btn btn-gold" onclick="runWeeklyPrize()">▶ Run Weekly Prize Now</button>
       </div>
     </div>
 
@@ -619,7 +640,7 @@ tr:last-child td{border-bottom:none}
         <div class="fg"><label>Description</label><textarea id="taskDesc" placeholder="Explain what the user should do…"></textarea></div>
         <div class="fg" id="taskUrlGroup"><label id="taskUrlLabel">YouTube URL</label><input type="url" id="taskUrl" placeholder="https://youtube.com/watch?v=..."></div>
         <div class="fg hidden" id="taskReadingGroup"><label>Reading Content</label><textarea id="taskReading" placeholder="Paste the article/content users should read…" style="min-height:150px"></textarea></div>
-        <div class="fg"><label>Reward (UGX)</label><input type="number" id="taskReward" placeholder="e.g. 1000"></div>
+        <div class="alert alert-info" style="margin-bottom:12px;font-size:.78rem">ℹ️ Task rewards are automatically determined by each user's active vault plan — no manual reward needed.</div>
         <div class="fg"><label>Timer Duration (seconds)</label><input type="number" id="taskTimer" placeholder="e.g. 60" value="60"></div>
         <button class="btn btn-green btn-full" onclick="addTask()">Add Task</button>
       </div>
@@ -700,14 +721,15 @@ const firebaseConfig = {
   measurementId: "G-8XFB9L9H4L"
 };
 
-let db, auth, storage, fbReady = false;
+let db, auth, storage, FS, fbReady = false;
 try {
-  firebase.initializeApp(firebaseConfig);
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   auth = firebase.auth();
   storage = firebase.storage();
+  FS = firebase.firestore.FieldValue; // safe alias — avoids "firebase is not defined" inside async fns
   fbReady = true;
-} catch(e) { console.error('Firebase:', e); }
+} catch(e) { console.error('Firebase init error:', e); }
 
 // ============================================================
 // GLOBALS
@@ -790,6 +812,16 @@ const REF_LEVELS = [
   {title:'VP',         icon:'🦅',color:'#ec4899',min:500},
   {title:'Admin',      icon:'👑',color:'#C9A84C',min:1000},
   {title:'Shareholder',icon:'💎',color:'#06b6d4',min:5000},
+];
+
+// Referral Career Levels — displayed on home page
+const CAREER_LEVELS = [
+  {level:1, title:'Admin',       referrals:100,  salary:50000,         icon:'1️⃣', color:'#6366f1', description:'Entry-level leadership. Manages user activity and assists support.'},
+  {level:2, title:'Partner',     referrals:500,  salary:200000,        icon:'2️⃣', color:'#ec4899', description:'Trusted user with a growing community under them.'},
+  {level:3, title:'Manager',     referrals:1000, salary:500000,        icon:'3️⃣', color:'#10b981', description:'Mid-level leader managing multiple partners.'},
+  {level:4, title:'Chief',       referrals:2000, salary:1000000,       icon:'4️⃣', color:'#f59e0b', description:'High-ranking official overseeing major sections of the network.'},
+  {level:5, title:'Partner King',referrals:5000, salary:2000000,       icon:'5️⃣', color:'#ef4444', description:'Top-tier promoter managing large networks.'},
+  {level:6, title:'Shareholder', referrals:10000,salary:'20% of funds',icon:'6️⃣', color:'#8b5cf6', description:'Ultimate recognition — becomes part-owner of the project.'},
 ];
 
 // ============================================================
@@ -1014,6 +1046,7 @@ function showUserDashboard(){
   setTimeout(()=>showSection('home'),50);
   updateUserStats();
   loadLeaderboard();
+  renderCareerLevels();
   startWeekTimer();
   listenForWithdrawalApproval();
 }
@@ -1113,6 +1146,7 @@ function applyStats({balance,refs,cb,user,vaults}){
   set('statRefs',refs);
   set('statTask',(cb.taskEarnings||0).toLocaleString());
   set('statRef',(cb.referralEarnings||0).toLocaleString());
+  set('statWeeklyPrize',(cb.weeklyPrize||0).toLocaleString());
   const active=vaults.filter(v=>v.status==='active');
   set('statLevel',calcVaultLevel(active).level);
   set('walletBal',(balance||0).toLocaleString());
@@ -1125,11 +1159,12 @@ function clearStatsCache(){ statsCache={data:null,ts:0,ttl:30000}; }
 async function getCatBalances(uid){
   try{
     const snap=await db.collection('transactions').where('userId','==',uid).get();
-    const b={taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0};
+    const b={taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0,weeklyPrize:0};
     snap.docs.forEach(d=>{
       const t=d.data(),a=t.amount||0;
       if(t.type==='task_completion') b.taskEarnings+=a;
       else if(t.type==='referral') b.referralEarnings+=a;
+      else if(t.type==='weekly_prize') b.weeklyPrize+=a;
       else if(t.type==='vault_maturity') b.vaultEarnings+=a;
       else if(t.type==='deposit') b.depositEarnings+=a;
       else if(['withdrawal','withdrawal_approved'].includes(t.type)){
@@ -1139,7 +1174,7 @@ async function getCatBalances(uid){
     });
     Object.keys(b).forEach(k=>{b[k]=Math.max(0,b[k])});
     return b;
-  }catch(e){ return {taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0}; }
+  }catch(e){ return {taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0,weeklyPrize:0}; }
 }
 
 async function getVaultLevel(uid){
@@ -1325,7 +1360,7 @@ async function doVaultPurchase(sourceCategory, categoryName){
   try{
     const p=PLANS[selectedPlan];
     if((CU.balance||0)<p.amount){ toast('Insufficient funds','❌','error'); return; }
-    await db.collection('users').doc(CU.id).update({balance:firebase.firestore.FieldValue.increment(-p.amount)});
+    await db.collection('users').doc(CU.id).update({balance:FS.increment(-p.amount)});
     CU.balance=(CU.balance||0)-p.amount;
     const start=new Date(), end=new Date(start.getTime()+p.days*86400000);
     await db.collection('users').doc(CU.id).collection('vaults').add({
@@ -1339,7 +1374,7 @@ async function doVaultPurchase(sourceCategory, categoryName){
       const bonus=Math.floor(p.amount*0.10);
       const rd=await db.collection('users').doc(CU.referredBy).get();
       if(rd.exists){
-        await db.collection('users').doc(CU.referredBy).update({balance:firebase.firestore.FieldValue.increment(bonus)});
+        await db.collection('users').doc(CU.referredBy).update({balance:FS.increment(bonus)});
         await db.collection('transactions').add({userId:CU.referredBy,userName:rd.data().fullName,type:'referral',amount:bonus,description:`10% bonus from ${CU.fullName} — ${p.name}`,date:new Date().toISOString()});
         await sendNotif(CU.referredBy,'referral_bonus',`You earned ${bonus.toLocaleString()} UGX referral bonus from ${CU.fullName}!`);
       }
@@ -1474,7 +1509,7 @@ async function completeTask(taskId, type, reward){
     const today=new Date().toDateString();
     const col=type==='youtube'||type==='youtube_sub'?'taskSubmissions':'externalTaskSubmissions';
     await db.collection(col).add({userId:CU.id,userName:CU.fullName,taskId,date:today,reward,completedAt:new Date().toISOString(),type});
-    await db.collection('users').doc(CU.id).update({balance:firebase.firestore.FieldValue.increment(reward)});
+    await db.collection('users').doc(CU.id).update({balance:FS.increment(reward)});
     CU.balance=(CU.balance||0)+reward;
     await db.collection('transactions').add({userId:CU.id,userName:CU.fullName,type:'task_completion',amount:reward,date:new Date().toISOString()});
     const card=$(`task-${taskId}`);
@@ -1605,7 +1640,7 @@ async function submitWithdrawal(){
   if(!phone){ showAlert('wdAlert','Please enter your phone number','error'); return; }
   if(cat==='task'){ const d=new Date().getDay(); if(d!==5&&d!==6){ showAlert('wdAlert','Task earnings only withdrawable on Friday & Saturday','error'); return; } }
   const b=await getCatBalances(CU.id);
-  const bk=cat==='referral'?'referralEarnings':cat==='task'?'taskEarnings':'vaultEarnings';
+  const bk=cat==='referral'?'referralEarnings':cat==='task'?'taskEarnings':cat==='weeklyPrize'?'weeklyPrize':'vaultEarnings';
   if(b[bk]<amt){ showAlert('wdAlert',`Insufficient ${cat} earnings (available: ${(b[bk]||0).toLocaleString()} UGX)`,'error'); return; }
   const fee=Math.floor(amt*0.05), net=amt-fee;
   try{
@@ -1625,7 +1660,7 @@ async function loadTxHistory(){
     const tb=$('txHistory');
     if(!tb) return;
     if(snap.empty){ tb.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--muted)">No transactions yet</td></tr>`; return; }
-    const types={deposit:'💰 Deposit',withdrawal:'💸 Withdrawal',referral:'👥 Referral',task_completion:'✅ Task',vault_purchase:'🏦 Vault',vault_maturity:'🏦 Matured',points_conversion:'🔄 Points',withdrawal_approved:'💸 Withdrawal'};
+    const types={deposit:'💰 Deposit',withdrawal:'💸 Withdrawal',referral:'👥 Referral',task_completion:'✅ Task',vault_purchase:'🏦 Vault',vault_maturity:'🏦 Matured',points_conversion:'🔄 Points',withdrawal_approved:'💸 Withdrawal',weekly_prize:'🏆 Weekly Prize'};
     const out=['withdrawal','vault_purchase','withdrawal_approved'];
     tb.innerHTML=snap.docs.map(d=>{
       const t=d.data(), a=t.netAmount||t.amount||0, isOut=out.includes(t.type);
@@ -1660,7 +1695,7 @@ async function convertPoints(){
   const cur=ud.data().pointsBalance||0;
   if(cur<pts){ showAlert('streakAlert',`Insufficient points (you have ${cur})`,'error'); return; }
   const ugx=pts*10;
-  await db.collection('users').doc(CU.id).update({pointsBalance:firebase.firestore.FieldValue.increment(-pts),balance:firebase.firestore.FieldValue.increment(ugx)});
+  await db.collection('users').doc(CU.id).update({pointsBalance:FS.increment(-pts),balance:FS.increment(ugx)});
   await db.collection('transactions').add({userId:CU.id,type:'points_conversion',amount:ugx,description:`${pts} points converted`,date:new Date().toISOString()});
   CU.pointsBalance=cur-pts; CU.balance=(CU.balance||0)+ugx;
   clearStatsCache();
@@ -1734,6 +1769,31 @@ async function uploadPic(ev){
 }
 
 // ============================================================
+// CAREER LEVELS — Renders the referral career progression on home
+// ============================================================
+function renderCareerLevels(){
+  const el=$('refLevelsHomeList'); if(!el) return;
+  el.innerHTML=CAREER_LEVELS.map(c=>{
+    const salaryStr=typeof c.salary==='number'?c.salary.toLocaleString()+' UGX/mo':c.salary;
+    return `<div style="border:1px solid ${c.color}30;border-radius:10px;padding:13px 14px;background:linear-gradient(135deg,${c.color}0A,transparent);position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:${c.color};border-radius:3px 0 0 3px"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:1.3rem">${c.icon}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.9rem">Level ${c.level} — ${c.title}</div>
+          <div style="font-size:.7rem;color:var(--muted);margin-top:1px">${c.referrals.toLocaleString()}+ referrals with active plans</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;color:${c.color}">${salaryStr}</div>
+          <div style="font-size:.62rem;color:var(--dim)">monthly salary</div>
+        </div>
+      </div>
+      <div style="font-size:.74rem;color:var(--muted);line-height:1.5;padding-left:2px">${c.description}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
 // LEADERBOARD
 // ============================================================
 async function loadLeaderboard(){
@@ -1764,27 +1824,65 @@ function updateWeekTimer(){
   set('weekTimer',`${days}d ${hrs}h ${mins}m`);
 }
 
-async function awardWeeklyWinner(){
+// ============================================================
+// WEEKLY PRIZE — fully automatic
+// Requires 8+ referrals THIS WEEK where each referred user has an active vault plan
+// Prize auto-credited to balance; user can then request withdrawal
+// Admin only approves the withdrawal request — not the prize itself
+// ============================================================
+async function runWeeklyPrize(){ await awardWeeklyWinner(true); }
+
+async function awardWeeklyWinner(manual=false){
   try{
     const now=new Date(), d=now.getDay(), d2m=d===0?6:d-1;
     const ws=new Date(now); ws.setDate(now.getDate()-d2m); ws.setHours(0,0,0,0);
+    const PRIZE=50000, MIN_REFS=8;
+
     const snap=await db.collection('users').where('isAdmin','==',false).get();
-    let top=null, max=0;
+    let topCandidate=null, topCount=0;
+
     for(const doc of snap.docs){
       const rs=await db.collection('users').doc(doc.id).collection('referrals').get();
-      const wk=rs.docs.filter(r=>new Date(r.data().date)>=ws).length;
-      if(wk>max){ max=wk; top={userId:doc.id,userData:doc.data(),wk}; }
+      let qualifiedCount=0;
+      for(const ref of rs.docs){
+        const refDate=new Date(ref.data().date||0);
+        if(refDate<ws) continue; // must be this week
+        // Referred user must have an active vault plan
+        const vSnap=await db.collection('users').doc(ref.data().userId).collection('vaults')
+          .where('status','==','active').limit(1).get();
+        if(!vSnap.empty) qualifiedCount++;
+      }
+      if(qualifiedCount>topCount){ topCount=qualifiedCount; topCandidate={userId:doc.id,userName:doc.data().fullName,count:qualifiedCount}; }
     }
-    if(top&&top.wk>=8){
-      const prize=50000;
-      await db.collection('users').doc(top.userId).update({balance:firebase.firestore.FieldValue.increment(prize)});
-      await db.collection('transactions').add({userId:top.userId,type:'referral',amount:prize,description:'Weekly Top Referrer Prize',date:new Date().toISOString()});
-      await sendNotif(top.userId,'referral_bonus',`🏆 You won the weekly referral prize: ${prize.toLocaleString()} UGX!`);
-      toast(`Winner: ${top.userData.fullName}`,'🏆','success');
-    } else {
-      toast('No winner — min 8 referrals required','⚠️','warning');
+
+    if(!topCandidate||topCount<MIN_REFS){
+      if(manual) toast(`No qualified winner — need ${MIN_REFS}+ referrals with active plans`,'⚠️','warning');
+      return;
     }
-  }catch(e){ console.error(e); }
+
+    // Prevent double-awarding within same week
+    const alreadySnap=await db.collection('transactions')
+      .where('userId','==',topCandidate.userId)
+      .where('type','==','weekly_prize').get();
+    const alreadyThisWeek=alreadySnap.docs.some(d=>new Date(d.data().date||0)>=ws);
+    if(alreadyThisWeek){
+      if(manual) toast(`${topCandidate.userName} already received the prize this week`,'ℹ️','info');
+      return;
+    }
+
+    await db.collection('users').doc(topCandidate.userId).update({balance:FS.increment(PRIZE)});
+    await db.collection('transactions').add({
+      userId:topCandidate.userId, userName:topCandidate.userName,
+      type:'weekly_prize', amount:PRIZE, qualifiedReferrals:topCount,
+      description:`🏆 Weekly Top Referrer — ${topCount} qualified referrals`,
+      date:new Date().toISOString()
+    });
+    await sendNotif(topCandidate.userId,'referral_bonus',
+      `🏆 You won this week's referral prize: ${PRIZE.toLocaleString()} UGX! (${topCount} qualified referrals) — go to Wallet → Withdraw to claim it.`
+    );
+    if(manual) toast(`🏆 ${PRIZE.toLocaleString()} UGX auto-credited to ${topCandidate.userName}`,'🏆','success',7000);
+    if(manual) loadAdminStats();
+  }catch(e){ console.error('Weekly prize:',e); if(manual) toast('Error: '+e.message,'❌','error'); }
 }
 
 // ============================================================
@@ -1794,7 +1892,7 @@ async function sendNotif(uid, type, msg){
   const icons={activation_approved:'🎉',withdrawal_approved:'💰',withdrawal_rejected:'❌',referral_bonus:'👥',vault_matured:'🏦'};
   const titles={activation_approved:'Account Activated!',withdrawal_approved:'Withdrawal Approved!',withdrawal_rejected:'Withdrawal Rejected',referral_bonus:'Referral Bonus!',vault_matured:'Vault Matured!'};
   try{
-    await db.collection('notifications').add({userId:uid,type,title:titles[type]||'Notification',message:msg||titles[type],icon:icons[type]||'🔔',read:false,timestamp:firebase.firestore.FieldValue.serverTimestamp(),createdAt:new Date().toISOString()});
+    await db.collection('notifications').add({userId:uid,type,title:titles[type]||'Notification',message:msg||titles[type],icon:icons[type]||'🔔',read:false,timestamp:FS.serverTimestamp(),createdAt:new Date().toISOString()});
   }catch(e){}
 }
 
@@ -1877,14 +1975,19 @@ function updateTaskForm(){
 async function addTask(){
   const type=$('taskType').value, title=$('taskTitle').value.trim(), desc=$('taskDesc').value.trim();
   const url=$('taskUrl').value.trim(), reading=$('taskReading').value.trim();
-  const reward=parseInt($('taskReward').value), timer=parseInt($('taskTimer').value)||60;
-  if(!title||!reward){ toast('Fill title and reward','⚠️','warning'); return; }
+  const timer=parseInt($('taskTimer').value)||60;
+  if(!title){ toast('Please enter a task title','⚠️','warning'); return; }
   if(type!=='reading'&&!url){ toast('Please enter a URL','⚠️','warning'); return; }
   if(type==='reading'&&!reading){ toast('Please enter reading content','⚠️','warning'); return; }
   try{
-    await db.collection('tasks').add({type,title,description:desc,url:url||'',readingContent:reading||'',reward,timerSeconds:timer,isActive:true,createdAt:new Date().toISOString()});
+    await db.collection('tasks').add({
+      type,title,description:desc,url:url||'',readingContent:reading||'',
+      // No fixed reward — each user earns based on their vault plan's taskReward
+      reward:null,
+      timerSeconds:timer,isActive:true,createdAt:new Date().toISOString()
+    });
     toast('Task added!','✅','success');
-    ['taskTitle','taskDesc','taskUrl','taskReading','taskReward'].forEach(id=>{ const e=$(id); if(e) e.value=''; });
+    ['taskTitle','taskDesc','taskUrl','taskReading'].forEach(id=>{ const e=$(id); if(e) e.value=''; });
     $('taskTimer').value='60';
     loadAdminTasks();
   }catch(e){ toast('Failed: '+e.message,'❌','error'); }
@@ -1905,11 +2008,9 @@ async function loadAdminTasks(){
             <div style="font-weight:700;font-size:.875rem">${typeIcons[t.type]||'📋'} ${t.title}</div>
             <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${t.description||''}</div>
             ${t.url?`<div style="font-size:.7rem;color:var(--dim);margin-top:2px;word-break:break-all">${t.url}</div>`:''}
-            <div style="font-size:.72rem;color:var(--gold);margin-top:4px">⏱ ${t.timerSeconds||60}s timer · +${(t.reward||0).toLocaleString()} UGX</div>
+            <div style="font-size:.72rem;color:var(--gold);margin-top:4px">⏱ ${t.timerSeconds||60}s timer · Reward: determined by user's vault plan</div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-            <span class="badge ${t.isActive?'badge-success':'badge-error'}">${t.isActive?'Active':'Off'}</span>
-          </div>
+          <span class="badge ${t.isActive?'badge-success':'badge-error'}">${t.isActive?'Active':'Off'}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-surface" style="padding:6px 11px;font-size:.75rem" onclick="editTask('${doc.id}')">✏️ Edit</button>
@@ -1931,10 +2032,8 @@ function editTask(id){
     if(newTitle===null) return;
     const newDesc=prompt('Description:',t.description||'');
     if(newDesc===null) return;
-    const newReward=parseInt(prompt('Reward (UGX):',t.reward||1000));
-    if(isNaN(newReward)) return;
     const newTimer=parseInt(prompt('Timer (seconds):',t.timerSeconds||60));
-    db.collection('tasks').doc(id).update({title:newTitle,description:newDesc,reward:newReward,timerSeconds:isNaN(newTimer)?60:newTimer})
+    db.collection('tasks').doc(id).update({title:newTitle,description:newDesc,timerSeconds:isNaN(newTimer)?60:newTimer})
       .then(()=>{ toast('Task updated','✅','success'); loadAdminTasks(); })
       .catch(e=>toast('Update failed: '+e.message,'❌','error'));
   });
@@ -1991,7 +2090,7 @@ async function approveDeposit(depId, uid, amount){
   if(!confirm(`Approve ${amount.toLocaleString()} UGX deposit?`)) return;
   try{
     await db.collection('depositRequests').doc(depId).update({status:'approved',approvedDate:new Date().toISOString()});
-    await db.collection('users').doc(uid).update({balance:firebase.firestore.FieldValue.increment(amount)});
+    await db.collection('users').doc(uid).update({balance:FS.increment(amount)});
     await db.collection('transactions').add({userId:uid,type:'deposit',amount,date:new Date().toISOString()});
     await sendNotif(uid,'activation_approved',`Your deposit of ${amount.toLocaleString()} UGX has been approved! 🎉`);
     toast('Deposit approved','✅','success');
@@ -2044,7 +2143,7 @@ async function approveWithdrawal(wdId, uid, net, fee){
   if(!confirm(`Approve withdrawal of ${net.toLocaleString()} UGX?`)) return;
   try{
     await db.collection('withdrawalRequests').doc(wdId).update({status:'approved',approvedDate:new Date().toISOString()});
-    await db.collection('users').doc(uid).update({balance:firebase.firestore.FieldValue.increment(-(net+fee))});
+    await db.collection('users').doc(uid).update({balance:FS.increment(-(net+fee))});
     await db.collection('transactions').add({userId:uid,type:'withdrawal_approved',amount:net,adminFee:fee,date:new Date().toISOString()});
     await sendNotif(uid,'withdrawal_approved',`Your withdrawal of ${net.toLocaleString()} UGX has been processed! 💰`);
     toast('Withdrawal approved','✅','success');
