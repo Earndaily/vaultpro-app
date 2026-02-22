@@ -1496,7 +1496,10 @@ async function doVaultPurchase(sourceCategory, categoryName){
 }
 
 // ============================================================
-// TASKS — dailyTasks limit comes from user's active vault plan
+// TASKS — tasks shown = plan's dailyTasks limit exactly
+// Timer starts immediately when user clicks Start Task
+// YouTube: hidden iframe revealed + autoplay on click
+// TikTok/Subscribe/Visit: link opens + timer starts simultaneously
 // ============================================================
 async function loadTasks(){
   const vi=await getVaultLevel(CU.id);
@@ -1516,70 +1519,74 @@ async function loadTasks(){
     return;
   }
 
-  const tasksSnap=await db.collection('tasks').where('isActive','==',true).get();
-  const allTasks=tasksSnap.docs.map(d=>({id:d.id,...d.data()}));
-  let html='';
+  if(done>=limit){
+    $('tasksList').innerHTML=`<div class="card" style="text-align:center;padding:28px"><div style="font-size:2.4rem;margin-bottom:10px">🎉</div><div style="font-weight:700;color:var(--gold);margin-bottom:7px">All Tasks Complete!</div><div style="color:var(--muted);font-size:.875rem">Come back tomorrow for more rewards</div></div>`;
+    return;
+  }
 
-  allTasks.forEach(t=>{
-    const isCompleted=doneIds.has(t.id);
-    if(isCompleted) return;
-    const canDo=done<limit;
-    // Use plan's taskReward as fallback if task doesn't have its own reward
+  const tasksSnap=await db.collection('tasks').where('isActive','==',true).get();
+  // Filter out already-done tasks, then slice to exactly how many remain today
+  const remaining=limit-done;
+  const availableTasks=tasksSnap.docs
+    .map(d=>({id:d.id,...d.data()}))
+    .filter(t=>!doneIds.has(t.id))
+    .slice(0, remaining); // ← KEY: only show tasks equal to remaining slots
+
+  if(!availableTasks.length){
+    $('tasksList').innerHTML=`<div class="card" style="text-align:center;color:var(--muted);padding:28px">No tasks available right now. Check back later!</div>`;
+    return;
+  }
+
+  const typeColors={youtube:'task-type-yt',youtube_sub:'task-type-sub',tiktok:'task-type-tiktok',visit:'task-type-read'};
+  const typeLabels={youtube:'📺 YouTube Watch',youtube_sub:'🔔 Subscribe',tiktok:'🎵 TikTok',visit:'🌐 Visit Website'};
+
+  const html=availableTasks.map(t=>{
     const reward=t.reward||vi.taskReward;
     const timerSecs=t.timerSeconds||60;
-    const typeColors={youtube:'task-type-yt',youtube_sub:'task-type-sub',tiktok:'task-type-tiktok',visit:'task-type-read'};
-    const typeLabels={youtube:'📺 YouTube Watch',youtube_sub:'🔔 Subscribe',tiktok:'🎵 TikTok Watch',visit:'🌐 Visit Website'};
     const typeClass=typeColors[t.type]||'task-type-yt';
+    const encodedUrl=encodeURIComponent(t.url||'');
+    const circ=(2*Math.PI*13).toFixed(2);
 
-    // Determine action instructions per type
-    const actionMap={
-      youtube:`▶️ Press <strong>Play</strong> on the video below, then click <strong>Start Task</strong> — your timer begins and reward unlocks when done.`,
-      youtube_sub:`👆 Click <strong>Subscribe</strong> on the channel, then click <strong>Start Task</strong> — wait for the timer to complete your reward.`,
-      tiktok:`👆 Tap <strong>Open TikTok</strong> to watch the video, then click <strong>Start Task</strong> — the timer will count down your reward.`,
-      visit:`🌐 Click <strong>Visit Website</strong>, spend time on the page, then click <strong>Start Task</strong> — wait for the countdown to earn.`
-    };
-
-    // Content preview area
+    // YouTube: show thumbnail preview, iframe hidden until Start clicked
     let contentHtml='';
     if(t.type==='youtube'){
       const vid=extractYouTubeId(t.url||'');
-      if(vid) contentHtml=`<iframe class="task-embed" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+      if(vid){
+        contentHtml=`
+          <!-- Thumbnail shown before start -->
+          <div id="ytThumb-${t.id}" style="position:relative;cursor:pointer;background:#000;border-radius:var(--rs) var(--rs) 0 0;overflow:hidden" onclick="startTask('${t.id}','youtube',${reward},${timerSecs},'${encodedUrl}')">
+            <img src="https://img.youtube.com/vi/${vid}/hqdefault.jpg" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;opacity:.85">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="width:56px;height:56px;background:rgba(255,0,0,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.5)">
+                <div style="width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:18px solid #fff;margin-left:4px"></div>
+              </div>
+            </div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.72rem;color:rgba(255,255,255,.8)">▶ Tap to play &amp; start timer</div>
+          </div>
+          <!-- Iframe hidden until start — autoplay enabled -->
+          <iframe id="ytFrame-${t.id}" class="task-embed hidden" src="" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" style="border-radius:var(--rs) var(--rs) 0 0"></iframe>`;
+      }
     } else if(t.type==='youtube_sub'){
-      // Extract channel from URL — support /channel/ID, /c/NAME, /@handle
-      const subUrl=t.url||'https://youtube.com';
-      contentHtml=`<div style="background:linear-gradient(135deg,rgba(255,0,0,.08),rgba(0,0,0,.02));border-radius:var(--rs) var(--rs) 0 0;padding:18px;text-align:center;border-bottom:1px solid var(--border-s)">
-        <div style="font-size:2.2rem;margin-bottom:8px">📺</div>
-        <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">${t.title}</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Subscribe to this YouTube channel to earn your reward</div>
-        <a href="${subUrl}" target="_blank" onclick="markOpened('${t.id}')"
-           style="display:inline-flex;align-items:center;gap:7px;background:#FF0000;color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:20px;text-decoration:none;box-shadow:0 4px 14px rgba(255,0,0,.35)">
-          🔔 Subscribe on YouTube
-        </a>
-        <div style="font-size:.7rem;color:var(--dim);margin-top:9px">Opens YouTube — subscribe, then come back here</div>
+      contentHtml=`<div style="background:linear-gradient(135deg,rgba(255,0,0,.08),rgba(0,0,0,.03));border-radius:var(--rs) var(--rs) 0 0;padding:20px;text-align:center;border-bottom:1px solid var(--border-s)">
+        <div style="font-size:2rem;margin-bottom:6px">📺</div>
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:3px">${t.title}</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> — the channel opens &amp; timer begins</div>
       </div>`;
     } else if(t.type==='tiktok'){
-      contentHtml=`<div style="background:linear-gradient(135deg,rgba(0,0,0,.3),rgba(105,201,208,.04));border-radius:var(--rs) var(--rs) 0 0;padding:18px;text-align:center;border-bottom:1px solid var(--border-s)">
-        <div style="font-size:2.2rem;margin-bottom:8px">🎵</div>
-        <div style="font-weight:700;font-size:.9rem;margin-bottom:12px">${t.title}</div>
-        <a href="${t.url}" target="_blank" onclick="markOpened('${t.id}')"
-           style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#010101,#69C9D0);color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:20px;text-decoration:none">
-          🎵 Open TikTok Video
-        </a>
-        <div style="font-size:.7rem;color:var(--dim);margin-top:9px">Watch the full video, then return and start your timer</div>
+      contentHtml=`<div style="background:linear-gradient(135deg,rgba(0,0,0,.25),rgba(105,201,208,.05));border-radius:var(--rs) var(--rs) 0 0;padding:20px;text-align:center;border-bottom:1px solid var(--border-s)">
+        <div style="font-size:2rem;margin-bottom:6px">🎵</div>
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:3px">${t.title}</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> — video opens &amp; timer begins</div>
       </div>`;
     } else if(t.type==='visit'){
-      contentHtml=`<div style="background:linear-gradient(135deg,rgba(74,124,247,.06),rgba(0,0,0,.02));border-radius:var(--rs) var(--rs) 0 0;padding:18px;text-align:center;border-bottom:1px solid var(--border-s)">
-        <div style="font-size:2.2rem;margin-bottom:8px">🌐</div>
-        <div style="font-weight:700;font-size:.9rem;margin-bottom:12px">${t.title}</div>
-        <a href="${t.url}" target="_blank" onclick="markOpened('${t.id}')"
-           style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#4A7CF7,#2E5FD4);color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:20px;text-decoration:none">
-          🌐 Visit Website
-        </a>
-        <div style="font-size:.7rem;color:var(--dim);margin-top:9px">Visit the site, then return here and start your timer</div>
+      contentHtml=`<div style="background:linear-gradient(135deg,rgba(74,124,247,.07),rgba(0,0,0,.02));border-radius:var(--rs) var(--rs) 0 0;padding:20px;text-align:center;border-bottom:1px solid var(--border-s)">
+        <div style="font-size:2rem;margin-bottom:6px">🌐</div>
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:3px">${t.title}</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> — site opens &amp; timer begins</div>
       </div>`;
     }
 
-    html+=`<div class="task-card" id="task-${t.id}">
+    return `<div class="task-card" id="task-${t.id}">
       <div class="task-type-bar ${typeClass}"></div>
       ${contentHtml}
       <div class="task-card-body">
@@ -1587,83 +1594,80 @@ async function loadTasks(){
           <div class="task-title">${typeLabels[t.type]||'Task'}: ${t.title||'Untitled'}</div>
           <div class="task-reward">+${reward.toLocaleString()} UGX</div>
         </div>
-        <div class="task-desc" style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:10px">${t.description||''}</div>
-        ${canDo ? `
-        <!-- Step instruction -->
-        <div id="taskInstruct-${t.id}" style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:var(--rs);padding:10px 12px;font-size:.78rem;line-height:1.55;margin-bottom:11px;color:var(--text)">
-          ${actionMap[t.type]||'Complete the task above, then start the timer.'}
-        </div>
+        ${t.description?`<div class="task-desc">${t.description}</div>`:''}
 
-        <!-- Timer (hidden until started) -->
+        <!-- Timer — hidden until started -->
         <div class="task-timer hidden" id="timer-${t.id}" style="margin-bottom:11px">
           <div class="task-timer-circle">
             <svg width="32" height="32" viewBox="0 0 32 32">
               <circle class="timer-bg" cx="16" cy="16" r="13"/>
-              <circle class="timer-fill" id="timerCircle-${t.id}" cx="16" cy="16" r="13" stroke-dasharray="${2*Math.PI*13}" stroke-dashoffset="0"/>
+              <circle class="timer-fill" id="timerCircle-${t.id}" cx="16" cy="16" r="13" stroke-dasharray="${circ}" stroke-dashoffset="0"/>
             </svg>
             <div class="timer-count" id="timerNum-${t.id}">${timerSecs}</div>
           </div>
-          <span id="timerMsg-${t.id}">Counting down… <strong id="timerSec-${t.id}">${timerSecs}s</strong> remaining</span>
+          <span>Counting down… <strong id="timerSec-${t.id}">${timerSecs}s</strong></span>
         </div>
 
-        <!-- Claim button (hidden until timer done) -->
+        <!-- Claim button — hidden until timer done -->
         <div id="claimWrap-${t.id}" class="hidden" style="margin-bottom:8px">
           <button class="btn btn-green btn-full" onclick="completeTask('${t.id}','${t.type}',${reward})">
             ✅ Claim ${reward.toLocaleString()} UGX
           </button>
         </div>
 
-        <!-- START button — must click this after doing the task -->
-        <button class="btn btn-gold btn-full" id="taskBtn-${t.id}"
-          onclick="startTask('${t.id}','${t.type||'youtube'}',${reward},${timerSecs},'${encodeURIComponent(t.url||'')}')">
-          ${t.type==='youtube'?'▶ I\'m Watching — Start Timer':
-            t.type==='youtube_sub'?'🔔 I\'ve Subscribed — Start Timer':
-            t.type==='tiktok'?'🎵 I\'ve Watched — Start Timer':
-            '🌐 I\'ve Visited — Start Timer'}
-        </button>` :
-        `<div style="text-align:center;color:var(--dim);font-size:.82rem;padding:8px 0">Daily limit reached for today</div>`}
+        <!-- START button — clicking this does everything at once -->
+        ${t.type==='youtube'
+          ? '' /* YouTube uses thumbnail click above as the trigger */
+          : `<button class="btn btn-gold btn-full" id="taskBtn-${t.id}"
+              onclick="startTask('${t.id}','${t.type}',${reward},${timerSecs},'${encodedUrl}')">
+              ${t.type==='youtube_sub'?'🔔 Subscribe & Start Timer':
+                t.type==='tiktok'?'🎵 Watch & Start Timer':
+                '🌐 Visit & Start Timer'}
+            </button>`
+        }
       </div>
     </div>`;
-  });
+  }).join('');
 
-  if(!html && done>=limit && limit>0){
-    html=`<div class="card" style="text-align:center;padding:28px"><div style="font-size:2.4rem;margin-bottom:10px">🎉</div><div style="font-weight:700;color:var(--gold);margin-bottom:7px">All Tasks Complete!</div><div style="color:var(--muted);font-size:.875rem">Come back tomorrow for more rewards</div></div>`;
-  } else if(!html){
-    html=`<div class="card" style="text-align:center;color:var(--muted);padding:28px">No tasks available right now. Check back later!</div>`;
-  }
   $('tasksList').innerHTML=html;
 }
 
-// Track which tasks the user has opened the content for
-const openedTasks=new Set();
-function markOpened(taskId){ openedTasks.add(taskId); }
-
 function startTask(taskId, type, reward, timerSecs, encodedUrl){
-  const btn=$(`taskBtn-${taskId}`), timer=$(`timer-${taskId}`);
-  const instruct=$(`taskInstruct-${taskId}`);
-  if(!btn) return;
+  // Hide start button (non-YouTube types)
+  const btn=$(`taskBtn-${taskId}`);
+  if(btn) btn.style.display='none';
 
-  // For non-YouTube types, warn if they haven't opened the link yet
-  if((type==='tiktok'||type==='youtube_sub'||type==='visit')&&!openedTasks.has(taskId)){
-    const url=decodeURIComponent(encodedUrl||'');
-    // Show a warning but still allow — user may have opened in external app
-    const warnEl=document.createElement('div');
-    warnEl.style.cssText='background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:9px 12px;font-size:.76rem;color:var(--gold-light);margin-bottom:9px;line-height:1.5';
-    warnEl.innerHTML=`⚠️ Please <a href="${url}" target="_blank" onclick="markOpened('${taskId}')" style="color:var(--gold);font-weight:700">open the link</a> first, then start your timer.`;
-    btn.parentNode.insertBefore(warnEl,btn);
-    // Only block if no URL opened at all — remove warning after 1 retry
-    if(!openedTasks.has(taskId)){
-      setTimeout(()=>warnEl.remove(),5000);
-      return;
+  // YouTube: swap thumbnail for autoplay iframe
+  if(type==='youtube'){
+    const thumb=$(`ytThumb-${taskId}`);
+    const frame=$(`ytFrame-${taskId}`);
+    const vid=frame?frame.id.replace('ytFrame-',''):null;
+    if(thumb) thumb.style.display='none';
+    if(frame){
+      // Extract videoId from the task — stored in data attr via id prefix
+      const allTasks=document.querySelectorAll('[id^="ytFrame-"]');
+      // Re-derive vid from the src we need to set
+      // We stored encoded URL; decode and extract
+      const url=decodeURIComponent(encodedUrl||'');
+      const vidId=extractYouTubeId(url);
+      if(vidId){
+        frame.src=`https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0&modestbranding=1`;
+        frame.classList.remove('hidden');
+      }
     }
+  } else {
+    // TikTok / Subscribe / Visit — open link in new tab immediately
+    const url=decodeURIComponent(encodedUrl||'');
+    if(url) window.open(url,'_blank');
   }
 
-  // For YouTube embed, we trust the iframe is visible — no block needed
-  btn.style.display='none';
-  if(instruct) instruct.style.display='none';
+  // Start countdown timer immediately
+  const timer=$(`timer-${taskId}`);
   if(timer) timer.classList.remove('hidden');
 
-  const circle=$(`timerCircle-${taskId}`), numEl=$(`timerNum-${taskId}`), secEl=$(`timerSec-${taskId}`);
+  const circle=$(`timerCircle-${taskId}`);
+  const numEl=$(`timerNum-${taskId}`);
+  const secEl=$(`timerSec-${taskId}`);
   const circ=2*Math.PI*13;
   let remaining=timerSecs;
   if(circle) circle.style.strokeDashoffset='0';
@@ -1678,7 +1682,6 @@ function startTask(taskId, type, reward, timerSecs, encodedUrl){
       clearInterval(interval);
       delete activeTimers[taskId];
       if(timer) timer.classList.add('hidden');
-      // Show Claim button — user must tap it to get reward (one final confirmation)
       const claimWrap=$(`claimWrap-${taskId}`);
       if(claimWrap){
         claimWrap.classList.remove('hidden');
@@ -2245,44 +2248,142 @@ function editTask(id){
 }
 
 // ============================================================
-// ADMIN DEPOSITS — renders base64 screenshots + legacy Firebase URLs
+// ADMIN DEPOSITS — pending on top, history in collapsible dropdown
 // ============================================================
 async function loadAdminDeposits(){
   try{
     const snap=await db.collection('depositRequests').orderBy('date','desc').get();
     const el=$('adminDepList');
     if(!el) return;
-    if(snap.empty){ el.innerHTML=`<p style="color:var(--muted)">No deposit requests</p>`; return; }
-    el.innerHTML=snap.docs.map(doc=>{
-      const d={id:doc.id,...doc.data()};
-      // Support both base64 (new) and Firebase Storage URL (legacy)
+    if(snap.empty){ el.innerHTML=`<p style="color:var(--muted);padding:10px 0">No deposit requests yet</p>`; return; }
+
+    const all=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+    const pending=all.filter(d=>d.status==='pending');
+    const history=all.filter(d=>d.status!=='pending');
+
+    function depCard(d, showActions){
       const imgSrc=d.screenshotBase64||d.screenshotUrl||null;
       const imgHtml=imgSrc
-        ? `<img src="${imgSrc}" onclick="showImgLightbox('${imgSrc.startsWith('data:')
-            ? imgSrc  // base64 — pass as-is
-            : imgSrc  // URL
-          }')" style="max-width:100%;border-radius:var(--rs);margin-top:10px;cursor:pointer;border:1px solid var(--border-s)" title="Click to enlarge">`
-        : '<div style="font-size:.75rem;color:var(--dim);font-style:italic;margin-top:8px">⚠️ No screenshot provided</div>';
-
+        ? `<img src="${imgSrc}" onclick="showImgLightbox(this.src)" style="max-width:100%;border-radius:var(--rs);margin-top:10px;cursor:pointer;border:1px solid var(--border-s)" title="Tap to enlarge">`
+        : '<div style="font-size:.73rem;color:var(--dim);font-style:italic;margin-top:6px">⚠️ No screenshot</div>';
+      const statusColor=d.status==='approved'?'badge-success':d.status==='rejected'?'badge-error':'badge-warning';
       return `<div class="dep-card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
-            <div style="font-weight:700">${d.userName}</div>
-            <div style="font-size:.75rem;color:var(--muted)">${d.phone} · ${d.method} · ${new Date(d.date).toLocaleDateString()}</div>
+            <div style="font-weight:700">${d.userName||'—'}</div>
+            <div style="font-size:.73rem;color:var(--muted)">${d.phone||''} · ${d.method||''} · ${new Date(d.date).toLocaleDateString()}</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;color:var(--green)">${(d.amount||0).toLocaleString()} UGX</div>
-            <span class="badge ${d.status==='approved'?'badge-success':d.status==='rejected'?'badge-error':'badge-warning'}">${d.status}</span>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--green)">${(d.amount||0).toLocaleString()} UGX</div>
+            <span class="badge ${statusColor}">${d.status}</span>
           </div>
         </div>
         ${imgHtml}
-        ${d.status==='pending'?`<div style="display:flex;gap:7px;margin-top:12px">
-          <button class="btn btn-green" style="flex:1;padding:9px;font-size:.82rem" onclick="approveDeposit('${doc.id}','${d.userId}',${d.amount})">✅ Approve</button>
-          <button class="btn btn-red" style="flex:1;padding:9px;font-size:.82rem" onclick="rejectDeposit('${doc.id}','${d.userId}')">❌ Reject</button>
+        ${showActions?`<div style="display:flex;gap:7px;margin-top:12px">
+          <button class="btn btn-green" style="flex:1;padding:9px;font-size:.82rem" onclick="approveDeposit('${d.id}','${d.userId}',${d.amount})">✅ Approve</button>
+          <button class="btn btn-red" style="flex:1;padding:9px;font-size:.82rem" onclick="rejectDeposit('${d.id}','${d.userId}')">❌ Reject</button>
         </div>`:''}
       </div>`;
-    }).join('');
+    }
+
+    const pendingHtml = pending.length
+      ? pending.map(d=>depCard(d,true)).join('')
+      : `<div style="background:rgba(29,184,127,.06);border:1px solid rgba(29,184,127,.2);border-radius:var(--rs);padding:14px;text-align:center;margin-bottom:12px;color:var(--green);font-size:.85rem">✅ No pending deposits</div>`;
+
+    const historyHtml = history.length
+      ? `<div class="card" style="padding:0;overflow:hidden;margin-top:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer;user-select:none" onclick="toggleDepHistory()">
+            <div>
+              <div style="font-weight:700;font-size:.88rem">📋 History</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:1px">${history.length} processed deposit${history.length!==1?'s':''}</div>
+            </div>
+            <span id="depHistCaret" style="color:var(--muted);font-size:.8rem;transition:transform .25s">▼</span>
+          </div>
+          <div id="depHistBody" style="overflow:hidden;max-height:0;transition:max-height .35s ease">
+            <div style="padding:0 12px 12px">
+              ${history.map(d=>depCard(d,false)).join('')}
+            </div>
+          </div>
+        </div>`
+      : '';
+
+    el.innerHTML = pendingHtml + historyHtml;
   }catch(e){ console.error(e); }
+}
+
+function toggleDepHistory(){
+  const body=$('depHistBody'), caret=$('depHistCaret');
+  if(!body) return;
+  const isOpen=body.style.maxHeight&&body.style.maxHeight!=='0px';
+  body.style.maxHeight=isOpen?'0px':'3000px';
+  if(caret) caret.style.transform=isOpen?'':'rotate(180deg)';
+}
+
+// Same collapsible pattern for admin withdrawals
+async function loadAdminWithdrawals(){
+  try{
+    const snap=await db.collection('withdrawalRequests').orderBy('date','desc').get();
+    const el=$('adminWdList');
+    if(!el) return;
+    if(snap.empty){ el.innerHTML=`<p style="color:var(--muted)">No withdrawal requests</p>`; return; }
+
+    const all=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+    const pending=all.filter(w=>w.status==='pending');
+    const history=all.filter(w=>w.status!=='pending');
+
+    function wdCard(w, showActions){
+      const statusColor=w.status==='approved'?'badge-success':w.status==='rejected'?'badge-error':'badge-warning';
+      return `<div class="dep-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:700">${w.userName||'—'}</div>
+            <div style="font-size:.73rem;color:var(--muted)">${w.phone||''} · ${w.category||''} · ${new Date(w.date).toLocaleDateString()}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--gold)">${(w.amount||0).toLocaleString()} UGX</div>
+            <div style="font-size:.72rem;color:var(--green)">Net: ${(w.netAmount||0).toLocaleString()}</div>
+            <span class="badge ${statusColor}">${w.status}</span>
+          </div>
+        </div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:${showActions?'10px':'0'}">Send to: <strong style="color:var(--text)">${w.phone}</strong></div>
+        ${showActions?`<div style="display:flex;gap:7px">
+          <button class="btn btn-green" style="flex:1;padding:9px;font-size:.82rem" onclick="approveWithdrawal('${w.id}','${w.userId}',${w.netAmount||0},${w.adminFee||0})">✅ Approve</button>
+          <button class="btn btn-red" style="flex:1;padding:9px;font-size:.82rem" onclick="rejectWithdrawal('${w.id}','${w.userId}')">❌ Reject</button>
+        </div>`:''}
+      </div>`;
+    }
+
+    const pendingHtml = pending.length
+      ? pending.map(w=>wdCard(w,true)).join('')
+      : `<div style="background:rgba(29,184,127,.06);border:1px solid rgba(29,184,127,.2);border-radius:var(--rs);padding:14px;text-align:center;margin-bottom:12px;color:var(--green);font-size:.85rem">✅ No pending withdrawals</div>`;
+
+    const historyHtml = history.length
+      ? `<div class="card" style="padding:0;overflow:hidden;margin-top:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer;user-select:none" onclick="toggleWdHistory()">
+            <div>
+              <div style="font-weight:700;font-size:.88rem">📋 History</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:1px">${history.length} processed withdrawal${history.length!==1?'s':''}</div>
+            </div>
+            <span id="wdHistCaret" style="color:var(--muted);font-size:.8rem;transition:transform .25s">▼</span>
+          </div>
+          <div id="wdHistBody" style="overflow:hidden;max-height:0;transition:max-height .35s ease">
+            <div style="padding:0 12px 12px">
+              ${history.map(w=>wdCard(w,false)).join('')}
+            </div>
+          </div>
+        </div>`
+      : '';
+
+    el.innerHTML = pendingHtml + historyHtml;
+  }catch(e){ console.error(e); }
+}
+
+function toggleWdHistory(){
+  const body=$('wdHistBody'), caret=$('wdHistCaret');
+  if(!body) return;
+  const isOpen=body.style.maxHeight&&body.style.maxHeight!=='0px';
+  body.style.maxHeight=isOpen?'0px':'3000px';
+  if(caret) caret.style.transform=isOpen?'':'rotate(180deg)';
 }
 
 // Lightbox — handles both base64 and URL
@@ -2311,38 +2412,6 @@ async function rejectDeposit(id, uid){
   loadAdminDeposits();
 }
 
-// ============================================================
-// ADMIN WITHDRAWALS
-// ============================================================
-async function loadAdminWithdrawals(){
-  try{
-    const snap=await db.collection('withdrawalRequests').orderBy('date','desc').get();
-    const el=$('adminWdList');
-    if(!el) return;
-    if(snap.empty){ el.innerHTML=`<p style="color:var(--muted)">No withdrawal requests</p>`; return; }
-    el.innerHTML=snap.docs.map(doc=>{
-      const w={id:doc.id,...doc.data()};
-      return `<div class="dep-card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div>
-            <div style="font-weight:700">${w.userName}</div>
-            <div style="font-size:.75rem;color:var(--muted)">${w.phone} · ${w.category} · ${new Date(w.date).toLocaleDateString()}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;color:var(--gold)">${(w.amount||0).toLocaleString()} UGX</div>
-            <div style="font-size:.75rem;color:var(--green)">Net: ${(w.netAmount||0).toLocaleString()}</div>
-            <span class="badge ${w.status==='approved'?'badge-success':w.status==='rejected'?'badge-error':'badge-warning'}">${w.status}</span>
-          </div>
-        </div>
-        <div style="font-size:.75rem;color:var(--muted);margin-bottom:${w.status==='pending'?'10px':'0'}">Send to: <strong style="color:var(--text)">${w.phone}</strong></div>
-        ${w.status==='pending'?`<div style="display:flex;gap:7px">
-          <button class="btn btn-green" style="flex:1;padding:9px;font-size:.82rem" onclick="approveWithdrawal('${doc.id}','${w.userId}',${w.netAmount||0},${w.adminFee||0})">✅ Approve</button>
-          <button class="btn btn-red" style="flex:1;padding:9px;font-size:.82rem" onclick="rejectWithdrawal('${doc.id}','${w.userId}')">❌ Reject</button>
-        </div>`:''}
-      </div>`;
-    }).join('');
-  }catch(e){ console.error(e); }
-}
 
 async function approveWithdrawal(wdId, uid, net, fee){
   if(!confirm(`Approve withdrawal of ${net.toLocaleString()} UGX?`)) return;
