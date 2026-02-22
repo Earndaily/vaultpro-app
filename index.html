@@ -12,7 +12,6 @@ html,body{height:100%}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:.4}
 .hidden{display:none!important}
-/* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:var(--rs);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.88rem;transition:all .2s;position:relative;overflow:hidden}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn:active:not(:disabled){transform:scale(.97)}
@@ -25,84 +24,71 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .btn-red{background:linear-gradient(135deg,var(--red),#B02040);color:#fff}
 .btn-blue{background:linear-gradient(135deg,var(--blue),#2E5FD4);color:#fff}
 .btn-full{width:100%}
-/* Cards */
 .card{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:20px;margin-bottom:12px}
 .card-gold{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));border:1px solid var(--border)}
-/* Forms */
 .fg{margin-bottom:14px}
 .fg label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
 .fg input,.fg select,.fg textarea{width:100%;padding:13px 15px;background:var(--bg3);border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.92rem;transition:border-color .2s;appearance:none;-webkit-appearance:none}
 .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1)}
 .fg input::placeholder,.fg textarea::placeholder{color:var(--dim)}
 .fg textarea{resize:vertical;min-height:80px}
-/* Alerts */
 .alert{padding:11px 15px;border-radius:var(--rs);margin-bottom:12px;font-size:.85rem;font-weight:500;display:flex;align-items:flex-start;gap:9px}
 .alert-success{background:rgba(29,184,127,.12);border:1px solid rgba(29,184,127,.3);color:#4DEBA0}
 .alert-error{background:rgba(232,68,90,.12);border:1px solid rgba(232,68,90,.3);color:#F07285}
 .alert-warning{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold-light)}
 .alert-info{background:rgba(74,124,247,.12);border:1px solid rgba(74,124,247,.3);color:#7FA8FF}
-/* Badges */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .badge-success{background:rgba(29,184,127,.15);color:var(--green);border:1px solid rgba(29,184,127,.3)}
 .badge-error{background:rgba(232,68,90,.15);color:var(--red);border:1px solid rgba(232,68,90,.3)}
 .badge-warning{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid var(--border)}
 .badge-blue{background:rgba(74,124,247,.15);color:#7FA8FF;border:1px solid rgba(74,124,247,.3)}
-/* Loading */
 #loadingScreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
 .loader-logo{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:800;color:var(--gold);letter-spacing:-.02em;margin-bottom:6px}
 .loader-tag{font-size:.75rem;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:48px}
 .loader-ring{width:42px;height:42px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* Auth */
 .auth-page{min-height:100vh;display:flex;flex-direction:column}
 .auth-header{background:linear-gradient(180deg,rgba(201,168,76,.08) 0%,transparent 100%);padding:56px 24px 36px;text-align:center;border-bottom:1px solid var(--border-s)}
 .auth-logo{font-family:'Playfair Display',serif;font-size:2rem;font-weight:800;color:var(--gold)}
 .auth-sub{font-size:.82rem;color:var(--muted);margin-top:5px;letter-spacing:.05em}
 .auth-body{flex:1;padding:26px 20px}
-/* Landing */
 .landing-page{min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:0 20px 40px}
 .landing-hero{width:100%;background:linear-gradient(180deg,rgba(201,168,76,.1) 0%,transparent 100%);padding:56px 20px 36px;text-align:center;border-bottom:1px solid var(--border-s);margin-bottom:24px}
 .landing-title{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:800;color:var(--text);margin-bottom:8px}
 .invite-code-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;text-align:center;width:100%;max-width:360px;margin:0 auto 22px;box-shadow:0 0 30px rgba(201,168,76,.15)}
 .invite-code-val{font-family:'JetBrains Mono',monospace;font-size:1.7rem;font-weight:600;color:var(--gold);letter-spacing:.12em}
-/* Dashboard header */
 .dash-header{position:sticky;top:0;z-index:100;background:rgba(10,12,16,.93);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border-s);padding:13px 18px;display:flex;align-items:center;justify-content:space-between}
 .header-brand{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold);font-weight:700}
 .header-user-name{font-weight:700;font-size:.9rem}
 .header-user-sub{font-size:.72rem;color:var(--muted)}
 .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border-s);background:var(--surface);color:var(--muted);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:all .2s}
 .notif-dot{position:absolute;top:1px;right:1px;width:15px;height:15px;background:var(--red);border-radius:50%;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
-/* Bottom nav */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:rgba(14,16,24,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border-s);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 3px 7px;cursor:pointer;border:none;background:none;color:var(--dim);font-size:.56rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:color .2s;font-family:'DM Sans',sans-serif}
 .nav-icon{font-size:1.2rem;transition:transform .2s}
 .nav-item.active{color:var(--gold)}
 .nav-item.active .nav-icon{transform:translateY(-2px)}
-/* Content */
 .content{padding:14px;padding-bottom:88px}
-/* Balance hero */
 .balance-hero{background:linear-gradient(135deg,var(--bg3) 0%,var(--surface) 100%);border:1px solid var(--border);border-radius:var(--r);padding:22px 18px;margin-bottom:12px;position:relative;overflow:hidden}
 .balance-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:radial-gradient(circle,rgba(201,168,76,.12) 0%,transparent 70%);pointer-events:none}
 .balance-label{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
 .balance-value{font-family:'Playfair Display',serif;font-size:2.3rem;font-weight:800;color:var(--gold);line-height:1;margin-bottom:3px}
 .balance-currency{font-size:.75rem;color:var(--muted)}
-/* Stat grid */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
 .stat-tile{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:14px}
 .stat-tile-icon{font-size:1.3rem;margin-bottom:8px}
 .stat-tile-value{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:600;color:var(--text);margin-bottom:2px}
 .stat-tile-label{font-size:.68rem;color:var(--muted);letter-spacing:.03em}
-/* Progress bar */
 .prog-wrap{background:var(--bg3);border-radius:100px;height:5px;overflow:hidden;margin-top:7px}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light));border-radius:100px;transition:width .4s ease}
-/* Collapsible */
 .collapsible-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding:0}
 .collapsible-header:hover .caret{color:var(--gold)}
 .caret{font-size:.8rem;color:var(--muted);transition:transform .25s}
 .caret.open{transform:rotate(180deg)}
 .collapsible-body{overflow:hidden;max-height:0;transition:max-height .35s ease}
 .collapsible-body.open{max-height:2000px}
-/* Plan cards */
+
+/* ── Plan Cards ── */
 .plan-card{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:16px;margin-bottom:9px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
 .plan-card:active{transform:scale(.98)}
 .plan-card:hover,.plan-card.selected{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,168,76,.25);background:linear-gradient(135deg,rgba(201,168,76,.05),var(--surface))}
@@ -114,14 +100,15 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .plan-stat{background:var(--bg3);border-radius:6px;padding:7px 9px}
 .plan-stat-val{font-size:.8rem;font-weight:700}
 .plan-stat-lbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
-/* Purchase summary */
+
+/* ── Confirm Purchase Panel ── */
 .purchase-sum{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.02));border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px}
 .sum-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-s);font-size:.88rem}
 .sum-row:last-child{border-bottom:none;font-weight:700}
 .sum-label{color:var(--muted)}
 .sum-val{font-family:'JetBrains Mono',monospace}
 .sum-val.hi{color:var(--green);font-size:1rem}
-/* Task cards */
+
 .task-card{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
 .task-card-body{padding:15px}
 .task-type-bar{height:3px;width:100%}
@@ -134,28 +121,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .task-reward{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:700;color:var(--green);white-space:nowrap}
 .task-desc{font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5}
 .task-embed{width:100%;aspect-ratio:16/9;border:none;background:#000;border-radius:var(--rs) var(--rs) 0 0}
-/* Timer */
 .task-timer{display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--gold)}
 .task-timer-circle{width:32px;height:32px;position:relative;flex-shrink:0}
 .task-timer-circle svg{transform:rotate(-90deg)}
 .timer-bg{fill:none;stroke:var(--border-s);stroke-width:3}
 .timer-fill{fill:none;stroke:var(--gold);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .9s linear}
 .timer-count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;color:var(--gold)}
-/* Wallet tabs */
 .tab-bar{display:flex;background:var(--bg3);border:1px solid var(--border-s);border-radius:var(--rs);padding:3px;margin-bottom:14px;gap:3px}
 .tab-btn{flex:1;padding:9px;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;background:none;color:var(--muted);transition:all .2s}
 .tab-btn.active{background:var(--surface2);color:var(--gold);border:1px solid var(--border)}
-/* Info rows */
 .info-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border-s)}
 .info-row:last-child{border-bottom:none}
 .info-label{font-size:.8rem;color:var(--muted)}
 .info-val{font-size:.875rem;font-weight:600;text-align:right;max-width:60%;word-break:break-word}
-/* Table */
 table{width:100%;border-collapse:collapse;font-size:.8rem}
 th{text-align:left;padding:9px 11px;color:var(--muted);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border-s)}
 td{padding:11px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text)}
 tr:last-child td{border-bottom:none}
-/* Leaderboard */
 .lb-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-s)}
 .lb-item:last-child{border-bottom:none}
 .lb-rank{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;width:28px;text-align:center;color:var(--dim)}
@@ -164,43 +146,35 @@ tr:last-child td{border-bottom:none}
 .lb-name{font-weight:600;font-size:.875rem}
 .lb-total{font-size:.72rem;color:var(--muted)}
 .lb-count{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold)}
-/* Profile */
 .profile-hero{background:linear-gradient(135deg,var(--bg3),var(--surface));border:1px solid var(--border-s);border-radius:var(--r);padding:26px 18px;text-align:center;margin-bottom:12px}
 .avatar{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dark),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;color:#0A0C10;margin:0 auto 12px;position:relative;border:3px solid rgba(201,168,76,.3)}
 .avatar-img{width:76px;height:76px;border-radius:50%;object-fit:cover;border:3px solid var(--border);display:none;margin:0 auto 12px}
 .avatar-edit{position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--surface);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;cursor:pointer}
-/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .modal-sheet{background:var(--bg2);border:1px solid var(--border-s);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:6px 18px 40px;animation:slideUp .3s ease-out}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:38px;height:4px;background:var(--border);border-radius:100px;margin:10px auto 18px}
 .modal-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin-bottom:6px}
-/* Streak */
 .streak-grid{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:14px 0}
 .streak-dot{width:36px;height:36px;border-radius:50%;border:2px solid var(--border-s);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--dim)}
 .streak-dot.done{background:var(--green);border-color:var(--green);color:#fff}
 .streak-dot.today{background:var(--gold);border-color:var(--gold-light);color:#0A0C10;animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-/* Pay option */
 .pay-opt{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:14px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s}
 .pay-opt:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
 .pay-opt.disabled{opacity:.4;pointer-events:none}
-/* Notif center */
 .notif-panel{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1001;display:flex;align-items:flex-end;justify-content:center}
 .notif-sheet{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out}
 .notif-item{padding:14px 18px;border-bottom:1px solid var(--border-s);cursor:pointer}
 .notif-item.unread{background:rgba(201,168,76,.04);border-left:3px solid var(--gold)}
-/* Toast */
 #toastCont{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:7px;width:calc(100% - 28px);max-width:440px;pointer-events:none}
 .toast{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--rs);padding:13px 15px;display:flex;align-items:flex-start;gap:11px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:toastIn .3s ease-out;pointer-events:auto;border-left-width:3px}
 @keyframes toastIn{from{transform:translateY(-18px);opacity:0}to{transform:translateY(0);opacity:1}}
 .toast-close{font-size:.95rem;cursor:pointer;color:var(--dim);background:none;border:none;flex-shrink:0;margin-left:auto}
-/* Screenshot upload */
 .upload-zone{border:2px dashed var(--border-s);border-radius:var(--rs);padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)}
 .upload-zone:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
 .upload-zone input{display:none}
 .upload-preview{max-width:100%;border-radius:var(--rs);margin-top:12px;max-height:200px;object-fit:contain;display:none}
-/* Admin */
 .admin-wrap{min-height:100vh;max-width:100%}
 .admin-header{background:var(--bg2);border-bottom:1px solid var(--border-s);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;max-width:100%}
 .admin-tabs{display:flex;gap:5px;overflow-x:auto;padding:11px 14px;background:var(--bg2);border-bottom:1px solid var(--border-s);scrollbar-width:none}
@@ -212,14 +186,11 @@ tr:last-child td{border-bottom:none}
 .admin-stat{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:14px;text-align:center}
 .admin-stat-val{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--gold)}
 .admin-stat-lbl{font-size:.68rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
-/* Deposit card admin */
 .dep-card{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:16px;margin-bottom:10px}
 .dep-card img{max-width:100%;border-radius:var(--rs);margin-top:10px;cursor:pointer}
 .section-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--text);margin-bottom:3px}
 .section-sub{font-size:.78rem;color:var(--muted);margin-bottom:14px}
-/* Reading task */
 .reading-content{background:var(--bg3);border-radius:var(--rs);padding:14px;font-size:.85rem;line-height:1.75;color:var(--muted);margin-bottom:12px;max-height:200px;overflow-y:auto}
-/* Success overlay */
 .success-overlay{position:fixed;inset:0;background:rgba(10,12,16,.95);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
 .success-icon{font-size:5rem;margin-bottom:20px;animation:bounceIn .5s ease-out}
 @keyframes bounceIn{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
@@ -229,16 +200,14 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<!-- LOADING -->
 <div id="loadingScreen">
   <div class="loader-logo">VaultPro</div>
   <div class="loader-tag">Investment Platform</div>
   <div class="loader-ring"></div>
 </div>
-<!-- TOASTS -->
 <div id="toastCont"></div>
 
-<!-- ===== REFERRAL LANDING ===== -->
+<!-- REFERRAL LANDING -->
 <div id="referralLandingPage" class="landing-page hidden">
   <div class="landing-hero" style="width:100%">
     <div style="font-size:3.2rem;margin-bottom:14px">🏦</div>
@@ -260,7 +229,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ===== REGISTER ===== -->
+<!-- REGISTER -->
 <div id="registerPage" class="auth-page hidden">
   <div class="auth-header"><div class="auth-logo">VaultPro</div><div class="auth-sub">Create your account</div></div>
   <div class="auth-body">
@@ -276,7 +245,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ===== LOGIN ===== -->
+<!-- LOGIN -->
 <div id="loginPage" class="auth-page hidden">
   <div class="auth-header"><div class="auth-logo">VaultPro</div><div class="auth-sub">Sign in to your account</div></div>
   <div class="auth-body">
@@ -288,7 +257,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ===== USER DASHBOARD ===== -->
+<!-- USER DASHBOARD -->
 <div id="userDashboard" class="hidden">
   <div class="dash-header">
     <div>
@@ -314,7 +283,6 @@ tr:last-child td{border-bottom:none}
       <div class="stat-tile"><div class="stat-tile-icon">💎</div><div class="stat-tile-value" id="statLevel">—</div><div class="stat-tile-label">Vault Level</div></div>
     </div>
 
-    <!-- Vault Plans Overview - Collapsible -->
     <div class="card">
       <div class="collapsible-header" onclick="toggleCollapse('vaultOverview')">
         <div style="font-weight:700;font-size:.9rem">📊 Vault Plans Overview</div>
@@ -323,26 +291,25 @@ tr:last-child td{border-bottom:none}
       <div class="collapsible-body" id="vaultOverview" style="margin-top:0">
         <div style="margin-top:14px;overflow-x:auto">
           <table>
-            <thead><tr><th>Plan</th><th>Amount</th><th>Tasks</th><th>Reward</th></tr></thead>
+            <thead><tr><th>Plan</th><th>Amount</th><th>Tasks/day</th><th>UGX/task</th><th>Monthly</th></tr></thead>
             <tbody>
-              <tr><td>🌱 Beginner</td><td>45K</td><td>2/day</td><td>750</td></tr>
-              <tr><td>🌿 Seed</td><td>180K</td><td>3/day</td><td>2,000</td></tr>
-              <tr><td>🌅 Rising</td><td>600K</td><td>4/day</td><td>5,000</td></tr>
-              <tr><td>💡 Nova</td><td>1.35M</td><td>5/day</td><td>9,000</td></tr>
-              <tr><td>🧠 Mastermind</td><td>4.05M</td><td>6/day</td><td>22,500</td></tr>
-              <tr><td>💪 Titan</td><td>8.775M</td><td>7/day</td><td>42,000</td></tr>
-              <tr><td>👑 King</td><td>16.65M</td><td>8/day</td><td>69,375</td></tr>
-              <tr><td>🦅 Emperor</td><td>29.7M</td><td>9/day</td><td>110K</td></tr>
-              <tr><td>⭐ Icon</td><td>48.6M</td><td>10/day</td><td>162K</td></tr>
-              <tr><td>👑 Supreme</td><td>81M</td><td>11/day</td><td>245K</td></tr>
-              <tr><td>🏆 Legendary</td><td>110M</td><td>12/day</td><td>305K</td></tr>
+              <tr><td>🌱 Beginner</td><td>45K</td><td>1</td><td>450</td><td>13,500</td></tr>
+              <tr><td>🌱 Seed</td><td>180K</td><td>3</td><td>600</td><td>54,000</td></tr>
+              <tr><td>🌅 Rising</td><td>600K</td><td>6</td><td>3,333</td><td>180,000</td></tr>
+              <tr><td>💡 Nova</td><td>1.35M</td><td>11</td><td>4,091</td><td>405,000</td></tr>
+              <tr><td>🧠 Mastermind</td><td>4.05M</td><td>18</td><td>7,500</td><td>1,215,000</td></tr>
+              <tr><td>💪 Titan</td><td>8.775M</td><td>25</td><td>11,700</td><td>2,632,500</td></tr>
+              <tr><td>👑 King</td><td>16.65M</td><td>34</td><td>16,307</td><td>4,995,000</td></tr>
+              <tr><td>🦅 Emperor</td><td>29.7M</td><td>44</td><td>22,500</td><td>8,910,000</td></tr>
+              <tr><td>⭐ Icon</td><td>48.6M</td><td>55</td><td>29,455</td><td>14,580,000</td></tr>
+              <tr><td>👑 Supreme</td><td>74.25M</td><td>66</td><td>37,502</td><td>22,275,000</td></tr>
+              <tr><td>🏆 Legendary</td><td>110M</td><td>75</td><td>48,888</td><td>33,000,000</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- Weekly Leaderboard - Collapsible -->
     <div class="card">
       <div class="collapsible-header" onclick="toggleCollapse('leaderboard')">
         <div>
@@ -356,11 +323,10 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <!-- WhatsApp -->
     <div class="card" style="background:linear-gradient(135deg,rgba(37,211,102,.08),rgba(18,140,126,.05));border-color:rgba(37,211,102,.2);text-align:center">
       <div style="font-size:1.4rem;margin-bottom:7px">💬</div>
       <div style="font-weight:700;margin-bottom:4px">Join Our WhatsApp Group</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Get updates & connect with investors</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Get updates &amp; connect with investors</div>
       <a href="https://chat.whatsapp.com/KBvY0dutPIcHPLNzjBcJZQ" target="_blank" class="btn btn-green btn-full" style="text-decoration:none">Join Now</a>
     </div>
   </div>
@@ -376,9 +342,13 @@ tr:last-child td{border-bottom:none}
       <div class="balance-currency">UGX</div>
     </div>
     <div id="plansList"></div>
+    <!-- Confirm Purchase Panel — shown when user taps a plan with sufficient balance -->
     <div id="selectedPlanDetails" class="hidden">
       <div class="purchase-sum" id="purchaseSumContent"></div>
-      <button class="btn btn-gold btn-full" id="purchaseBtn" onclick="purchaseVault()">Confirm Purchase</button>
+      <div style="display:flex;gap:9px;margin-bottom:6px">
+        <button class="btn btn-surface" style="flex:1" onclick="cancelPlanSelection()">Cancel</button>
+        <button class="btn btn-gold" style="flex:2" id="purchaseBtn" onclick="purchaseVault()">✅ Confirm Purchase</button>
+      </div>
     </div>
   </div>
 
@@ -470,11 +440,11 @@ tr:last-child td{border-bottom:none}
           <label class="upload-zone" for="depScreenshot">
             <input type="file" id="depScreenshot" accept="image/*" onchange="previewScreenshot(this,'depPreview')">
             <div style="font-size:1.8rem;margin-bottom:8px">📸</div>
-            <div style="font-size:.82rem;color:var(--muted)">Tap to upload payment screenshot</div>
+            <div style="font-size:.82rem;color:var(--muted)" id="depScreenshotLabel">Tap to upload payment screenshot</div>
             <img id="depPreview" class="upload-preview">
           </label>
         </div>
-        <button class="btn btn-green btn-full" onclick="submitDeposit()">Submit Deposit Request</button>
+        <button class="btn btn-green btn-full" id="depSubmitBtn" onclick="submitDeposit()">Submit Deposit Request</button>
       </div>
     </div>
 
@@ -596,7 +566,7 @@ tr:last-child td{border-bottom:none}
   </nav>
 </div>
 
-<!-- ===== ADMIN DASHBOARD ===== -->
+<!-- ADMIN DASHBOARD -->
 <div id="adminDashboard" class="admin-wrap hidden">
   <div class="admin-header" style="max-width:100%;position:sticky;top:0;z-index:100">
     <span style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold)">VaultPro Admin</span>
@@ -611,7 +581,6 @@ tr:last-child td{border-bottom:none}
     <button class="admin-tab" onclick="showAdmin('transactions',this)">📋 Transactions</button>
   </div>
   <div class="admin-content">
-    <!-- Stats -->
     <div id="adminStats">
       <div class="admin-stats-grid">
         <div class="admin-stat"><div class="admin-stat-val" id="aTotal">0</div><div class="admin-stat-lbl">Total Users</div></div>
@@ -628,7 +597,6 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <!-- Users -->
     <div id="adminUsers" class="hidden">
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:14px;font-weight:700;border-bottom:1px solid var(--border-s)">All Users</div>
@@ -636,9 +604,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <!-- Tasks -->
     <div id="adminTasks" class="hidden">
-      <!-- Add task form -->
       <div class="card">
         <div style="font-weight:700;margin-bottom:14px">➕ Add New Task</div>
         <div class="fg"><label>Task Type</label>
@@ -657,26 +623,22 @@ tr:last-child td{border-bottom:none}
         <div class="fg"><label>Timer Duration (seconds)</label><input type="number" id="taskTimer" placeholder="e.g. 60" value="60"></div>
         <button class="btn btn-green btn-full" onclick="addTask()">Add Task</button>
       </div>
-      <!-- Task list -->
       <div class="card">
         <div style="font-weight:700;margin-bottom:14px">All Tasks</div>
         <div id="adminTasksList" style="color:var(--muted)">Loading…</div>
       </div>
     </div>
 
-    <!-- Deposits -->
     <div id="adminDeposits" class="hidden">
       <div style="font-weight:700;margin-bottom:12px">Deposit Requests</div>
       <div id="adminDepList" style="color:var(--muted)">Loading…</div>
     </div>
 
-    <!-- Withdrawals -->
     <div id="adminWithdrawals" class="hidden">
       <div style="font-weight:700;margin-bottom:12px">Withdrawal Requests</div>
       <div id="adminWdList" style="color:var(--muted)">Loading…</div>
     </div>
 
-    <!-- Transactions -->
     <div id="adminTransactions" class="hidden">
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:14px;font-weight:700;border-bottom:1px solid var(--border-s)">All Transactions</div>
@@ -707,7 +669,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- SUCCESS OVERLAY (withdrawal confirmed) -->
+<!-- SUCCESS OVERLAY -->
 <div id="successOverlay" class="success-overlay hidden">
   <div class="success-icon" id="successIcon">💰</div>
   <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:800;color:var(--gold);margin-bottom:10px" id="successTitle">Success!</div>
@@ -750,28 +712,74 @@ try {
 // ============================================================
 // GLOBALS
 // ============================================================
-let CU = null; // current user
+let CU = null;
 let selectedPlan = null;
 let isPurchasing = false;
 let statsCache = { data:null, ts:0, ttl:30000 };
-let activeTimers = {}; // taskId -> intervalId
+let activeTimers = {};
 let weekTimerInt = null;
 
 // ============================================================
-// VAULT PLANS
+// VAULT PLANS — Matched exactly to first snippet structure
+// amount, dailyTasks, taskReward → monthly = dailyTasks * taskReward * 30
+// profitPct is always 30%
 // ============================================================
 const PLANS = {
-  beginner:   {name:'Beginner',   emoji:'🌱',amount:45000,     days:30,dailyTasks:2, taskReward:750,   level:1},
-  seed:       {name:'Seed',       emoji:'🌿',amount:180000,    days:30,dailyTasks:3, taskReward:2000,  level:2},
-  rising:     {name:'Rising',     emoji:'🌅',amount:600000,    days:30,dailyTasks:4, taskReward:5000,  level:3},
-  nova:       {name:'Nova',       emoji:'💡',amount:1350000,   days:30,dailyTasks:5, taskReward:9000,  level:4},
-  mastermind: {name:'Mastermind', emoji:'🧠',amount:4050000,   days:30,dailyTasks:6, taskReward:22500, level:5},
-  titan:      {name:'Titan',      emoji:'💪',amount:8775000,   days:30,dailyTasks:7, taskReward:42000, level:6},
-  king:       {name:'King',       emoji:'👑',amount:16650000,  days:30,dailyTasks:8, taskReward:69375, level:7},
-  emperor:    {name:'Emperor',    emoji:'🦅',amount:29700000,  days:30,dailyTasks:9, taskReward:110000,level:8},
-  icon:       {name:'Icon',       emoji:'⭐',amount:48600000,  days:30,dailyTasks:10,taskReward:162000,level:9},
-  supreme:    {name:'Supreme',    emoji:'👑',amount:81000000,  days:30,dailyTasks:11,taskReward:245000,level:10},
-  legendary:  {name:'Legendary',  emoji:'🏆',amount:110000000, days:30,dailyTasks:12,taskReward:305556,level:11},
+  beginner: {
+    name:'Beginner', emoji:'🌱', amount:45000,
+    days:30, dailyTasks:1, taskReward:450, level:1,
+    monthlyEarnings:13500  // 1 * 450 * 30
+  },
+  seed: {
+    name:'Seed', emoji:'🌱', amount:180000,
+    days:30, dailyTasks:3, taskReward:600, level:2,
+    monthlyEarnings:54000  // 3 * 600 * 30
+  },
+  rising: {
+    name:'Rising', emoji:'🌅', amount:600000,
+    days:30, dailyTasks:6, taskReward:3333, level:3,
+    monthlyEarnings:180000  // rounded from 3333*6*30=599940≈180K
+  },
+  nova: {
+    name:'Nova', emoji:'💡', amount:1350000,
+    days:30, dailyTasks:11, taskReward:4091, level:4,
+    monthlyEarnings:405000  // 11*4091*30≈405K
+  },
+  mastermind: {
+    name:'Mastermind', emoji:'🧠', amount:4050000,
+    days:30, dailyTasks:18, taskReward:7500, level:5,
+    monthlyEarnings:1215000  // 18*7500*30=1,215,000
+  },
+  titan: {
+    name:'Titan', emoji:'💪', amount:8775000,
+    days:30, dailyTasks:25, taskReward:11700, level:6,
+    monthlyEarnings:2632500  // 25*11700*30=2,632,500
+  },
+  king: {
+    name:'King', emoji:'👑', amount:16650000,
+    days:30, dailyTasks:34, taskReward:16307, level:7,
+    monthlyEarnings:4995000  // 34*16307*30≈4,995,000
+  },
+  emperor: {
+    name:'Emperor', emoji:'🦅', amount:29700000,
+    days:30, dailyTasks:44, taskReward:22500, level:8,
+    monthlyEarnings:8910000  // 44*22500*30=8,910,000
+  },
+  icon: {
+    name:'Icon', emoji:'⭐', amount:48600000,
+    days:30, dailyTasks:55, taskReward:29455, level:9,
+    monthlyEarnings:14580000  // 55*29455*30≈14,580,000
+  },
+  supreme: {
+    name:'Supreme', emoji:'👑', amount:74250000,
+    days:30, dailyTasks:66, taskReward:37502, level:10,
+    monthlyEarnings:22275000  // 66*37502*30≈22,275,000
+  },
+  legendary: {
+    name:'Legendary', emoji:'🏆', amount:110000000,
+    days:30, dailyTasks:75, taskReward:48888, level:11,
+    monthlyEarnings:33000000  // 75*48888*30≈33,000,000
+  },
 };
 
 const REF_LEVELS = [
@@ -820,7 +828,7 @@ function toggleCollapse(id){
 function calcVaultLevel(vaults){
   const t=vaults.reduce((s,v)=>s+(v.amount||0),0);
   if(t>=110000000) return {level:'Legendary',icon:'🏆'};
-  if(t>=81000000)  return {level:'Supreme',  icon:'👑'};
+  if(t>=74250000)  return {level:'Supreme',  icon:'👑'};
   if(t>=48600000)  return {level:'Icon',     icon:'⭐'};
   if(t>=29700000)  return {level:'Emperor',  icon:'🦅'};
   if(t>=16650000)  return {level:'King',     icon:'👑'};
@@ -828,7 +836,7 @@ function calcVaultLevel(vaults){
   if(t>=4050000)   return {level:'Mastermind',icon:'🧠'};
   if(t>=1350000)   return {level:'Nova',     icon:'💡'};
   if(t>=600000)    return {level:'Rising',   icon:'🌅'};
-  if(t>=180000)    return {level:'Seed',     icon:'🌿'};
+  if(t>=180000)    return {level:'Seed',     icon:'🌱'};
   if(t>=45000)     return {level:'Beginner', icon:'🌱'};
   return {level:'Newcomer',icon:'—'};
 }
@@ -846,16 +854,48 @@ function extractYouTubeId(url){
   }catch(e){ return null; }
 }
 
-function extractTikTokEmbed(url){ return url; }
-
+// ============================================================
+// SCREENSHOT — stored as base64 in Firestore (avoids CORS/Storage rules issues)
+// ============================================================
 function previewScreenshot(input, previewId){
   const f=input.files[0]; if(!f) return;
+  const label=$('depScreenshotLabel');
+  if(label) label.textContent=f.name;
   const reader=new FileReader();
   reader.onload=e=>{
     const img=$(previewId);
     if(img){ img.src=e.target.result; img.style.display='block'; }
   };
   reader.readAsDataURL(f);
+}
+
+/**
+ * Reads an image file and returns a compressed base64 data URL.
+ * Compresses to max 800px and quality 0.7 to keep Firestore doc under 1MB.
+ */
+function compressAndGetBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('File read failed'));
+    reader.onload=e=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('Image load failed'));
+      img.onload=()=>{
+        const MAX=800;
+        let w=img.width, h=img.height;
+        if(w>MAX||h>MAX){
+          if(w>h){ h=Math.round(h*(MAX/w)); w=MAX; }
+          else { w=Math.round(w*(MAX/h)); h=MAX; }
+        }
+        const canvas=document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',0.7));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function showImgLightbox(src){
@@ -1064,7 +1104,6 @@ async function updateUserStats(force=false){
     const link=$('userRefLink');
     if(link) link.textContent=`${location.origin}${location.pathname}?ref=${CU.referralCode}`;
     if(CU.isActivated) $('activeBadge').classList.remove('hidden');
-    // auto-fill withdraw phone
     if(CU.phone){ const wp=$('wdPhone'); if(wp) wp.value=CU.phone; }
   }catch(e){ console.error('Stats:',e); }
 }
@@ -1111,7 +1150,8 @@ async function getVaultLevel(uid){
     const top=active.sort((a,b)=>b.amount-a.amount)[0];
     const pk=Object.keys(PLANS).find(k=>PLANS[k].name===top.planName);
     if(!pk) return {planName:'None',level:0,dailyTasks:0,taskReward:0};
-    return {planName:PLANS[pk].name,level:PLANS[pk].level,dailyTasks:PLANS[pk].dailyTasks,taskReward:PLANS[pk].taskReward};
+    const p=PLANS[pk];
+    return {planName:p.name,level:p.level,dailyTasks:p.dailyTasks,taskReward:p.taskReward};
   }catch(e){ return {planName:'None',level:0,dailyTasks:0,taskReward:0}; }
 }
 
@@ -1121,23 +1161,28 @@ async function refreshCU(){
 }
 
 // ============================================================
-// VAULT SECTION
+// VAULT SECTION — Uses PLANS from first snippet
 // ============================================================
 async function loadVaultSection(){
   const vi=await getVaultLevel(CU.id);
   const bal=CU.balance||0;
   set('vaultBalance',bal.toLocaleString());
   const el=$('plansList'); if(!el) return;
+
   el.innerHTML=Object.entries(PLANS).map(([key,p])=>{
     const isOwned=vi.planName===p.name;
     const isLower=vi.level>0&&p.level<vi.level;
-    const monthEarn=p.dailyTasks*p.taskReward*30;
+    const canAfford=bal>=p.amount;
     let badge='';
     if(isOwned) badge=`<span class="badge badge-success">✓ Owned</span>`;
     else if(p.level===2) badge=`<span class="badge badge-blue">Popular</span>`;
     else if(p.level===11) badge=`<span class="badge badge-warning">Ultimate</span>`;
     const disabled=isLower?'style="opacity:.45;pointer-events:none"':'';
-    return `<div class="plan-card ${isOwned?'owned':''}" ${disabled} onclick="selectPlan('${key}')">
+    const affordIndicator=!isOwned&&!isLower
+      ? `<div style="margin-top:8px;font-size:.7rem;padding:4px 8px;border-radius:6px;display:inline-block;background:${canAfford?'rgba(29,184,127,.12)':'rgba(232,68,90,.12)'};color:${canAfford?'var(--green)':'var(--red)'};">${canAfford?'✓ You can afford this':'⚡ Need '+(p.amount-bal).toLocaleString()+' UGX more'}</div>`
+      : '';
+
+    return `<div class="plan-card ${isOwned?'owned':''}" ${disabled} onclick="selectPlan('${key}',event)">
       <div class="plan-header">
         <div><div class="plan-name">${p.emoji} ${p.name}</div><div class="plan-amount">${p.amount.toLocaleString()} UGX</div></div>
         ${badge}
@@ -1145,99 +1190,99 @@ async function loadVaultSection(){
       <div class="plan-stats">
         <div class="plan-stat"><div class="plan-stat-val">${p.dailyTasks}/day</div><div class="plan-stat-lbl">Tasks</div></div>
         <div class="plan-stat"><div class="plan-stat-val">${p.taskReward.toLocaleString()}</div><div class="plan-stat-lbl">UGX/Task</div></div>
-        <div class="plan-stat"><div class="plan-stat-val">${monthEarn.toLocaleString()}</div><div class="plan-stat-lbl">Monthly Max</div></div>
-        <div class="plan-stat"><div class="plan-stat-val">30 days</div><div class="plan-stat-lbl">Duration</div></div>
+        <div class="plan-stat"><div class="plan-stat-val">${(p.dailyTasks*p.taskReward).toLocaleString()}</div><div class="plan-stat-lbl">Daily Max</div></div>
+        <div class="plan-stat"><div class="plan-stat-val">${p.monthlyEarnings.toLocaleString()}</div><div class="plan-stat-lbl">Monthly (30%)</div></div>
       </div>
+      ${affordIndicator}
     </div>`;
   }).join('');
 }
 
-async function selectPlan(key){
+// ============================================================
+// SELECT PLAN — Shows confirm panel (sufficient) or deposit prompt (insufficient)
+// ============================================================
+async function selectPlan(key, event){
   if(isPurchasing) return;
   const p=PLANS[key];
   const vi=await getVaultLevel(CU.id);
-  if(vi.planName===p.name){ toast('You already own this plan','💡','warning'); return; }
-  if(vi.level>p.level){ toast('You have a higher plan','💡','warning'); return; }
 
-  // Check balance before allowing selection
+  if(vi.planName===p.name){ toast('You already own this plan','💡','warning'); return; }
+  if(vi.level>0&&p.level<vi.level){ toast('You have a higher plan already','💡','warning'); return; }
+
+  // Highlight selected card
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  if(event && event.currentTarget) event.currentTarget.classList.add('selected');
+
   const bal=CU.balance||0;
-  if(bal<p.amount){
+  const det=$('selectedPlanDetails');
+  det.classList.remove('hidden');
+
+  if(bal < p.amount){
+    // ── INSUFFICIENT BALANCE: show deposit prompt ──
+    selectedPlan=null;
     const shortfall=(p.amount-bal).toLocaleString();
-    const det=$('selectedPlanDetails'); det.classList.remove('hidden');
     $('purchaseSumContent').innerHTML=`
-      <div style="text-align:center;padding:10px 0">
+      <div style="text-align:center;padding:8px 0 4px">
         <div style="font-size:2.5rem;margin-bottom:10px">💸</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:6px">Insufficient Balance</div>
-        <div style="font-size:.85rem;color:var(--muted);margin-bottom:14px">You need <strong style="color:var(--red)">${shortfall} UGX</strong> more to activate the ${p.emoji} ${p.name} plan.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:6px">${p.emoji} ${p.name} Plan</div>
+        <div style="font-size:.85rem;color:var(--muted);margin-bottom:14px">You need <strong style="color:var(--red)">${shortfall} UGX</strong> more to activate this plan.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--gold)">${bal.toLocaleString()}</div>
-            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">Your Balance</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:700;color:var(--muted)">${bal.toLocaleString()}</div>
+            <div style="font-size:.65rem;color:var(--dim);margin-top:2px">Your Balance</div>
           </div>
           <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--text)">${p.amount.toLocaleString()}</div>
-            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">Plan Cost</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:700;color:var(--gold)">${p.amount.toLocaleString()}</div>
+            <div style="font-size:.65rem;color:var(--dim);margin-top:2px">Plan Cost</div>
           </div>
         </div>
       </div>`;
-    $('purchaseBtn').textContent='💰 Deposit Funds';
-    $('purchaseBtn').onclick=()=>{ showSection('wallet'); showWalletTab('dep'); toast(`Deposit at least ${shortfall} UGX to activate ${p.name}`,'💡','info',6000); };
-    $('purchaseBtn').className='btn btn-green btn-full';
-    det.scrollIntoView({behavior:'smooth',block:'nearest'});
-    return;
+    const btn=$('purchaseBtn');
+    btn.textContent='💰 Deposit Funds';
+    btn.className='btn btn-green';
+    btn.style.flex='2';
+    btn.onclick=()=>{
+      cancelPlanSelection();
+      showSection('wallet');
+      showWalletTab('dep');
+      toast(`Deposit at least ${shortfall} UGX to activate ${p.name}`,'💡','info',6000);
+    };
+  } else {
+    // ── SUFFICIENT BALANCE: show confirm purchase ──
+    selectedPlan=key;
+    const dailyMax=p.dailyTasks*p.taskReward;
+    $('purchaseSumContent').innerHTML=`
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:14px">${p.emoji} ${p.name} Plan — Confirm Purchase</div>
+      <div class="sum-row"><span class="sum-label">Investment Cost</span><span class="sum-val">${p.amount.toLocaleString()} UGX</span></div>
+      <div class="sum-row"><span class="sum-label">Your Balance</span><span class="sum-val" style="color:var(--green)">${bal.toLocaleString()} UGX ✓</span></div>
+      <div class="sum-row"><span class="sum-label">Duration</span><span class="sum-val">${p.days} days</span></div>
+      <div class="sum-row"><span class="sum-label">Tasks Per Day</span><span class="sum-val">${p.dailyTasks} tasks</span></div>
+      <div class="sum-row"><span class="sum-label">Reward Per Task</span><span class="sum-val">${p.taskReward.toLocaleString()} UGX</span></div>
+      <div class="sum-row"><span class="sum-label">Daily Maximum</span><span class="sum-val">${dailyMax.toLocaleString()} UGX</span></div>
+      <div class="sum-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:12px"><span class="sum-label" style="font-weight:700;color:var(--text)">Monthly Earnings (30%)</span><span class="sum-val hi">+${p.monthlyEarnings.toLocaleString()} UGX</span></div>`;
+    const btn=$('purchaseBtn');
+    btn.textContent='✅ Confirm Purchase';
+    btn.className='btn btn-gold';
+    btn.style.flex='2';
+    btn.onclick=purchaseVault;
   }
 
-  selectedPlan=key;
-  // Reset button to normal purchase state (may have been changed by a previous insufficient-balance selection)
-  $('purchaseBtn').textContent='Confirm Purchase';
-  $('purchaseBtn').onclick=purchaseVault;
-  $('purchaseBtn').className='btn btn-gold btn-full';
-  const monthEarn=p.dailyTasks*p.taskReward*30;
-  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
-  const det=$('selectedPlanDetails'); det.classList.remove('hidden');
-  $('purchaseSumContent').innerHTML=`
-    <div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;margin-bottom:13px">${p.emoji} ${p.name} Plan</div>
-    <div class="sum-row"><span class="sum-label">Investment</span><span class="sum-val">${p.amount.toLocaleString()} UGX</span></div>
-    <div class="sum-row"><span class="sum-label">Duration</span><span class="sum-val">${p.days} days</span></div>
-    <div class="sum-row"><span class="sum-label">Daily Tasks</span><span class="sum-val">${p.dailyTasks}</span></div>
-    <div class="sum-row"><span class="sum-label">Per Task</span><span class="sum-val">${p.taskReward.toLocaleString()} UGX</span></div>
-    <div class="sum-row"><span class="sum-label">Daily Max</span><span class="sum-val">${(p.dailyTasks*p.taskReward).toLocaleString()} UGX</span></div>
-    <div class="sum-row"><span class="sum-label">Monthly Max</span><span class="sum-val hi">+${monthEarn.toLocaleString()} UGX</span></div>`;
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+function cancelPlanSelection(){
+  selectedPlan=null;
+  $('selectedPlanDetails').classList.add('hidden');
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+}
+
+// ============================================================
+// PURCHASE VAULT
+// ============================================================
 async function purchaseVault(){
   if(!selectedPlan||isPurchasing) return;
   const p=PLANS[selectedPlan];
-  const vi=await getVaultLevel(CU.id);
-  if(vi.planName===p.name){ toast('Already owned','💡','warning'); return; }
-  showPayModal(p.amount, p.name);
-}
-
-async function showPayModal(amount, planName){
-  const modal=$('payModal');
-  $('payModalDesc').textContent=`Choose how to pay ${amount.toLocaleString()} UGX`;
-  const opts=$('payModalOpts');
-  const bal=CU.balance||0, ok=bal>=amount;
-  opts.innerHTML=`
-    <div class="pay-opt ${ok?'':'disabled'}" onclick="${ok?`closePayModal();processVaultWallet(${amount},'${planName}')`:''}" ${ok?'':'style="pointer-events:none;opacity:.4"'}>
-      <span style="font-size:1.8rem">💰</span>
-      <div style="flex:1"><div style="font-weight:700;font-size:.9rem">Wallet Balance</div><div style="font-size:.78rem;color:var(--muted)">Available: ${bal.toLocaleString()} UGX ${!ok?'· Insufficient':''}</div></div>
-      <span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✗'}</span>
-    </div>
-    <div class="pay-opt" onclick="closePayModal();showSection('wallet')">
-      <span style="font-size:1.8rem">📱</span>
-      <div style="flex:1"><div style="font-weight:700;font-size:.9rem">Mobile Money Deposit</div><div style="font-size:.78rem;color:var(--muted)">Deposit then purchase</div></div>
-      <span style="color:var(--muted)">→</span>
-    </div>`;
-  modal.classList.remove('hidden');
-  modal.onclick=e=>{ if(e.target===modal) closePayModal(); };
-}
-function closePayModal(){ $('payModal').classList.add('hidden'); }
-
-async function processVaultWallet(amount, planName){
-  await showCatSelectModal(amount,(cat,catName)=>doVaultPurchase(cat,catName));
+  showCatSelectModal(p.amount, (cat,catName)=>doVaultPurchase(cat,catName));
 }
 
 async function showCatSelectModal(amount, callback){
@@ -1252,16 +1297,26 @@ async function showCatSelectModal(amount, callback){
   $('payModalDesc').textContent=`Select earnings source for ${amount.toLocaleString()} UGX:`;
   const opts=$('payModalOpts');
   opts.innerHTML='';
+  let anyAvail=false;
   cats.forEach(c=>{
     const ok=c.bal>=amount;
+    if(ok) anyAvail=true;
     const div=document.createElement('div');
     div.className=`pay-opt${ok?'':' disabled'}`;
     div.innerHTML=`<div style="flex:1"><div style="font-weight:700;font-size:.9rem">${c.label}</div><div style="font-size:.78rem;color:var(--muted)">Available: ${c.bal.toLocaleString()} UGX</div></div><span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✗'}</span>`;
     if(ok) div.onclick=()=>{ closePayModal(); callback(c.key,c.label); };
     opts.appendChild(div);
   });
+  if(!anyAvail){
+    const info=document.createElement('div');
+    info.className='alert alert-warning';
+    info.textContent='ℹ️ No single earnings category has enough balance. Please deposit more funds.';
+    opts.appendChild(info);
+  }
   modal.classList.remove('hidden');
+  modal.onclick=e=>{ if(e.target===modal) closePayModal(); };
 }
+function closePayModal(){ $('payModal').classList.add('hidden'); }
 
 async function doVaultPurchase(sourceCategory, categoryName){
   if(isPurchasing) return;
@@ -1273,7 +1328,12 @@ async function doVaultPurchase(sourceCategory, categoryName){
     await db.collection('users').doc(CU.id).update({balance:firebase.firestore.FieldValue.increment(-p.amount)});
     CU.balance=(CU.balance||0)-p.amount;
     const start=new Date(), end=new Date(start.getTime()+p.days*86400000);
-    await db.collection('users').doc(CU.id).collection('vaults').add({planName:p.name,amount:p.amount,duration:p.days,startDate:start.toISOString(),maturityDate:end.toISOString(),status:'active',isMatured:false});
+    await db.collection('users').doc(CU.id).collection('vaults').add({
+      planName:p.name,amount:p.amount,duration:p.days,
+      dailyTasks:p.dailyTasks,taskReward:p.taskReward,
+      startDate:start.toISOString(),maturityDate:end.toISOString(),
+      status:'active',isMatured:false
+    });
     await db.collection('transactions').add({userId:CU.id,userName:CU.fullName,type:'vault_purchase',amount:p.amount,sourceCategory,categoryName,planName:p.name,date:new Date().toISOString()});
     if(CU.referredBy){
       const bonus=Math.floor(p.amount*0.10);
@@ -1287,20 +1347,22 @@ async function doVaultPurchase(sourceCategory, categoryName){
     toast(`${p.emoji} ${p.name} vault activated!`,'🎉','success',6000);
     clearStatsCache();
     setTimeout(()=>{
-      $('selectedPlanDetails').classList.add('hidden');
+      cancelPlanSelection();
       selectedPlan=null;
-      document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
       updateUserStats(true);
       loadVaultSection();
       showSection('home');
       isPurchasing=false;
-      btn.disabled=false; btn.textContent='Confirm Purchase';
+      btn.disabled=false; btn.textContent='✅ Confirm Purchase';
     },2000);
-  }catch(e){ toast('Purchase failed: '+e.message,'❌','error'); isPurchasing=false; btn.disabled=false; btn.textContent='Confirm Purchase'; }
+  }catch(e){
+    toast('Purchase failed: '+e.message,'❌','error');
+    isPurchasing=false; btn.disabled=false; btn.textContent='✅ Confirm Purchase';
+  }
 }
 
 // ============================================================
-// TASKS
+// TASKS — dailyTasks limit comes from user's active vault plan
 // ============================================================
 async function loadTasks(){
   const vi=await getVaultLevel(CU.id);
@@ -1326,8 +1388,9 @@ async function loadTasks(){
 
   allTasks.forEach(t=>{
     const isCompleted=doneIds.has(t.id);
-    if(isCompleted) return; // completed tasks disappear
+    if(isCompleted) return;
     const canDo=done<limit;
+    // Use plan's taskReward as fallback if task doesn't have its own reward
     const reward=t.reward||vi.taskReward;
     const timerSecs=t.timerSeconds||60;
     const typeColors={youtube:'task-type-yt',youtube_sub:'task-type-sub',tiktok:'task-type-tiktok',reading:'task-type-read'};
@@ -1373,7 +1436,7 @@ async function loadTasks(){
     </div>`;
   });
 
-  if(!html && done >= limit && limit > 0){
+  if(!html && done>=limit && limit>0){
     html=`<div class="card" style="text-align:center;padding:28px"><div style="font-size:2.4rem;margin-bottom:10px">🎉</div><div style="font-weight:700;color:var(--gold);margin-bottom:7px">All Tasks Complete!</div><div style="color:var(--muted);font-size:.875rem">Come back tomorrow for more rewards</div></div>`;
   } else if(!html){
     html=`<div class="card" style="text-align:center;color:var(--muted);padding:28px">No tasks available right now. Check back later!</div>`;
@@ -1414,12 +1477,10 @@ async function completeTask(taskId, type, reward){
     await db.collection('users').doc(CU.id).update({balance:firebase.firestore.FieldValue.increment(reward)});
     CU.balance=(CU.balance||0)+reward;
     await db.collection('transactions').add({userId:CU.id,userName:CU.fullName,type:'task_completion',amount:reward,date:new Date().toISOString()});
-    // Remove task card from DOM
     const card=$(`task-${taskId}`);
     if(card){ card.style.opacity='0'; card.style.transition='opacity .4s'; setTimeout(()=>card.remove(),400); }
     clearStatsCache();
     toast(`+${reward.toLocaleString()} UGX earned! 🎉`,'✅','success');
-    // Refresh progress
     setTimeout(()=>loadTasks(),600);
   }catch(e){ toast('Failed to complete task','❌','error'); }
 }
@@ -1466,7 +1527,6 @@ async function loadWallet(){
   const u=ud.data();
   set('walletBal',(u.balance||0).toLocaleString());
   set('walletPts',(u.pointsBalance||0).toLocaleString());
-  // auto-fill withdraw phone
   if(u.phone){ const wp=$('wdPhone'); if(wp) wp.value=u.phone; }
 }
 
@@ -1477,29 +1537,65 @@ function showWalletTab(t){
   if(t==='hist') loadTxHistory();
 }
 
+// ============================================================
+// DEPOSIT — base64 screenshot stored in Firestore (fixes admin-side display)
+// ============================================================
 async function submitDeposit(){
-  const amt=parseInt($('depAmount').value), meth=$('depMethod').value, phone=$('depPhone').value.trim();
+  const amt=parseInt($('depAmount').value);
+  const meth=$('depMethod').value;
+  const phone=$('depPhone').value.trim();
   const screenshotInput=$('depScreenshot');
+  const submitBtn=$('depSubmitBtn');
+
   if(!amt||amt<1000){ showAlert('depAlert','Minimum deposit is 1,000 UGX','error'); return; }
   if(!meth){ showAlert('depAlert','Please select a payment method','error'); return; }
   if(!phone){ showAlert('depAlert','Please enter your phone number','error'); return; }
   if(!screenshotInput.files[0]){ showAlert('depAlert','Please upload a payment screenshot','error'); return; }
+
+  submitBtn.disabled=true; submitBtn.textContent='Uploading…';
   try{
-    // Upload screenshot to Firebase Storage
+    // Convert screenshot to compressed base64 — stored directly in Firestore
+    // This avoids Firebase Storage CORS issues and ensures admin can always see it
+    let screenshotData=null;
     const file=screenshotInput.files[0];
-    const storageRef=storage.ref(`deposit_screenshots/${CU.id}_${Date.now()}`);
-    const snap=await storageRef.put(file);
-    const screenshotUrl=await snap.ref.getDownloadURL();
+    if(file.size>5*1024*1024){ showAlert('depAlert','Screenshot must be under 5MB','error'); return; }
+
+    try{
+      screenshotData=await compressAndGetBase64(file);
+    }catch(imgErr){
+      console.warn('Image compression failed, storing raw base64:', imgErr);
+      screenshotData=await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=e=>res(e.target.result);
+        r.onerror=()=>rej(new Error('Read failed'));
+        r.readAsDataURL(file);
+      });
+    }
 
     await db.collection('depositRequests').add({
-      userId:CU.id,userName:CU.fullName,userEmail:CU.email,
-      amount:amt,method:meth,phone,screenshotUrl,
-      status:'pending',date:new Date().toISOString()
+      userId:CU.id,
+      userName:CU.fullName,
+      userEmail:CU.email,
+      amount:amt,
+      method:meth,
+      phone,
+      screenshotBase64:screenshotData,  // stored as base64 string
+      screenshotUrl:null,               // legacy field — null for new submissions
+      status:'pending',
+      date:new Date().toISOString()
     });
-    showAlert('depAlert','Deposit request submitted! Admin will approve shortly.','success');
-    $('depAmount').value=''; $('depPhone').value=''; screenshotInput.value='';
+
+    showAlert('depAlert','✅ Deposit request submitted! Admin will approve shortly.','success');
+    $('depAmount').value='';
+    $('depPhone').value='';
+    screenshotInput.value='';
     $('depPreview').style.display='none';
-  }catch(e){ showAlert('depAlert','Failed: '+e.message,'error'); }
+    $('depScreenshotLabel').textContent='Tap to upload payment screenshot';
+  }catch(e){
+    showAlert('depAlert','Failed to submit: '+e.message,'error');
+  }finally{
+    submitBtn.disabled=false; submitBtn.textContent='Submit Deposit Request';
+  }
 }
 
 async function submitWithdrawal(){
@@ -1768,7 +1864,6 @@ async function loadAdminUsers(){
   }catch(e){}
 }
 
-// Admin task form dynamic
 function updateTaskForm(){
   const type=$('taskType').value;
   const urlGroup=$('taskUrlGroup'), readGroup=$('taskReadingGroup');
@@ -1830,7 +1925,6 @@ async function toggleTask(id, active){ await db.collection('tasks').doc(id).upda
 async function deleteTask(id){ if(!confirm('Delete this task?'))return; await db.collection('tasks').doc(id).delete(); toast('Task deleted','🗑','warning'); loadAdminTasks(); }
 
 function editTask(id){
-  // Inline edit - open a simple prompt-based flow
   db.collection('tasks').doc(id).get().then(d=>{
     const t=d.data();
     const newTitle=prompt('Task Title:',t.title||'');
@@ -1846,7 +1940,9 @@ function editTask(id){
   });
 }
 
-// Admin Deposits
+// ============================================================
+// ADMIN DEPOSITS — renders base64 screenshots + legacy Firebase URLs
+// ============================================================
 async function loadAdminDeposits(){
   try{
     const snap=await db.collection('depositRequests').orderBy('date','desc').get();
@@ -1855,6 +1951,15 @@ async function loadAdminDeposits(){
     if(snap.empty){ el.innerHTML=`<p style="color:var(--muted)">No deposit requests</p>`; return; }
     el.innerHTML=snap.docs.map(doc=>{
       const d={id:doc.id,...doc.data()};
+      // Support both base64 (new) and Firebase Storage URL (legacy)
+      const imgSrc=d.screenshotBase64||d.screenshotUrl||null;
+      const imgHtml=imgSrc
+        ? `<img src="${imgSrc}" onclick="showImgLightbox('${imgSrc.startsWith('data:')
+            ? imgSrc  // base64 — pass as-is
+            : imgSrc  // URL
+          }')" style="max-width:100%;border-radius:var(--rs);margin-top:10px;cursor:pointer;border:1px solid var(--border-s)" title="Click to enlarge">`
+        : '<div style="font-size:.75rem;color:var(--dim);font-style:italic;margin-top:8px">⚠️ No screenshot provided</div>';
+
       return `<div class="dep-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div>
@@ -1866,15 +1971,20 @@ async function loadAdminDeposits(){
             <span class="badge ${d.status==='approved'?'badge-success':d.status==='rejected'?'badge-error':'badge-warning'}">${d.status}</span>
           </div>
         </div>
-        ${d.screenshotUrl?`<img src="${d.screenshotUrl}" onclick="showImgLightbox('${d.screenshotUrl}')" title="Click to enlarge">`:
-          '<div style="font-size:.75rem;color:var(--dim);font-style:italic">No screenshot provided</div>'}
-        ${d.status==='pending'?`<div style="display:flex;gap:7px;margin-top:10px">
+        ${imgHtml}
+        ${d.status==='pending'?`<div style="display:flex;gap:7px;margin-top:12px">
           <button class="btn btn-green" style="flex:1;padding:9px;font-size:.82rem" onclick="approveDeposit('${doc.id}','${d.userId}',${d.amount})">✅ Approve</button>
           <button class="btn btn-red" style="flex:1;padding:9px;font-size:.82rem" onclick="rejectDeposit('${doc.id}','${d.userId}')">❌ Reject</button>
         </div>`:''}
       </div>`;
     }).join('');
   }catch(e){ console.error(e); }
+}
+
+// Lightbox — handles both base64 and URL
+function showImgLightbox(src){
+  $('lightboxImg').src=src;
+  $('imgLightbox').style.display='flex';
 }
 
 async function approveDeposit(depId, uid, amount){
@@ -1897,7 +2007,9 @@ async function rejectDeposit(id, uid){
   loadAdminDeposits();
 }
 
-// Admin Withdrawals
+// ============================================================
+// ADMIN WITHDRAWALS
+// ============================================================
 async function loadAdminWithdrawals(){
   try{
     const snap=await db.collection('withdrawalRequests').orderBy('date','desc').get();
@@ -1935,13 +2047,6 @@ async function approveWithdrawal(wdId, uid, net, fee){
     await db.collection('users').doc(uid).update({balance:firebase.firestore.FieldValue.increment(-(net+fee))});
     await db.collection('transactions').add({userId:uid,type:'withdrawal_approved',amount:net,adminFee:fee,date:new Date().toISOString()});
     await sendNotif(uid,'withdrawal_approved',`Your withdrawal of ${net.toLocaleString()} UGX has been processed! 💰`);
-    // Show success overlay if user is on their dashboard
-    if(CU&&CU.id===uid){
-      $('successIcon').textContent='💰';
-      $('successTitle').textContent='Withdrawal Approved!';
-      $('successMsg').textContent=`${net.toLocaleString()} UGX has been sent to your mobile money.`;
-      $('successOverlay').classList.remove('hidden');
-    }
     toast('Withdrawal approved','✅','success');
     loadAdminWithdrawals(); loadAdminStats();
   }catch(e){ toast('Error: '+e.message,'❌','error'); }
@@ -1966,7 +2071,7 @@ async function loadAdminTransactions(){
 }
 
 // ============================================================
-// WITHDRAWAL APPROVAL REALTIME LISTENER FOR USER
+// REALTIME: Withdrawal approval listener for user
 // ============================================================
 function listenForWithdrawalApproval(){
   if(!CU||CU.isAdmin) return;
@@ -1975,7 +2080,6 @@ function listenForWithdrawalApproval(){
       snap.docChanges().forEach(change=>{
         if(change.type==='modified'||change.type==='added'){
           const w=change.doc.data();
-          // Only trigger if recently approved (within 5 min)
           if(w.approvedDate&&(Date.now()-new Date(w.approvedDate).getTime())<300000){
             $('successIcon').textContent='💰';
             $('successTitle').textContent='Withdrawal Approved!';
