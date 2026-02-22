@@ -2,8 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
 <title>VaultPro – Investment Platform</title>
+
+<!-- PWA Meta -->
+<meta name="application-name" content="VaultPro">
+<meta name="description" content="Uganda’s premier investment platform. Earn daily task rewards, grow capital with vault plans, and build your network.">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VaultPro">
+<meta name="msapplication-TileColor" content="#C9A84C">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:title" content="VaultPro – Investment Platform">
+<meta property="og:description" content="Earn daily rewards and grow your wealth.">
+
+<!-- PWA Icons -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230A0C10'/%3E%3Ctext y='72' x='50' text-anchor='middle' font-size='60'%3E%F0%9F%8F%A6%3C/text%3E%3C/svg%3E">
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--gold:#C9A84C;--gold-light:#E8C96B;--gold-dark:#A07834;--bg:#0A0C10;--bg2:#111318;--bg3:#181C24;--surface:#1E2330;--surface2:#252B3A;--border:rgba(201,168,76,0.15);--border-s:rgba(255,255,255,0.06);--text:#F0EDE6;--muted:#7E8899;--dim:#4A5166;--green:#1DB87F;--red:#E8445A;--blue:#4A7CF7;--r:14px;--rs:8px}
@@ -197,6 +214,97 @@ tr:last-child td{border-bottom:none}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:100px}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .3s ease-out}
+
+/* ── PWA safe area ── */
+body{padding-top:env(safe-area-inset-top)}
+.bottom-nav{padding-bottom:calc(env(safe-area-inset-bottom) + 4px) !important}
+.content{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+
+/* ================================================================
+   RESPONSIVE — tablet (600px+) and desktop (1024px+)
+   ================================================================ */
+@media (min-width:600px){
+  body{max-width:100%}
+  .bottom-nav{display:none !important}
+  #sideNav{display:flex !important}
+  #userDashboard{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr;min-height:100vh}
+  .dash-header{grid-column:1/-1;max-width:100%}
+  #contentArea{grid-column:2;grid-row:2;overflow-y:auto}
+  .content{padding:22px 28px 40px;max-width:820px}
+  .balance-value{font-size:3rem}
+  .stat-grid{grid-template-columns:repeat(3,1fr)}
+  #plansList{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #plansList .plan-card{margin-bottom:0}
+  .modal-sheet{max-width:500px;margin:0 auto;border-radius:20px 20px 0 0}
+  .auth-page{align-items:center;justify-content:center;padding:40px 20px}
+  .auth-body{max-width:440px;width:100%;background:var(--surface);border:1px solid var(--border-s);border-radius:20px;padding:32px}
+  .admin-stats-grid{grid-template-columns:repeat(3,1fr)}
+  #toastCont{max-width:500px}
+  .landing-page{align-items:center;padding:40px 24px}
+}
+@media (min-width:1024px){
+  #userDashboard{grid-template-columns:260px 1fr}
+  .content{max-width:900px;padding:28px 40px 40px}
+  .stat-grid{grid-template-columns:repeat(4,1fr)}
+  #plansList{grid-template-columns:repeat(3,1fr)}
+  .balance-value{font-size:3.6rem}
+  .admin-stats-grid{grid-template-columns:repeat(4,1fr)}
+  .admin-content{padding:28px 36px}
+}
+
+/* Sidebar nav — shown on tablet+ */
+#sideNav{
+  display:none;flex-direction:column;
+  background:var(--bg2);border-right:1px solid var(--border-s);
+  padding:16px 0;position:sticky;top:60px;
+  height:calc(100vh - 60px);overflow-y:auto;
+  grid-row:2;grid-column:1;
+}
+.side-nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;cursor:pointer;border:none;background:none;
+  color:var(--dim);font-family:'DM Sans',sans-serif;
+  font-size:.88rem;font-weight:600;width:100%;text-align:left;
+  transition:all .2s;border-left:3px solid transparent;
+}
+.side-nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.side-nav-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(201,168,76,.06)}
+.side-nav-icon{font-size:1.1rem;width:22px;text-align:center;flex-shrink:0}
+.side-nav-label{flex:1}
+.side-nav-section{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:14px 20px 5px;margin-top:6px}
+#contentArea{grid-column:2;grid-row:2;overflow-y:auto}
+
+/* Admin sidebar on tablet+ */
+@media (min-width:600px){
+  .admin-tabs{display:none !important}
+  .admin-wrap{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 60px)}
+  .admin-header{grid-column:1/-1}
+  #adminSideNav{display:flex !important;flex-direction:column;background:var(--bg2);border-right:1px solid var(--border-s);padding:10px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+  .admin-content{grid-column:2;padding:22px 24px}
+}
+
+/* Install prompt banner */
+#installBanner{
+  position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;
+  background:linear-gradient(135deg,var(--bg2),var(--surface));
+  border-top:1px solid var(--border);
+  padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:12px;z-index:9000;
+  transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);
+}
+#installBanner.show{transform:translateY(0)}
+@media (min-width:600px){
+  #installBanner{
+    bottom:auto;top:80px;right:24px;left:auto;border:1px solid var(--border);
+    border-radius:16px;max-width:320px;padding:16px;
+    transform:translateY(-20px);opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+  }
+  #installBanner.show{transform:translateY(0);opacity:1}
+}
+
+/* Mobile table font */
+@media (max-width:599px){table{font-size:.72rem}th,td{padding:8px 6px}}
 </style>
 </head>
 <body>
@@ -283,13 +391,46 @@ tr:last-child td{border-bottom:none}
 <div id="userDashboard" class="hidden">
   <div class="dash-header">
     <div>
-      <div class="header-brand">VaultPro</div>
+      <div class="header-brand">🏦 VaultPro</div>
       <div class="header-user-sub" id="headerSub">Loading…</div>
     </div>
     <div style="display:flex;gap:7px">
       <button class="icon-btn" onclick="openNotif()" title="Notifications">🔔<span class="notif-dot hidden" id="notifBadge"></span></button>
     </div>
   </div>
+
+  <!-- SIDEBAR — shown on tablet/desktop, hidden on mobile -->
+  <nav id="sideNav" aria-label="Main navigation">
+    <div class="side-nav-section">Menu</div>
+    <button class="side-nav-item" onclick="showSection('home')" id="sidenav-home">
+      <span class="side-nav-icon">🏠</span><span class="side-nav-label">Home</span>
+    </button>
+    <button class="side-nav-item" onclick="showSection('vault')" id="sidenav-vault">
+      <span class="side-nav-icon">🏦</span><span class="side-nav-label">Vault Plans</span>
+    </button>
+    <button class="side-nav-item" onclick="showSection('tasks')" id="sidenav-tasks">
+      <span class="side-nav-icon">✅</span><span class="side-nav-label">Daily Tasks</span>
+    </button>
+    <button class="side-nav-item" onclick="showSection('referrals')" id="sidenav-referrals">
+      <span class="side-nav-icon">👥</span><span class="side-nav-label">Referrals</span>
+    </button>
+    <div class="side-nav-section">Account</div>
+    <button class="side-nav-item" onclick="showSection('wallet')" id="sidenav-wallet">
+      <span class="side-nav-icon">💰</span><span class="side-nav-label">Wallet</span>
+    </button>
+    <button class="side-nav-item" onclick="showSection('streak')" id="sidenav-streak">
+      <span class="side-nav-icon">🔥</span><span class="side-nav-label">Streak</span>
+    </button>
+    <button class="side-nav-item" onclick="showSection('profile')" id="sidenav-profile">
+      <span class="side-nav-icon">👤</span><span class="side-nav-label">Profile</span>
+    </button>
+    <div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--border-s)">
+      <button class="btn btn-outline" style="width:100%;padding:10px;font-size:.8rem" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- CONTENT AREA wrapper for tablet/desktop grid -->
+  <div id="contentArea">
 
   <!-- HOME -->
   <div id="homeSection" class="content hidden fade-in">
@@ -607,14 +748,27 @@ tr:last-child td{border-bottom:none}
     <button class="nav-item" data-section="streak" onclick="showSection('streak')"><span class="nav-icon">🔥</span>Streak</button>
     <button class="nav-item" data-section="profile" onclick="showSection('profile')"><span class="nav-icon">👤</span>Profile</button>
   </nav>
+  </div><!-- /#contentArea -->
+</div><!-- /#userDashboard -->
+
+<!-- INSTALL BANNER -->
+<div id="installBanner">
+  <div style="font-size:2rem">🏦</div>
+  <div style="flex:1">
+    <div style="font-weight:700;font-size:.9rem">Install VaultPro</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Add to home screen for the best experience</div>
+  </div>
+  <button id="installBtn" class="btn btn-gold" style="padding:9px 14px;font-size:.8rem;flex-shrink:0">Install</button>
+  <button onclick="dismissInstall()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:1.2rem;padding:4px;flex-shrink:0">✕</button>
 </div>
 
 <!-- ADMIN DASHBOARD -->
 <div id="adminDashboard" class="admin-wrap hidden">
-  <div class="admin-header" style="max-width:100%;position:sticky;top:0;z-index:100">
-    <span style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold)">VaultPro Admin</span>
+  <div class="admin-header" style="max-width:100%;position:sticky;top:0;z-index:100;grid-column:1/-1">
+    <span style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold)">🏦 VaultPro Admin</span>
     <button class="btn btn-surface" style="padding:7px 14px;font-size:.78rem" onclick="logout()">Sign Out</button>
   </div>
+  <!-- Mobile tabs -->
   <div class="admin-tabs">
     <button class="admin-tab active" onclick="showAdmin('stats',this)">📊 Stats</button>
     <button class="admin-tab" onclick="showAdmin('users',this)">👥 Users</button>
@@ -623,6 +777,19 @@ tr:last-child td{border-bottom:none}
     <button class="admin-tab" onclick="showAdmin('withdrawals',this)">💸 Withdrawals</button>
     <button class="admin-tab" onclick="showAdmin('transactions',this)">📋 Transactions</button>
   </div>
+  <!-- Desktop sidebar nav -->
+  <nav id="adminSideNav" style="display:none">
+    <div class="side-nav-section">Admin Panel</div>
+    <button class="side-nav-item active" onclick="showAdmin('stats',this)"><span class="side-nav-icon">📊</span><span class="side-nav-label">Stats</span></button>
+    <button class="side-nav-item" onclick="showAdmin('users',this)"><span class="side-nav-icon">👥</span><span class="side-nav-label">Users</span></button>
+    <button class="side-nav-item" onclick="showAdmin('tasks',this)"><span class="side-nav-icon">✅</span><span class="side-nav-label">Tasks</span></button>
+    <button class="side-nav-item" onclick="showAdmin('deposits',this)"><span class="side-nav-icon">💰</span><span class="side-nav-label">Deposits</span></button>
+    <button class="side-nav-item" onclick="showAdmin('withdrawals',this)"><span class="side-nav-icon">💸</span><span class="side-nav-label">Withdrawals</span></button>
+    <button class="side-nav-item" onclick="showAdmin('transactions',this)"><span class="side-nav-icon">📋</span><span class="side-nav-label">Transactions</span></button>
+    <div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--border-s)">
+      <button class="btn btn-outline" style="width:100%;padding:10px;font-size:.8rem" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
   <div class="admin-content">
     <div id="adminStats">
       <div class="admin-stats-grid">
@@ -1162,10 +1329,12 @@ function showSection(s){
     const e=$(x+'Section'); if(e) e.classList.add('hidden');
   });
   const el=$(s+'Section');
-  if(el) el.classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
-  const nav=document.querySelector(`[data-section="${s}"]`);
-  if(nav) nav.classList.add('active');
+  if(el){ el.classList.remove('hidden'); el.classList.add('fade-in'); }
+  // Sync both bottom nav and sidebar
+  updateSidebarActive(s);
+  // Scroll content area to top on section change
+  const ca=$('contentArea');
+  if(ca) ca.scrollTop=0; else window.scrollTo(0,0);
   if(s==='home'){ updateUserStats(); }
   else if(s==='vault'){ loadVaultSection(); }
   else if(s==='referrals'){ loadReferrals(); }
@@ -1182,13 +1351,17 @@ function showAdmin(s, btn){
   });
   const el=$('admin'+s.charAt(0).toUpperCase()+s.slice(1));
   if(el) el.classList.remove('hidden');
+  // Sync both tab bar and sidebar
   document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
   if(btn) btn.classList.add('active');
+  document.querySelectorAll('#adminSideNav .side-nav-item').forEach(t=>t.classList.remove('active'));
+  if(btn && btn.closest('#adminSideNav')) btn.classList.add('active');
   if(s==='users') loadAdminUsers();
   else if(s==='tasks') loadAdminTasks();
   else if(s==='deposits') loadAdminDeposits();
   else if(s==='withdrawals') loadAdminWithdrawals();
   else if(s==='transactions') loadAdminTransactions();
+  else loadAdminStats();
 }
 
 // ============================================================
@@ -2470,6 +2643,125 @@ function listenForWithdrawalApproval(){
 // BOOT
 // ============================================================
 window.addEventListener('load', init);
+
+// ============================================================
+// PWA — Service Worker + Install Prompt
+// ============================================================
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Show banner after 3 seconds if not dismissed
+  if(!localStorage.getItem('vp_install_dismissed')){
+    setTimeout(()=>{
+      const b=$('installBanner');
+      if(b) b.classList.add('show');
+    }, 3000);
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  const b=$('installBanner');
+  if(b) b.classList.remove('show');
+  deferredInstallPrompt = null;
+  toast('VaultPro installed! 🎉','🏦','success',5000);
+});
+
+const installBtn=$('installBtn');
+if(installBtn){
+  installBtn.addEventListener('click', async () => {
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const {outcome} = await deferredInstallPrompt.userChoice;
+    if(outcome === 'accepted') toast('Installing VaultPro…','📲','success');
+    deferredInstallPrompt = null;
+    const b=$('installBanner');
+    if(b) b.classList.remove('show');
+  });
+}
+
+function dismissInstall(){
+  const b=$('installBanner');
+  if(b) b.classList.remove('show');
+  localStorage.setItem('vp_install_dismissed','1');
+}
+
+// Register Service Worker (inline via blob URL — works in single-file apps)
+if('serviceWorker' in navigator){
+  const swCode = `
+const CACHE='vaultpro-v1';
+const PRECACHE=['/'];
+self.addEventListener('install', e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate', e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch', e=>{
+  // Network-first for Firebase, cache-first for everything else
+  const isFirebase = e.request.url.includes('firebaseio.com') || e.request.url.includes('googleapis.com') || e.request.url.includes('gstatic.com');
+  if(isFirebase){
+    e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
+    return;
+  }
+  e.respondWith(
+    caches.match(e.request).then(cached=>{
+      if(cached) return cached;
+      return fetch(e.request).then(response=>{
+        if(response && response.status===200 && response.type!=='opaque'){
+          const clone = response.clone();
+          caches.open(CACHE).then(c=>c.put(e.request,clone));
+        }
+        return response;
+      }).catch(()=>cached);
+    })
+  );
+});
+self.addEventListener('push', e=>{
+  const data = e.data ? e.data.json() : {};
+  e.waitUntil(self.registration.showNotification(data.title||'VaultPro', {
+    body: data.body||'You have a new notification',
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230A0C10"/><text y="72" x="50" text-anchor="middle" font-size="60">🏦</text></svg>',
+    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" x="50" text-anchor="middle" font-size="80">🏦</text></svg>',
+    tag: 'vaultpro',
+    renotify: true,
+    data: data
+  }));
+});
+self.addEventListener('notificationclick', e=>{
+  e.notification.close();
+  e.waitUntil(clients.openWindow('/'));
+});
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl, {scope:'/'})
+    .then(reg => {
+      console.log('VaultPro SW registered');
+      // Check for updates periodically
+      setInterval(()=>reg.update(), 60*60*1000);
+    })
+    .catch(err => console.warn('SW registration failed:', err));
+}
+
+// ============================================================
+// SIDEBAR — sync active state with current section
+// ============================================================
+function updateSidebarActive(section){
+  // User sidebar
+  document.querySelectorAll('[id^="sidenav-"]').forEach(el=>{
+    el.classList.remove('active');
+  });
+  const active = $(`sidenav-${section}`);
+  if(active) active.classList.add('active');
+
+  // Bottom nav
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    const s=el.getAttribute('data-section');
+    el.classList.toggle('active', s===section);
+  });
+}
 </script>
 </body>
 </html>
