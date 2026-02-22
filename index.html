@@ -254,6 +254,28 @@ tr:last-child td{border-bottom:none}
     <div class="fg"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password"></div>
     <button class="btn btn-gold btn-full" id="loginBtn" onclick="login()" style="margin-top:6px">Sign In</button>
     <p style="text-align:center;margin-top:18px;font-size:.875rem;color:var(--muted)">Don't have an account? <a href="#" onclick="showRegister()" style="color:var(--gold);text-decoration:none;font-weight:600">Join now</a></p>
+    <p style="text-align:center;margin-top:10px;font-size:.75rem;color:var(--dim)"><a href="#" onclick="checkAndShowAdminSetup()" style="color:var(--dim);text-decoration:none">First time? ⚙️ Admin setup</a></p>
+  </div>
+</div>
+
+<!-- ADMIN SETUP — One-time bootstrap page -->
+<div id="adminSetupPage" class="auth-page hidden">
+  <div class="auth-header">
+    <div class="auth-logo" style="color:var(--red)">⚙️ Admin Setup</div>
+    <div class="auth-sub" style="color:var(--muted)">One-time setup — creates first admin account</div>
+  </div>
+  <div class="auth-body">
+    <div class="alert alert-warning" style="margin-bottom:14px">
+      ⚠️ This page is only for the <strong>first time</strong>. After creating the admin, this option disappears.
+    </div>
+    <div id="adminSetupAlert"></div>
+    <div class="fg"><label>Admin Full Name</label><input type="text" id="adminSetupName" placeholder="Your full name"></div>
+    <div class="fg"><label>Admin Email</label><input type="email" id="adminSetupEmail" placeholder="admin@example.com"></div>
+    <div class="fg"><label>Admin Phone</label><input type="tel" id="adminSetupPhone" placeholder="07XXXXXXXX"></div>
+    <div class="fg"><label>Password</label><input type="password" id="adminSetupPass" placeholder="Strong password"></div>
+    <div class="fg"><label>Confirm Password</label><input type="password" id="adminSetupPass2" placeholder="Repeat password"></div>
+    <button class="btn btn-red btn-full" onclick="createAdminAccount()">🔐 Create Admin Account</button>
+    <p style="text-align:center;margin-top:14px;font-size:.8rem;color:var(--dim)"><a href="#" onclick="showLogin()" style="color:var(--muted);text-decoration:none">← Back to Login</a></p>
   </div>
 </div>
 
@@ -616,6 +638,15 @@ tr:last-child td{border-bottom:none}
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:13px">50,000 UGX auto-credited each week to the top referrer who has 8+ referrals <strong style="color:var(--gold)">with active vault plans</strong>. Runs every Monday at midnight.</div>
         <button class="btn btn-gold" onclick="runWeeklyPrize()">▶ Run Weekly Prize Now</button>
       </div>
+      <div class="card" style="background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.02));border-color:var(--border)">
+        <div style="font-weight:700;margin-bottom:7px">🔗 Your Invitation Link</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Share this link or code to let people register on VaultPro</div>
+        <div id="adminRefCodeDisplay" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--gold);word-break:break-all;margin-bottom:10px">Loading…</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" style="flex:1;padding:10px;font-size:.8rem" onclick="copyAdminRefLink()">📋 Copy Link</button>
+          <button class="btn btn-surface" style="flex:1;padding:10px;font-size:.8rem" onclick="shareAdminRefLink()">📤 Share</button>
+        </div>
+      </div>
     </div>
 
     <div id="adminUsers" class="hidden">
@@ -633,7 +664,7 @@ tr:last-child td{border-bottom:none}
             <option value="youtube">📺 YouTube Watch</option>
             <option value="youtube_sub">🔔 YouTube Subscribe</option>
             <option value="tiktok">🎵 TikTok Watch</option>
-            <option value="reading">📖 Reading Task</option>
+            <option value="visit">🌐 Visit Website</option>
           </select>
         </div>
         <div class="fg"><label>Task Title</label><input type="text" id="taskTitle" placeholder="e.g. Watch our latest product review"></div>
@@ -830,7 +861,7 @@ const CAREER_LEVELS = [
 function $(id){ return document.getElementById(id); }
 function set(id, v){ const e=$(id); if(e) e.textContent=v; }
 function hideAll(){
-  ['loadingScreen','referralLandingPage','registerPage','loginPage','userDashboard','adminDashboard']
+  ['loadingScreen','referralLandingPage','registerPage','loginPage','adminSetupPage','userDashboard','adminDashboard']
     .forEach(id=>{ const e=$(id); if(e) e.classList.add('hidden'); });
 }
 
@@ -1034,6 +1065,74 @@ async function logout(){ if(!confirm('Sign out?'))return; await auth.signOut(); 
 // ============================================================
 function showLogin(){ hideAll(); $('loginPage').classList.remove('hidden'); }
 function showRegister(){ hideAll(); $('registerPage').classList.remove('hidden'); }
+
+// Check if an admin already exists before showing setup
+async function checkAndShowAdminSetup(){
+  try{
+    const snap=await db.collection('users').where('isAdmin','==',true).limit(1).get();
+    if(!snap.empty){
+      toast('Admin account already exists. Use the login page.','🔒','warning');
+      return;
+    }
+    hideAll();
+    $('adminSetupPage').classList.remove('hidden');
+  }catch(e){ toast('Error checking admin status: '+e.message,'❌','error'); }
+}
+
+async function createAdminAccount(){
+  const name=$('adminSetupName').value.trim();
+  const email=$('adminSetupEmail').value.trim();
+  const phone=$('adminSetupPhone').value.trim();
+  const pass=$('adminSetupPass').value;
+  const pass2=$('adminSetupPass2').value;
+  if(!name||!email||!phone||!pass){ showAlert('adminSetupAlert','Please fill all fields','error'); return; }
+  if(pass!==pass2){ showAlert('adminSetupAlert','Passwords do not match','error'); return; }
+  if(pass.length<6){ showAlert('adminSetupAlert','Password must be at least 6 characters','error'); return; }
+  try{
+    // Double-check no admin exists
+    const snap=await db.collection('users').where('isAdmin','==',true).limit(1).get();
+    if(!snap.empty){ showAlert('adminSetupAlert','Admin already exists. Cannot create another.','error'); return; }
+
+    // Create Firebase Auth account
+    const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    const uid=cred.user.uid;
+
+    // Generate a referral code for the admin (this is the "invitation link" starter)
+    const refCode='ADMIN'+Math.random().toString(36).substring(2,8).toUpperCase();
+
+    await db.collection('users').doc(uid).set({
+      fullName:name,
+      email,
+      phone,
+      isAdmin:true,
+      isActivated:true,
+      referralCode:refCode,
+      referredBy:null,
+      balance:0,
+      pointsBalance:0,
+      totalReferrals:0,
+      joinedDate:new Date().toISOString(),
+      currentStreak:0,
+      longestStreak:0,
+    });
+
+    // Store invitation code in a global invitations collection so anyone can use it to register
+    await db.collection('invitationCodes').doc(refCode).set({
+      code:refCode,
+      ownerId:uid,
+      ownerName:name,
+      isActive:true,
+      createdAt:new Date().toISOString()
+    });
+
+    toast(`✅ Admin account created! Your referral/invite code is: ${refCode}`,'🎉','success',10000);
+    setTimeout(()=>showLogin(),3000);
+  }catch(e){
+    let msg=e.message;
+    if(e.code==='auth/email-already-in-use') msg='That email is already registered. Use the login page.';
+    showAlert('adminSetupAlert',msg,'error');
+  }
+}
 function showRegisterFromReferral(){
   showRegister();
   const code=getStoredRef();
@@ -1428,45 +1527,101 @@ async function loadTasks(){
     // Use plan's taskReward as fallback if task doesn't have its own reward
     const reward=t.reward||vi.taskReward;
     const timerSecs=t.timerSeconds||60;
-    const typeColors={youtube:'task-type-yt',youtube_sub:'task-type-sub',tiktok:'task-type-tiktok',reading:'task-type-read'};
-    const typeLabels={youtube:'📺 YouTube Watch',youtube_sub:'🔔 YouTube Sub',tiktok:'🎵 TikTok',reading:'📖 Reading'};
+    const typeColors={youtube:'task-type-yt',youtube_sub:'task-type-sub',tiktok:'task-type-tiktok',visit:'task-type-read'};
+    const typeLabels={youtube:'📺 YouTube Watch',youtube_sub:'🔔 Subscribe',tiktok:'🎵 TikTok Watch',visit:'🌐 Visit Website'};
     const typeClass=typeColors[t.type]||'task-type-yt';
 
-    let embedHtml='';
-    if(t.type==='youtube'||t.type==='youtube_sub'){
+    // Determine action instructions per type
+    const actionMap={
+      youtube:`▶️ Press <strong>Play</strong> on the video below, then click <strong>Start Task</strong> — your timer begins and reward unlocks when done.`,
+      youtube_sub:`👆 Click <strong>Subscribe</strong> on the channel, then click <strong>Start Task</strong> — wait for the timer to complete your reward.`,
+      tiktok:`👆 Tap <strong>Open TikTok</strong> to watch the video, then click <strong>Start Task</strong> — the timer will count down your reward.`,
+      visit:`🌐 Click <strong>Visit Website</strong>, spend time on the page, then click <strong>Start Task</strong> — wait for the countdown to earn.`
+    };
+
+    // Content preview area
+    let contentHtml='';
+    if(t.type==='youtube'){
       const vid=extractYouTubeId(t.url||'');
-      if(vid) embedHtml=`<iframe class="task-embed" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+      if(vid) contentHtml=`<iframe class="task-embed" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+    } else if(t.type==='youtube_sub'){
+      // Extract channel from URL — support /channel/ID, /c/NAME, /@handle
+      const subUrl=t.url||'https://youtube.com';
+      contentHtml=`<div style="background:linear-gradient(135deg,rgba(255,0,0,.08),rgba(0,0,0,.02));border-radius:var(--rs) var(--rs) 0 0;padding:18px;text-align:center;border-bottom:1px solid var(--border-s)">
+        <div style="font-size:2.2rem;margin-bottom:8px">📺</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">${t.title}</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Subscribe to this YouTube channel to earn your reward</div>
+        <a href="${subUrl}" target="_blank" onclick="markOpened('${t.id}')"
+           style="display:inline-flex;align-items:center;gap:7px;background:#FF0000;color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:20px;text-decoration:none;box-shadow:0 4px 14px rgba(255,0,0,.35)">
+          🔔 Subscribe on YouTube
+        </a>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:9px">Opens YouTube — subscribe, then come back here</div>
+      </div>`;
     } else if(t.type==='tiktok'){
-      embedHtml=`<div style="background:var(--bg3);padding:14px;text-align:center;border-radius:var(--rs) var(--rs) 0 0"><a href="${t.url}" target="_blank" class="btn btn-surface" style="display:inline-block;text-decoration:none">🎵 Open TikTok Video</a></div>`;
-    } else if(t.type==='reading'){
-      embedHtml=`<div class="reading-content">${t.readingContent||'Content will appear here...'}</div>`;
+      contentHtml=`<div style="background:linear-gradient(135deg,rgba(0,0,0,.3),rgba(105,201,208,.04));border-radius:var(--rs) var(--rs) 0 0;padding:18px;text-align:center;border-bottom:1px solid var(--border-s)">
+        <div style="font-size:2.2rem;margin-bottom:8px">🎵</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:12px">${t.title}</div>
+        <a href="${t.url}" target="_blank" onclick="markOpened('${t.id}')"
+           style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#010101,#69C9D0);color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:20px;text-decoration:none">
+          🎵 Open TikTok Video
+        </a>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:9px">Watch the full video, then return and start your timer</div>
+      </div>`;
+    } else if(t.type==='visit'){
+      contentHtml=`<div style="background:linear-gradient(135deg,rgba(74,124,247,.06),rgba(0,0,0,.02));border-radius:var(--rs) var(--rs) 0 0;padding:18px;text-align:center;border-bottom:1px solid var(--border-s)">
+        <div style="font-size:2.2rem;margin-bottom:8px">🌐</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:12px">${t.title}</div>
+        <a href="${t.url}" target="_blank" onclick="markOpened('${t.id}')"
+           style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#4A7CF7,#2E5FD4);color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:20px;text-decoration:none">
+          🌐 Visit Website
+        </a>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:9px">Visit the site, then return here and start your timer</div>
+      </div>`;
     }
 
     html+=`<div class="task-card" id="task-${t.id}">
       <div class="task-type-bar ${typeClass}"></div>
-      ${embedHtml}
+      ${contentHtml}
       <div class="task-card-body">
         <div class="task-header">
           <div class="task-title">${typeLabels[t.type]||'Task'}: ${t.title||'Untitled'}</div>
           <div class="task-reward">+${reward.toLocaleString()} UGX</div>
         </div>
-        <div class="task-desc">${t.description||''}</div>
-        ${canDo
-          ? `<div class="task-timer hidden" id="timer-${t.id}">
-              <div class="task-timer-circle">
-                <svg width="32" height="32" viewBox="0 0 32 32">
-                  <circle class="timer-bg" cx="16" cy="16" r="13"/>
-                  <circle class="timer-fill" id="timerCircle-${t.id}" cx="16" cy="16" r="13" stroke-dasharray="${2*Math.PI*13}" stroke-dashoffset="0"/>
-                </svg>
-                <div class="timer-count" id="timerNum-${t.id}">${timerSecs}</div>
-              </div>
-              <span id="timerMsg-${t.id}">Complete in <strong id="timerSec-${t.id}">${timerSecs}s</strong></span>
-            </div>
-            <button class="btn btn-gold btn-full" id="taskBtn-${t.id}" onclick="startTask('${t.id}','${t.type||'youtube'}',${reward},${timerSecs})">
-              ${t.type==='reading'?'Start Reading':'Start Task'}
-            </button>`
-          : `<div style="text-align:center;color:var(--dim);font-size:.82rem;padding:8px">Daily limit reached for today</div>`
-        }
+        <div class="task-desc" style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:10px">${t.description||''}</div>
+        ${canDo ? `
+        <!-- Step instruction -->
+        <div id="taskInstruct-${t.id}" style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:var(--rs);padding:10px 12px;font-size:.78rem;line-height:1.55;margin-bottom:11px;color:var(--text)">
+          ${actionMap[t.type]||'Complete the task above, then start the timer.'}
+        </div>
+
+        <!-- Timer (hidden until started) -->
+        <div class="task-timer hidden" id="timer-${t.id}" style="margin-bottom:11px">
+          <div class="task-timer-circle">
+            <svg width="32" height="32" viewBox="0 0 32 32">
+              <circle class="timer-bg" cx="16" cy="16" r="13"/>
+              <circle class="timer-fill" id="timerCircle-${t.id}" cx="16" cy="16" r="13" stroke-dasharray="${2*Math.PI*13}" stroke-dashoffset="0"/>
+            </svg>
+            <div class="timer-count" id="timerNum-${t.id}">${timerSecs}</div>
+          </div>
+          <span id="timerMsg-${t.id}">Counting down… <strong id="timerSec-${t.id}">${timerSecs}s</strong> remaining</span>
+        </div>
+
+        <!-- Claim button (hidden until timer done) -->
+        <div id="claimWrap-${t.id}" class="hidden" style="margin-bottom:8px">
+          <button class="btn btn-green btn-full" onclick="completeTask('${t.id}','${t.type}',${reward})">
+            ✅ Claim ${reward.toLocaleString()} UGX
+          </button>
+        </div>
+
+        <!-- START button — must click this after doing the task -->
+        <button class="btn btn-gold btn-full" id="taskBtn-${t.id}"
+          onclick="startTask('${t.id}','${t.type||'youtube'}',${reward},${timerSecs},'${encodeURIComponent(t.url||'')}')">
+          ${t.type==='youtube'?'▶ I\'m Watching — Start Timer':
+            t.type==='youtube_sub'?'🔔 I\'ve Subscribed — Start Timer':
+            t.type==='tiktok'?'🎵 I\'ve Watched — Start Timer':
+            '🌐 I\'ve Visited — Start Timer'}
+        </button>` :
+        `<div style="text-align:center;color:var(--dim);font-size:.82rem;padding:8px 0">Daily limit reached for today</div>`}
       </div>
     </div>`;
   });
@@ -1479,16 +1634,41 @@ async function loadTasks(){
   $('tasksList').innerHTML=html;
 }
 
-function startTask(taskId, type, reward, timerSecs){
+// Track which tasks the user has opened the content for
+const openedTasks=new Set();
+function markOpened(taskId){ openedTasks.add(taskId); }
+
+function startTask(taskId, type, reward, timerSecs, encodedUrl){
   const btn=$(`taskBtn-${taskId}`), timer=$(`timer-${taskId}`);
+  const instruct=$(`taskInstruct-${taskId}`);
   if(!btn) return;
+
+  // For non-YouTube types, warn if they haven't opened the link yet
+  if((type==='tiktok'||type==='youtube_sub'||type==='visit')&&!openedTasks.has(taskId)){
+    const url=decodeURIComponent(encodedUrl||'');
+    // Show a warning but still allow — user may have opened in external app
+    const warnEl=document.createElement('div');
+    warnEl.style.cssText='background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:9px 12px;font-size:.76rem;color:var(--gold-light);margin-bottom:9px;line-height:1.5';
+    warnEl.innerHTML=`⚠️ Please <a href="${url}" target="_blank" onclick="markOpened('${taskId}')" style="color:var(--gold);font-weight:700">open the link</a> first, then start your timer.`;
+    btn.parentNode.insertBefore(warnEl,btn);
+    // Only block if no URL opened at all — remove warning after 1 retry
+    if(!openedTasks.has(taskId)){
+      setTimeout(()=>warnEl.remove(),5000);
+      return;
+    }
+  }
+
+  // For YouTube embed, we trust the iframe is visible — no block needed
   btn.style.display='none';
+  if(instruct) instruct.style.display='none';
   if(timer) timer.classList.remove('hidden');
+
   const circle=$(`timerCircle-${taskId}`), numEl=$(`timerNum-${taskId}`), secEl=$(`timerSec-${taskId}`);
   const circ=2*Math.PI*13;
   let remaining=timerSecs;
   if(circle) circle.style.strokeDashoffset='0';
-  const interval=setInterval(async()=>{
+
+  const interval=setInterval(()=>{
     remaining--;
     const pct=1-(remaining/timerSecs);
     if(circle) circle.style.strokeDashoffset=`${circ*pct}`;
@@ -1498,7 +1678,12 @@ function startTask(taskId, type, reward, timerSecs){
       clearInterval(interval);
       delete activeTimers[taskId];
       if(timer) timer.classList.add('hidden');
-      await completeTask(taskId, type, reward);
+      // Show Claim button — user must tap it to get reward (one final confirmation)
+      const claimWrap=$(`claimWrap-${taskId}`);
+      if(claimWrap){
+        claimWrap.classList.remove('hidden');
+        claimWrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+      }
     }
   },1000);
   activeTimers[taskId]=interval;
@@ -1949,7 +2134,26 @@ async function loadAdminStats(){
     set('aTotal',users.length); set('aBalance',tb.toLocaleString());
     set('aDeposits',dep.toLocaleString()); set('aWithdraws',wd.toLocaleString());
     set('aActive',act); set('aPending',pw.size);
+    // Show admin's referral/invite link
+    const refEl=$('adminRefCodeDisplay');
+    if(refEl&&CU&&CU.referralCode){
+      const link=`${location.origin}${location.pathname}?ref=${CU.referralCode}`;
+      refEl.textContent=link;
+      refEl._link=link;
+    }
   }catch(e){}
+}
+
+function copyAdminRefLink(){
+  const el=$('adminRefCodeDisplay');
+  const link=el?el._link||el.textContent:'';
+  navigator.clipboard.writeText(link).then(()=>toast('Link copied!','📋','success'));
+}
+function shareAdminRefLink(){
+  const el=$('adminRefCodeDisplay');
+  const link=el?el._link||el.textContent:'';
+  if(navigator.share) navigator.share({title:'Join VaultPro',text:'Join Uganda\'s premier investment platform!',url:link});
+  else copyAdminRefLink();
 }
 
 async function loadAdminUsers(){
@@ -1966,28 +2170,29 @@ function updateTaskForm(){
   const type=$('taskType').value;
   const urlGroup=$('taskUrlGroup'), readGroup=$('taskReadingGroup');
   const urlLabel=$('taskUrlLabel');
-  if(type==='reading'){ urlGroup.classList.add('hidden'); readGroup.classList.remove('hidden'); }
-  else{ urlGroup.classList.remove('hidden'); readGroup.classList.add('hidden'); }
-  if(type==='youtube'||type==='youtube_sub') urlLabel.textContent='YouTube URL';
+  // visit/tiktok/youtube/youtube_sub all use a URL field
+  urlGroup.classList.remove('hidden');
+  if(readGroup) readGroup.classList.add('hidden');
+  if(type==='youtube') urlLabel.textContent='YouTube Video URL';
+  else if(type==='youtube_sub') urlLabel.textContent='YouTube Channel URL (e.g. https://youtube.com/@channelname)';
   else if(type==='tiktok') urlLabel.textContent='TikTok Video URL';
+  else if(type==='visit') urlLabel.textContent='Website URL';
 }
 
 async function addTask(){
   const type=$('taskType').value, title=$('taskTitle').value.trim(), desc=$('taskDesc').value.trim();
-  const url=$('taskUrl').value.trim(), reading=$('taskReading').value.trim();
+  const url=$('taskUrl').value.trim();
   const timer=parseInt($('taskTimer').value)||60;
   if(!title){ toast('Please enter a task title','⚠️','warning'); return; }
-  if(type!=='reading'&&!url){ toast('Please enter a URL','⚠️','warning'); return; }
-  if(type==='reading'&&!reading){ toast('Please enter reading content','⚠️','warning'); return; }
+  if(!url){ toast('Please enter a URL','⚠️','warning'); return; }
   try{
     await db.collection('tasks').add({
-      type,title,description:desc,url:url||'',readingContent:reading||'',
-      // No fixed reward — each user earns based on their vault plan's taskReward
-      reward:null,
+      type,title,description:desc,url,
+      reward:null, // reward determined by user's vault plan
       timerSeconds:timer,isActive:true,createdAt:new Date().toISOString()
     });
     toast('Task added!','✅','success');
-    ['taskTitle','taskDesc','taskUrl','taskReading'].forEach(id=>{ const e=$(id); if(e) e.value=''; });
+    ['taskTitle','taskDesc','taskUrl'].forEach(id=>{ const e=$(id); if(e) e.value=''; });
     $('taskTimer').value='60';
     loadAdminTasks();
   }catch(e){ toast('Failed: '+e.message,'❌','error'); }
