@@ -863,6 +863,7 @@ body{padding-top:env(safe-area-inset-top)}
     <button class="admin-tab" onclick="showAdmin('deposits',this)">💰 Deposits</button>
     <button class="admin-tab" onclick="showAdmin('withdrawals',this)">💸 Withdrawals</button>
     <button class="admin-tab" onclick="showAdmin('transactions',this)">📋 Transactions</button>
+    <button class="admin-tab" onclick="showAdmin('sacco',this)">🏦 SACCO</button>
   </div>
   <!-- Desktop sidebar nav -->
   <nav id="adminSideNav" style="display:none">
@@ -873,6 +874,7 @@ body{padding-top:env(safe-area-inset-top)}
     <button class="side-nav-item" onclick="showAdmin('deposits',this)"><span class="side-nav-icon">💰</span><span class="side-nav-label">Deposits</span></button>
     <button class="side-nav-item" onclick="showAdmin('withdrawals',this)"><span class="side-nav-icon">💸</span><span class="side-nav-label">Withdrawals</span></button>
     <button class="side-nav-item" onclick="showAdmin('transactions',this)"><span class="side-nav-icon">📋</span><span class="side-nav-label">Transactions</span></button>
+    <button class="side-nav-item" onclick="showAdmin('sacco',this)"><span class="side-nav-icon">🏦</span><span class="side-nav-label">SACCO</span></button>
     <div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--border-s)">
       <button class="btn btn-outline" style="width:100%;padding:10px;font-size:.8rem" onclick="logout()">Sign Out</button>
     </div>
@@ -950,6 +952,22 @@ body{padding-top:env(safe-area-inset-top)}
         <div style="padding:14px;font-weight:700;border-bottom:1px solid var(--border-s)">All Transactions</div>
         <div style="overflow-x:auto"><table><thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead><tbody id="adminTxList"><tr><td colspan="4" style="text-align:center;color:var(--muted)">Loading…</td></tr></tbody></table></div>
       </div>
+    </div>
+
+    <!-- ADMIN SACCO PANEL -->
+    <div id="adminSacco" class="hidden">
+      <div style="font-weight:700;margin-bottom:4px">🏦 SACCO Plans</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:14px">Review all active plans. Revoke any plan purchased with vault principal (not earnings) — funds are returned to the user's balance.</div>
+
+      <!-- Filter bar -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-surface" style="padding:7px 14px;font-size:.78rem" onclick="loadAdminSacco('all')">All</button>
+        <button class="btn btn-surface" style="padding:7px 14px;font-size:.78rem" onclick="loadAdminSacco('active')">Active</button>
+        <button class="btn btn-surface" style="padding:7px 14px;font-size:.78rem" onclick="loadAdminSacco('invalid')">⚠️ Suspicious</button>
+        <button class="btn btn-surface" style="padding:7px 14px;font-size:.78rem" onclick="loadAdminSacco('revoked')">Revoked</button>
+      </div>
+
+      <div id="adminSaccoList" style="color:var(--muted)">Loading…</div>
     </div>
   </div>
 </div>
@@ -1400,6 +1418,8 @@ function showUserDashboard(){
   updateUserStats();
   loadLeaderboard();
   renderCareerLevels();
+  // Silently auto-revoke any SACCO plans bought with vault principal
+  autoRevokeBadSaccoPlans();
   startWeekTimer();
   listenForWithdrawalApproval();
 }
@@ -1432,7 +1452,7 @@ function showSection(s){
 }
 
 function showAdmin(s, btn){
-  ['stats','users','tasks','deposits','withdrawals','transactions'].forEach(x=>{
+  ['stats','users','tasks','deposits','withdrawals','transactions','sacco'].forEach(x=>{
     const e=$('admin'+x.charAt(0).toUpperCase()+x.slice(1));
     if(e) e.classList.add('hidden');
   });
@@ -1448,6 +1468,7 @@ function showAdmin(s, btn){
   else if(s==='deposits') loadAdminDeposits();
   else if(s==='withdrawals') loadAdminWithdrawals();
   else if(s==='transactions') loadAdminTransactions();
+  else if(s==='sacco') loadAdminSacco('all');
   else loadAdminStats();
 }
 
@@ -2488,7 +2509,26 @@ async function doSaccoPurchase(p, amt, sourceCategory, categoryName){
   const btn = $('saccoConfirmBtn');
   if(btn){ btn.disabled=true; btn.textContent='Processing…'; }
   try{
-    // Deduct from user balance
+    // ── STRICT SOURCE CHECK ──
+    // Re-fetch live category balances to prevent spending vault principal
+    const liveBalances = await getCatBalances(CU.id);
+    const allowedKeys = ['depositEarnings','referralEarnings','taskEarnings','vaultEarnings','saccoReturn'];
+    if(!allowedKeys.includes(sourceCategory)){
+      toast('Invalid payment source. Only earnings may be used for SACCO.','❌','error');
+      return;
+    }
+    const catBal = liveBalances[sourceCategory]||0;
+    if(catBal < amt){
+      toast(`Insufficient ${categoryName} balance. You have ${catBal.toLocaleString()} UGX available.`,'❌','error');
+      return;
+    }
+    // Also verify raw balance is sufficient (sanity check)
+    if((CU.balance||0) < amt){
+      toast('Insufficient total balance.','❌','error');
+      return;
+    }
+
+    // Deduct from user total balance
     await db.collection('users').doc(CU.id).update({balance:FS.increment(-amt)});
     CU.balance = (CU.balance||0)-amt;
 
@@ -2497,7 +2537,7 @@ async function doSaccoPurchase(p, amt, sourceCategory, categoryName){
     const withdrawDate = nextMonday(matDate);
     const profit = Math.floor(amt*p.rate);
 
-    const saccoDoc = await db.collection('saccoPlans').add({
+    await db.collection('saccoPlans').add({
       userId: CU.id,
       userName: CU.fullName,
       planId: p.id,
@@ -2507,23 +2547,32 @@ async function doSaccoPurchase(p, amt, sourceCategory, categoryName){
       principal: amt,
       profit: profit,
       totalReturn: amt+profit,
-      sourceCategory, categoryName,
+      sourceCategory,
+      categoryName,
       startDate: start.toISOString(),
       maturityDate: matDate.toISOString(),
       withdrawableFrom: withdrawDate.toISOString(),
       status: 'active',
+      // Flag to verify this used legitimate earnings
+      sourceCategoryVerified: true,
+      sourceCategoryBalanceAtPurchase: catBal,
     });
 
+    // Record the debit against the correct earnings category
     await db.collection('transactions').add({
-      userId:CU.id, userName:CU.fullName,
-      type:'sacco_deposit', amount:amt,
-      description:`SACCO ${p.label} savings plan`,
-      planId:p.id, sourceCategory,
-      date:start.toISOString()
+      userId: CU.id,
+      userName: CU.fullName,
+      type: 'sacco_deposit',
+      amount: amt,
+      description: `SACCO ${p.label} savings plan`,
+      planId: p.id,
+      sourceCategory,
+      categoryName,
+      date: start.toISOString()
     });
 
     clearStatsCache();
-    toast(`${p.emoji} SACCO ${p.label} activated! ${amt.toLocaleString()} UGX locked in.`,'💰','success',6000);
+    toast(`${p.emoji} SACCO ${p.label} activated! ${amt.toLocaleString()} UGX from ${categoryName} locked in.`,'💰','success',6000);
     cancelSaccoSelect();
     loadSacco();
   }catch(e){
@@ -3274,6 +3323,176 @@ function listenForWithdrawalApproval(){
         }
       });
     });
+}
+
+// ============================================================
+// AUTO-REVOKE — runs on every login, voids any SACCO plan
+// that was purchased using vault principal (not earnings)
+// ============================================================
+async function autoRevokeBadSaccoPlans(){
+  if(!CU||!CU.id) return;
+  try{
+    const snap = await db.collection('saccoPlans')
+      .where('userId','==',CU.id)
+      .where('status','==','active')
+      .get();
+    if(snap.empty) return;
+
+    const VALID = ['depositEarnings','referralEarnings','taskEarnings','vaultEarnings','saccoReturn'];
+    const badPlans = snap.docs.filter(d=>{
+      const src = d.data().sourceCategory;
+      // Invalid if: no source, source is raw balance, or source is vault_purchase
+      return !src || !VALID.includes(src) || src === 'vaultBalance' || src === 'vault_purchase';
+    });
+
+    if(!badPlans.length) return;
+
+    for(const doc of badPlans){
+      const plan = doc.data();
+      const principal = plan.principal || 0;
+
+      // Revoke the plan
+      await db.collection('saccoPlans').doc(doc.id).update({
+        status: 'revoked',
+        revokedAt: new Date().toISOString(),
+        revokedBy: 'system_auto',
+        revokeReason: 'Purchased with vault principal — only earnings allowed',
+      });
+
+      // Refund principal to user
+      await db.collection('users').doc(CU.id).update({
+        balance: FS.increment(principal)
+      });
+      CU.balance = (CU.balance||0) + principal;
+
+      // Log the reversal
+      await db.collection('transactions').add({
+        userId: CU.id,
+        userName: CU.fullName,
+        type: 'sacco_revoke_refund',
+        amount: principal,
+        description: 'SACCO plan auto-revoked: vault principal cannot fund SACCO. Principal refunded.',
+        date: new Date().toISOString()
+      });
+
+      // Remove the erroneous sacco_deposit transaction so category balances are clean
+      const badTxSnap = await db.collection('transactions')
+        .where('userId','==',CU.id)
+        .where('type','==','sacco_deposit')
+        .where('planId','==',plan.planId)
+        .limit(1).get();
+      if(!badTxSnap.empty){
+        await db.collection('transactions').doc(badTxSnap.docs[0].id).delete();
+      }
+
+      console.log(`[Auto-revoke] SACCO plan ${doc.id} revoked, ${principal} UGX refunded`);
+    }
+
+    if(badPlans.length > 0){
+      // Notify user
+      toast(
+        `${badPlans.length} SACCO plan(s) revoked: only deposit, referral, task, and vault profit earnings can fund SACCO. Your principal has been refunded.`,
+        '⚠️','warning', 9000
+      );
+      clearStatsCache();
+      updateUserStats(true);
+    }
+  }catch(e){
+    console.error('autoRevokeBadSaccoPlans error:', e);
+  }
+}
+
+// ============================================================
+// ADMIN SACCO — Review and Revoke fraudulent plans
+// ============================================================
+// Legitimate source categories for SACCO (no vault_purchase principal)
+const SACCO_VALID_SOURCES = ['depositEarnings','referralEarnings','taskEarnings','vaultEarnings','saccoReturn'];
+
+async function loadAdminSacco(filter='all'){
+  const el=$('adminSaccoList');
+  if(!el) return;
+  el.innerHTML='<div style="color:var(--muted);padding:10px">Loading…</div>';
+  try{
+    let q=db.collection('saccoPlans').orderBy('startDate','desc');
+    const snap=await q.get();
+    if(snap.empty){ el.innerHTML='<p style="color:var(--muted)">No SACCO plans found.</p>'; return; }
+
+    // Categorise: suspicious = sourceCategory not in valid list OR not set
+    const all=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const filtered = filter==='all' ? all
+      : filter==='active' ? all.filter(p=>p.status==='active')
+      : filter==='invalid' ? all.filter(p=>!SACCO_VALID_SOURCES.includes(p.sourceCategory)||!p.sourceCategory||p.sourceCategory==='vaultBalance')
+      : filter==='revoked' ? all.filter(p=>p.status==='revoked')
+      : all;
+
+    if(!filtered.length){ el.innerHTML='<p style="color:var(--muted)">No plans in this filter.</p>'; return; }
+
+    const isInvalid = p => !SACCO_VALID_SOURCES.includes(p.sourceCategory)||!p.sourceCategory||p.sourceCategory==='vaultBalance';
+
+    el.innerHTML=filtered.map(p=>{
+      const bad=isInvalid(p)&&p.status==='active';
+      const matDate=new Date(p.maturityDate);
+      const srcLabel=p.categoryName||p.sourceCategory||'Unknown';
+      return `<div class="dep-card" style="${bad?'border-color:rgba(232,68,90,.4);background:rgba(232,68,90,.04)':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:700">${p.userName||'—'}</div>
+            <div style="font-size:.73rem;color:var(--muted)">${p.planLabel} · ${p.days} days · Started ${new Date(p.startDate).toLocaleDateString()}</div>
+            <div style="font-size:.72rem;margin-top:3px">
+              Source: <strong style="color:${SACCO_VALID_SOURCES.includes(p.sourceCategory)?'var(--green)':'var(--red)'}">${srcLabel}</strong>
+              ${bad?'<span style="color:var(--red);margin-left:6px;font-weight:700">⚠️ INVALID SOURCE</span>':''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;color:var(--gold)">${(p.principal||0).toLocaleString()} UGX</div>
+            <div style="font-size:.7rem;color:var(--muted)">+${(p.profit||0).toLocaleString()} profit</div>
+            <span class="badge ${p.status==='active'?'badge-success':p.status==='revoked'?'badge-error':'badge-warning'}">${p.status}</span>
+          </div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:${p.status==='active'?'10px':'0'}">
+          Matures: ${matDate.toLocaleDateString()} · Withdrawable: ${new Date(p.withdrawableFrom).toLocaleDateString()}
+        </div>
+        ${p.status==='active'?`<div style="display:flex;gap:7px">
+          ${bad?`<button class="btn btn-red" style="flex:1;padding:8px;font-size:.8rem;font-weight:700"
+            onclick="revokeSaccoPlan('${p.id}','${p.userId}',${p.principal},'${(p.userName||'').replace(/'/g,"\'")}')">
+            🚫 Revoke &amp; Refund
+          </button>`:''}
+          <button class="btn btn-surface" style="flex:1;padding:8px;font-size:.8rem"
+            onclick="revokeSaccoPlan('${p.id}','${p.userId}',${p.principal},'${(p.userName||'').replace(/'/g,"\'")}')">
+            Revoke Plan
+          </button>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML=`<p style="color:var(--red)">Error: ${e.message}</p>`; }
+}
+
+async function revokeSaccoPlan(planId, userId, principal, userName){
+  if(!confirm(`Revoke this SACCO plan and refund ${(+principal).toLocaleString()} UGX to ${userName}?`)) return;
+  try{
+    // Void the plan
+    await db.collection('saccoPlans').doc(planId).update({
+      status:'revoked',
+      revokedAt:new Date().toISOString(),
+      revokedBy:'admin',
+      revokeReason:'Invalid source — vault principal used instead of earnings',
+    });
+    // Refund the principal back to user balance
+    await db.collection('users').doc(userId).update({balance:FS.increment(+principal)});
+    // Record the reversal transaction
+    await db.collection('transactions').add({
+      userId, type:'sacco_revoke_refund',
+      amount:+principal,
+      description:`SACCO plan revoked by admin — principal refunded`,
+      date:new Date().toISOString()
+    });
+    // Notify user
+    await sendNotif(userId,'withdrawal_rejected',
+      `Your SACCO savings plan has been reviewed and revoked by admin. Your principal of ${(+principal).toLocaleString()} UGX has been refunded to your balance. Only earnings (deposits, referrals, task rewards, vault profits) may be used for SACCO plans.`
+    );
+    toast(`Plan revoked. ${(+principal).toLocaleString()} UGX refunded to ${userName}.`,'✅','success',6000);
+    loadAdminSacco('all');
+  }catch(e){ toast('Revoke failed: '+e.message,'❌','error'); }
 }
 
 // ============================================================
