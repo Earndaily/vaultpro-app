@@ -1500,22 +1500,29 @@ function clearStatsCache(){ statsCache={data:null,ts:0,ttl:30000}; }
 async function getCatBalances(uid){
   try{
     const snap=await db.collection('transactions').where('userId','==',uid).get();
-    const b={taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0,weeklyPrize:0};
+    const b={taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0,weeklyPrize:0,saccoReturn:0};
     snap.docs.forEach(d=>{
       const t=d.data(),a=t.amount||0;
       if(t.type==='task_completion') b.taskEarnings+=a;
       else if(t.type==='referral') b.referralEarnings+=a;
       else if(t.type==='weekly_prize') b.weeklyPrize+=a;
+      // vault_maturity = profit only (30% monthly return credited to balance)
       else if(t.type==='vault_maturity') b.vaultEarnings+=a;
+      // vault_purchase is NOT counted as spendable earnings - it's locked principal
       else if(t.type==='deposit') b.depositEarnings+=a;
+      else if(t.type==='sacco_return') b.saccoReturn+=a;
       else if(['withdrawal','withdrawal_approved'].includes(t.type)){
         const k=t.sourceCategory||'depositEarnings';
         b[k]=Math.max(0,(b[k]||0)-Math.abs(a));
       }
+      // sacco_deposit deducts from the source category it used
+      else if(t.type==='sacco_deposit'&&t.sourceCategory){
+        b[t.sourceCategory]=Math.max(0,(b[t.sourceCategory]||0)-Math.abs(a));
+      }
     });
     Object.keys(b).forEach(k=>{b[k]=Math.max(0,b[k])});
     return b;
-  }catch(e){ return {taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0,weeklyPrize:0}; }
+  }catch(e){ return {taskEarnings:0,referralEarnings:0,vaultEarnings:0,depositEarnings:0,weeklyPrize:0,saccoReturn:0}; }
 }
 
 async function getVaultLevel(uid){
@@ -1664,10 +1671,10 @@ async function purchaseVault(){
 async function showCatSelectModal(amount, callback){
   const b=await getCatBalances(CU.id);
   const cats=[
-    {key:'depositEarnings',label:'💰 Deposits',bal:b.depositEarnings},
-    {key:'referralEarnings',label:'👥 Referral',bal:b.referralEarnings},
-    {key:'taskEarnings',label:'✅ Task',bal:b.taskEarnings},
-    {key:'vaultEarnings',label:'🏦 Vault',bal:b.vaultEarnings},
+    {key:'depositEarnings',label:'💰 Deposit Funds',bal:b.depositEarnings},
+    {key:'referralEarnings',label:'👥 Referral Earnings',bal:b.referralEarnings},
+    {key:'taskEarnings',label:'✅ Task Earnings',bal:b.taskEarnings},
+    {key:'vaultEarnings',label:'🏦 Vault Profits',bal:b.vaultEarnings},
   ];
   const modal=$('payModal');
   $('payModalDesc').textContent=`Select earnings source for ${amount.toLocaleString()} UGX:`;
@@ -1965,10 +1972,12 @@ function startCountdownTimer(taskId, type, reward, timerSecs, useYTPause){
   const circ=2*Math.PI*13;
   let remaining=timerSecs;
   if(circle) circle.style.strokeDashoffset='0';
-  ytTimerPaused[taskId]= useYTPause ? true : false; // YT starts paused until play event
+  ytTimerPaused[taskId]= useYTPause ? true : false;
+
+  // Sync in-app browser at start
+  if(type==='tiktok'||type==='visit') updateInAppBrowserProgress(remaining, timerSecs);
 
   const interval=setInterval(()=>{
-    // If YT video is paused, freeze timer
     if(useYTPause && ytTimerPaused[taskId]) return;
 
     remaining--;
@@ -1976,17 +1985,20 @@ function startCountdownTimer(taskId, type, reward, timerSecs, useYTPause){
     if(circle) circle.style.strokeDashoffset=`${circ*pct}`;
     if(numEl) numEl.textContent=remaining;
     if(secEl) secEl.textContent=`${remaining}s`;
+
+    // Keep in-app browser progress in sync
+    if(type==='tiktok'||type==='visit') updateInAppBrowserProgress(remaining, timerSecs);
+
     if(remaining<=0){
       clearInterval(interval);
       delete activeTimers[taskId];
       if(timer) timer.classList.add('hidden');
-      // Stop YT player if still running
       if(ytPlayers[taskId]&&ytPlayers[taskId].pauseVideo) ytPlayers[taskId].pauseVideo();
-      // Show claim button
+      // Show claim button behind the overlay - user will see it when they close
       const claimWrap=$(`claimWrap-${taskId}`);
       if(claimWrap){
         claimWrap.classList.remove('hidden');
-        claimWrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+        // Don't scroll yet - user is in the overlay; they'll close and see it
       }
     }
   },1000);
@@ -1995,29 +2007,103 @@ function startCountdownTimer(taskId, type, reward, timerSecs, useYTPause){
 
 // ── In-App Browser overlay (keeps user in the app) ──
 function showInAppBrowser(url, taskId){
-  // Remove any existing
   const existing=document.getElementById('inAppBrowser');
   if(existing) existing.remove();
 
   const overlay=document.createElement('div');
   overlay.id='inAppBrowser';
-  overlay.style.cssText=`position:fixed;inset:0;z-index:5000;background:var(--bg);display:flex;flex-direction:column`;
+  overlay.style.cssText='position:fixed;inset:0;z-index:5000;background:#0A0C10;display:flex;flex-direction:column;opacity:0;transform:translateY(20px);transition:opacity .3s,transform .3s';
+
   overlay.innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--border-s);flex-shrink:0">
-      <button onclick="closeInAppBrowser()" style="background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px">✕</button>
-      <div style="flex:1;background:var(--bg3);border-radius:20px;padding:7px 14px;font-size:.75rem;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${url}</div>
-      <a href="${url}" target="_blank" style="color:var(--gold);font-size:.75rem;font-weight:700;text-decoration:none;white-space:nowrap">Open ↗</a>
+    <div id="iab-topbar" style="background:#111318;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px">
+        <button id="iab-close-btn" disabled onclick="closeInAppBrowser()"
+          title="Complete the timer to unlock"
+          style="width:44px;height:44px;border-radius:50%;border:2.5px solid #E8445A;
+                 background:rgba(232,68,90,.12);color:#E8445A;font-size:1.2rem;font-weight:900;
+                 cursor:not-allowed;display:flex;align-items:center;justify-content:center;
+                 flex-shrink:0;transition:all .3s;opacity:.35">&#x2715;</button>
+        <div style="flex:1;background:#181C24;border-radius:20px;padding:6px 12px;
+                    font-size:.72rem;color:#7E8899;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${url}</div>
+        <div id="iab-badge" style="background:#C9A84C;color:#0A0C10;font-family:monospace;
+                                    font-size:.82rem;font-weight:800;padding:5px 11px;
+                                    border-radius:20px;flex-shrink:0;min-width:54px;text-align:center">--s</div>
+      </div>
+      <div style="height:4px;background:rgba(255,255,255,.06)">
+        <div id="iab-progress" style="height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96B);width:0%;transition:width 1s linear;border-radius:0 2px 2px 0"></div>
+      </div>
+      <div id="iab-status" style="padding:5px 14px 8px;font-size:.7rem;color:#7E8899;text-align:center">
+        ⏳ Stay on this page until the timer completes to earn your reward
+      </div>
     </div>
-    <iframe src="${url}" style="flex:1;border:none;width:100%" allow="autoplay"></iframe>
-    <div style="padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border-s);text-align:center;flex-shrink:0">
-      <div style="font-size:.74rem;color:var(--muted)">⏱️ Timer is running while you browse. Close when done.</div>
+    <iframe src="${url}" style="flex:1;border:none;width:100%;background:#fff"
+            allow="autoplay;clipboard-write"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    <div style="background:#111318;border-top:1px solid rgba(255,255,255,.07);padding:10px 14px;text-align:center;flex-shrink:0">
+      <div id="iab-bottom" style="font-size:.74rem;color:#7E8899">&#x23F1;&#xFE0F; Do not close — timer is counting down</div>
     </div>`;
+
   document.body.appendChild(overlay);
+  requestAnimationFrame(()=>{ overlay.style.opacity='1'; overlay.style.transform='translateY(0)'; });
+}
+
+function updateInAppBrowserProgress(remaining, totalSecs){
+  const badge=document.getElementById('iab-badge');
+  const progress=document.getElementById('iab-progress');
+  const closeBtn=document.getElementById('iab-close-btn');
+  const status=document.getElementById('iab-status');
+  const bottom=document.getElementById('iab-bottom');
+  if(!badge) return;
+
+  const pct=Math.min(100,((totalSecs-remaining)/totalSecs)*100);
+  if(progress) progress.style.width=pct+'%';
+
+  if(remaining>0){
+    badge.textContent=remaining+'s';
+    const col=remaining<=10?'#E8445A':remaining<=30?'#f59e0b':'#C9A84C';
+    badge.style.background=col;
+    badge.style.color=remaining<=10?'#fff':'#0A0C10';
+    if(progress) progress.style.background=`linear-gradient(90deg,${col},#E8C96B)`;
+  } else {
+    // Timer done - UNLOCK the close button
+    badge.textContent='Done!';
+    badge.style.background='#1DB87F';
+    badge.style.color='#fff';
+    if(progress){ progress.style.width='100%'; progress.style.background='#1DB87F'; }
+
+    if(closeBtn){
+      closeBtn.disabled=false;
+      closeBtn.style.cursor='pointer';
+      closeBtn.style.opacity='1';
+      closeBtn.style.background='#E8445A';
+      closeBtn.style.color='#fff';
+      closeBtn.style.border='2.5px solid #E8445A';
+      closeBtn.style.boxShadow='0 0 0 6px rgba(232,68,90,.35),0 0 20px rgba(232,68,90,.5)';
+      closeBtn.style.animation='pulse 1s ease-in-out infinite';
+      closeBtn.title='Task complete! Tap to close';
+      // Pulse attention
+      closeBtn.animate([
+        {transform:'scale(1)',boxShadow:'0 0 0 4px rgba(232,68,90,.4)'},
+        {transform:'scale(1.12)',boxShadow:'0 0 0 8px rgba(232,68,90,.0)'},
+        {transform:'scale(1)',boxShadow:'0 0 0 4px rgba(232,68,90,.4)'}
+      ],{duration:900,iterations:Infinity});
+    }
+    if(status){ status.style.color='#1DB87F'; status.textContent='Task complete! Tap the ✕ to close and claim your reward.'; }
+    if(bottom){ bottom.style.color='#1DB87F'; bottom.textContent='Your reward is ready - close this browser to claim it!'; }
+  }
 }
 
 function closeInAppBrowser(){
+  const closeBtn=document.getElementById('iab-close-btn');
+  // Hard block - cannot close while timer is running
+  if(closeBtn && closeBtn.disabled) return;
   const el=document.getElementById('inAppBrowser');
-  if(el) el.remove();
+  if(el){
+    el.style.opacity='0';
+    el.style.transform='translateY(20px)';
+    el.style.transition='opacity .25s,transform .25s';
+    setTimeout(()=>el.remove(),260);
+  }
 }
 
 const claimingTasks = new Set(); // Prevent double-claim
@@ -2281,7 +2367,8 @@ async function loadSacco(){
 
     // Show available balance
     const b = await getCatBalances(CU.id);
-    const total = (b.depositEarnings||0)+(b.taskEarnings||0)+(b.referralEarnings||0)+(b.vaultEarnings||0);
+    // Available = deposits + referral + task earnings + vault PROFITS (not vault principal)
+    const total = (b.depositEarnings||0)+(b.taskEarnings||0)+(b.referralEarnings||0)+(b.vaultEarnings||0)+(b.saccoReturn||0);
     set('saccoBal', total.toLocaleString());
 
     // Check for any SACCO that finished countdown but not yet processed
