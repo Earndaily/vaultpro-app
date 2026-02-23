@@ -1226,7 +1226,7 @@ async function init(){
           CU={id:user.uid,...d.data()};
           $('loadingScreen').classList.add('hidden');
           if(CU.isAdmin) showAdminDashboard();
-          else{ showUserDashboard(); initNotifListener(); }
+          else{ showUserDashboard(); initNotifListener(); initUserDocListener(); }
           return;
         }
       }catch(e){ console.error(e); }
@@ -1517,8 +1517,13 @@ async function getCatBalances(uid){
         case 'weekly_prize':
           b.referralEarnings+=a; break;
         case 'sacco_return':
-        case 'sacco_revoke_refund':
+          // Only credited here after plan MATURES and user claims (principal+profit)
           b.saccoEarnings+=a; break;
+        case 'sacco_revoke_refund':
+          // Revoke = undo; money returns to the original source bucket it came from
+          { const key=resolveSrc(t.sourceCategory);
+            b[key]=(b[key]||0)+a; }
+          break;
         case 'vault_purchase':
         case 'sacco_deposit':
         case 'withdrawal':
@@ -3068,6 +3073,34 @@ async function sendNotif(uid, type, msg){
   }catch(e){}
 }
 
+// Real-time listener for user balance changes
+// This fires immediately when admin approves deposit, task completes, etc.
+let _userDocUnsubscribe = null;
+
+function initUserDocListener(){
+  if(!CU?.id) return;
+  if(_userDocUnsubscribe) _userDocUnsubscribe(); // clean up previous
+  _userDocUnsubscribe = db.collection('users').doc(CU.id).onSnapshot(async snap=>{
+    if(!snap.exists) return;
+    const fresh = snap.data();
+    // Only re-run stats if balance or a key field actually changed
+    if(fresh.balance !== CU.balance || fresh.isActivated !== CU.isActivated){
+      CU = {id:CU.id, ...fresh};
+      // Force fresh category balances (bypass cache)
+      clearStatsCache();
+      const [vs, rs, cb] = await Promise.all([
+        db.collection('users').doc(CU.id).collection('vaults').get(),
+        db.collection('users').doc(CU.id).collection('referrals').get(),
+        getCatBalances(CU.id),
+      ]);
+      const data={balance:CU.balance||0, refs:rs.size, cb, user:CU, vaults:vs.docs.map(d=>d.data())};
+      statsCache={data, ts:Date.now(), ttl:30000};
+      applyStats(data);
+      if(CU.isActivated) { const ab=$('activeBadge'); if(ab) ab.classList.remove('hidden'); }
+    }
+  }, err=>console.warn('User doc listener error:', err.message));
+}
+
 function initNotifListener(){
   if(!CU) return;
   // Only use simple where queries to avoid composite index requirement
@@ -3082,7 +3115,6 @@ function initNotifListener(){
         else b.classList.add('hidden');
       }
     }, err=>{
-      // Fallback: poll every 60s if realtime fails
       console.warn('Notif listener failed, using polling:', err.message);
       setInterval(async()=>{
         try{
@@ -3587,7 +3619,8 @@ async function autoRevokeBadSaccoPlans(){
         userName: CU.fullName,
         type: 'sacco_revoke_refund',
         amount: principal,
-        description: 'SACCO plan auto-revoked: vault principal cannot fund SACCO. Principal refunded.',
+        sourceCategory: plan.sourceCategory||'depositEarnings',
+        description: 'SACCO plan auto-revoked: principal refunded to original source bucket.',
         date: new Date().toISOString()
       });
 
@@ -3696,10 +3729,12 @@ async function revokeSaccoPlan(planId, userId, principal, userName){
     // Refund the principal back to user balance
     await db.collection('users').doc(userId).update({balance:FS.increment(+principal)});
     // Record the reversal transaction
+    // Store the originalSourceCategory so getCatBalances can refund to the right bucket
     await db.collection('transactions').add({
       userId, type:'sacco_revoke_refund',
       amount:+principal,
-      description:`SACCO plan revoked by admin — principal refunded`,
+      sourceCategory: planDoc?.sourceCategory||'depositEarnings',
+      description:`SACCO plan revoked by admin — principal refunded to original source`,
       date:new Date().toISOString()
     });
     // Notify user
