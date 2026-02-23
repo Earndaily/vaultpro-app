@@ -1991,13 +1991,45 @@ function startCountdownTimer(taskId, type, reward, timerSecs, useYTPause){
 }
 
 // ── In-App Browser overlay (keeps user in the app) ──
+// Sites known to block iframes (X-Frame-Options: deny/sameorigin)
+const IFRAME_BLOCKED_DOMAINS = ['tiktok.com','www.tiktok.com','vm.tiktok.com','facebook.com','instagram.com','twitter.com','x.com'];
+
+function isIframeBlocked(url){
+  try{ return IFRAME_BLOCKED_DOMAINS.some(d=>new URL(url).hostname.includes(d)); }
+  catch(e){ return false; }
+}
+
 function showInAppBrowser(url, taskId){
   const existing=document.getElementById('inAppBrowser');
   if(existing) existing.remove();
 
+  const blocked=isIframeBlocked(url);
+  // For blocked sites (TikTok etc): open the link externally then show a waiting room overlay
+  if(blocked) window.open(url,'_blank');
+
   const overlay=document.createElement('div');
   overlay.id='inAppBrowser';
   overlay.style.cssText='position:fixed;inset:0;z-index:5000;background:#0A0C10;display:flex;flex-direction:column;opacity:0;transform:translateY(20px);transition:opacity .3s,transform .3s';
+
+  // Content area: iframe for embeddable sites, waiting room for blocked ones
+  const contentArea = blocked
+    ? `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;gap:16px">
+        <div style="font-size:3rem">🎵</div>
+        <div style="font-size:1rem;font-weight:700;color:#F0EDE6">TikTok opened in your browser</div>
+        <div style="font-size:.8rem;color:#7E8899;line-height:1.6;max-width:280px">
+          Watch the video in your browser tab, then return here.<br>
+          Your timer is counting down — <strong style="color:#C9A84C">don't close this screen.</strong>
+        </div>
+        <a href="${url}" target="_blank"
+           style="background:#fe2c55;color:#fff;border-radius:8px;padding:11px 22px;
+                  font-weight:700;font-size:.85rem;text-decoration:none;display:inline-block;margin-top:4px">
+          ↗ Reopen TikTok
+        </a>
+        <div style="font-size:.72rem;color:#4A5166;margin-top:8px">Timer continues running whether or not TikTok is open</div>
+      </div>`
+    : `<iframe src="${url}" style="flex:1;border:none;width:100%;background:#fff"
+               allow="autoplay;clipboard-write"
+               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>`;
 
   overlay.innerHTML=`
     <div id="iab-topbar" style="background:#111318;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0">
@@ -2018,14 +2050,12 @@ function showInAppBrowser(url, taskId){
         <div id="iab-progress" style="height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96B);width:0%;transition:width 1s linear;border-radius:0 2px 2px 0"></div>
       </div>
       <div id="iab-status" style="padding:5px 14px 8px;font-size:.7rem;color:#7E8899;text-align:center">
-        ⏳ Stay on this page until the timer completes to earn your reward
+        ⏳ ${blocked?'Video opened in browser — return here after watching':'Stay on this page until the timer completes'}
       </div>
     </div>
-    <iframe src="${url}" style="flex:1;border:none;width:100%;background:#fff"
-            allow="autoplay;clipboard-write"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    ${contentArea}
     <div style="background:#111318;border-top:1px solid rgba(255,255,255,.07);padding:10px 14px;text-align:center;flex-shrink:0">
-      <div id="iab-bottom" style="font-size:.74rem;color:#7E8899">&#x23F1;&#xFE0F; Do not close — timer is counting down</div>
+      <div id="iab-bottom" style="font-size:.74rem;color:#7E8899">Timer is running — wait for the ✕ button to unlock</div>
     </div>`;
 
   document.body.appendChild(overlay);
@@ -2135,13 +2165,34 @@ async function completeTask(taskId, type, reward){
 // REFERRALS
 // ============================================================
 async function loadReferrals(){
+  const rl=$('referralsList');
+  if(rl) rl.innerHTML='<div style="text-align:center;color:var(--muted);padding:14px">Loading...</div>';
   try{
-    const snap=await db.collection('users').doc(CU.id).collection('referrals').get();
-    const refs=snap.docs.map(d=>d.data());
-    const total=refs.reduce((s,r)=>s+(r.earnings||0),0);
-    set('totalRefEarnings',total.toLocaleString());
+    // Set referral link
     const link=$('userRefLink');
-    if(link) link.textContent=`${location.origin}${location.pathname}?ref=${CU.referralCode}`;
+    if(link) link.textContent=`${location.origin}${location.pathname}?ref=${CU.referralCode||''}`;
+
+    // Fetch referrals subcollection AND referral transactions in parallel
+    const [refSnap, txSnap] = await Promise.all([
+      db.collection('users').doc(CU.id).collection('referrals').get(),
+      db.collection('transactions').where('userId','==',CU.id).where('type','==','referral').get()
+    ]);
+
+    const refs = refSnap.docs.map(d=>d.data());
+
+    // Build earnings map from actual transactions (source of truth)
+    const earnByUser={};
+    txSnap.docs.forEach(d=>{
+      const t=d.data();
+      // transactions have description like "10% bonus from John Doe - Beginner"
+      // We match by looking at the description or referredUserId field
+      const uid=t.referredUserId||t.fromUserId||null;
+      if(uid){ earnByUser[uid]=(earnByUser[uid]||0)+(t.amount||0); }
+    });
+    const totalRefEarnings=txSnap.docs.reduce((s,d)=>s+(d.data().amount||0),0);
+    set('totalRefEarnings',totalRefEarnings.toLocaleString());
+
+    // Level card
     const lvl=getRefLevel(refs.length);
     const ni=REF_LEVELS.findIndex(l=>l.title===lvl.title)+1;
     const next=ni<REF_LEVELS.length?REF_LEVELS[ni]:null;
@@ -2149,16 +2200,57 @@ async function loadReferrals(){
     if(lc){
       let progress='';
       if(next){
-        const pct=Math.min(100,((refs.length-lvl.min)/(next.min-lvl.min))*100);
-        progress=`<div style="margin-top:10px"><div style="font-size:.72rem;color:var(--muted);margin-bottom:5px">To ${next.icon} ${next.title}: ${refs.length}/${next.min}</div><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>`;
+        const pct=Math.min(100,((refs.length-(lvl.min||0))/((next.min||1)-(lvl.min||0)))*100);
+        progress=`<div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:5px">
+            <span>${refs.length} referrals</span><span>Next: ${next.icon} ${next.title} at ${next.min}</span>
+          </div>
+          <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
+        </div>`;
       }
-      lc.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="font-size:1.8rem">${lvl.icon}</div><div><div style="font-weight:700">${lvl.title}</div><div style="font-size:.78rem;color:var(--muted)">${refs.length} referral${refs.length!==1?'s':''}</div></div></div>${progress}`;
+      lc.innerHTML=`
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:${next?'0':'0'}">
+          <div style="font-size:2rem">${lvl.icon}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:1rem">${lvl.title}</div>
+            <div style="font-size:.78rem;color:var(--muted)">${refs.length} referral${refs.length!==1?'s':''} · ${totalRefEarnings.toLocaleString()} UGX earned</div>
+          </div>
+        </div>${progress}`;
     }
-    const rl=$('referralsList');
+
     if(!rl) return;
-    if(!refs.length){ rl.innerHTML=`<div style="text-align:center;color:var(--muted);padding:14px">No referrals yet - share your link!</div>`; return; }
-    rl.innerHTML=refs.map(r=>`<div class="info-row"><div><div style="font-weight:600">${r.name}</div><div style="font-size:.72rem;color:var(--muted)">${new Date(r.date).toLocaleDateString()}</div></div><span style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace">+${(r.earnings||0).toLocaleString()}</span></div>`).join('');
-  }catch(e){ console.error('Referrals:',e); }
+    if(!refs.length){
+      rl.innerHTML=`<div style="text-align:center;color:var(--muted);padding:24px">
+        <div style="font-size:2rem;margin-bottom:8px">👥</div>
+        <div style="font-weight:600;margin-bottom:4px">No referrals yet</div>
+        <div style="font-size:.78rem">Share your link to start earning!</div>
+      </div>`;
+      return;
+    }
+
+    // Sort by date newest first
+    refs.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+
+    rl.innerHTML=refs.map((r,i)=>`
+      <div class="info-row" style="${i>0?'border-top:1px solid var(--border-s);margin-top:0;padding-top:12px':''}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">
+            ${(r.name||'?').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:.88rem">${r.name||'Unknown'}</div>
+            <div style="font-size:.7rem;color:var(--muted)">${r.date?new Date(r.date).toLocaleDateString():'—'} · ${r.hasPlan?'<span style="color:var(--green)">Active plan</span>':'No plan yet'}</div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.88rem">+${(earnByUser[r.userId]||r.earnings||0).toLocaleString()}</div>
+          <div style="font-size:.65rem;color:var(--dim)">UGX</div>
+        </div>
+      </div>`).join('');
+  }catch(e){
+    console.error('Referrals error:',e);
+    if(rl) rl.innerHTML=`<div style="color:var(--red);padding:14px;font-size:.82rem">Error loading referrals: ${e.message}</div>`;
+  }
 }
 
 function copyRefLink(){ const el=$('userRefLink'); if(el) navigator.clipboard.writeText(el.textContent).then(()=>toast('Link copied!','📋','success')); }
@@ -2968,8 +3060,8 @@ async function loadNotifList(){
 
     el.innerHTML=`
       <div style="padding:10px 16px;border-bottom:1px solid var(--border-s);display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:.73rem;color:var(--muted)">${docs.filter(n=>!n.read).length} unread</span>
-        <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--gold);font-size:.73rem;font-weight:700;cursor:pointer">Mark all read</button>
+        <span data-unread-count style="font-size:.73rem;color:var(--muted)">${docs.filter(n=>!n.read).length} unread</span>
+        <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--gold);font-size:.73rem;font-weight:700;cursor:pointer;padding:4px 8px">Mark all read</button>
       </div>
       ${docs.map(n=>{
         const t=n.timestamp?.toDate?n.timestamp.toDate():new Date(n.createdAt||Date.now());
@@ -3005,23 +3097,32 @@ async function markNotifRead(id, el){
 
 async function markAllNotifsRead(){
   if(!CU) return;
+  // Immediately update UI first (optimistic)
+  document.querySelectorAll('.notif-item.unread').forEach(el=>{
+    el.classList.remove('unread');
+    const dot=el.querySelector('span[style*="border-radius:50%"]');
+    if(dot) dot.remove();
+  });
+  const badge=$('notifBadge');
+  if(badge) badge.classList.add('hidden');
+  // Update unread count label
+  const unreadCountEl=document.querySelector('#notifList [data-unread-count]');
+  if(unreadCountEl) unreadCountEl.textContent='0 unread';
+
   try{
     const snap=await db.collection('notifications')
-      .where('userId','==',CU.id).where('read','==',false).get();
+      .where('userId','==',CU.id).where('read','==',false).limit(100).get();
+    if(snap.empty) return;
+    // Firestore batch max 500 writes
     const batch=db.batch();
     snap.docs.forEach(d=>batch.update(d.ref,{read:true}));
     await batch.commit();
-    // Update UI
-    document.querySelectorAll('.notif-item.unread').forEach(el=>{
-      el.classList.remove('unread');
-      const dot=el.querySelector('span[style*="8px"]');
-      if(dot) dot.remove();
-    });
-    const badge=$('notifBadge');
-    if(badge) badge.classList.add('hidden');
-    const unreadLabel=document.querySelector('#notifList span[style*="unread"]');
-    loadNotifList(); // refresh count
-  }catch(e){}
+    // Silently reload to update count label
+    setTimeout(()=>loadNotifList(),400);
+  }catch(e){
+    console.error('markAllNotifsRead error:',e);
+    toast('Could not mark all read: '+e.message,'⚠️','warning');
+  }
 }
 
 // ============================================================
