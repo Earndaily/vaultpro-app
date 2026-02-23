@@ -456,7 +456,8 @@ body{padding-top:env(safe-area-inset-top)}
       <div class="stat-tile"><div class="stat-tile-icon">✅</div><div class="stat-tile-value" id="statTask">0</div><div class="stat-tile-label">Task Earnings</div></div>
       <div class="stat-tile"><div class="stat-tile-icon">💸</div><div class="stat-tile-value" id="statRef">0</div><div class="stat-tile-label">Referral Earn.</div></div>
       <div class="stat-tile"><div class="stat-tile-icon">💎</div><div class="stat-tile-value" id="statLevel">—</div><div class="stat-tile-label">Vault Level</div></div>
-      <div class="stat-tile" style="grid-column:span 2;background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.02));border-color:var(--border)"><div class="stat-tile-icon">🏆</div><div class="stat-tile-value" id="statWeeklyPrize" style="color:var(--gold)">0</div><div class="stat-tile-label">Weekly Prize Earnings</div></div>
+      <div class="stat-tile" style="background:linear-gradient(135deg,rgba(29,184,127,.08),rgba(29,184,127,.02));border-color:rgba(29,184,127,.2)"><div class="stat-tile-icon">💰</div><div class="stat-tile-value" id="statDeposits" style="color:var(--green)">0</div><div class="stat-tile-label">Net Deposits</div></div>
+      <div class="stat-tile" style="background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.02));border-color:var(--border)"><div class="stat-tile-icon">🏦</div><div class="stat-tile-value" id="statSaccoEarnings" style="color:var(--gold)">0</div><div class="stat-tile-label">SACCO Earnings</div></div>
     </div>
 
     <div class="card">
@@ -1472,7 +1473,8 @@ function applyStats({balance,refs,cb,user,vaults}){
   set('statRefs',refs);
   set('statTask',(cb.taskEarnings||0).toLocaleString());
   set('statRef',(cb.referralEarnings||0).toLocaleString());
-  set('statWeeklyPrize',(cb.weeklyPrize||0).toLocaleString());
+  set('statDeposits',(cb.depositEarnings||0).toLocaleString());
+  set('statSaccoEarnings',(cb.saccoEarnings||0).toLocaleString());
   const active=vaults.filter(v=>v.status==='active');
   set('statLevel',calcVaultLevel(active).level);
   set('walletBal',(balance||0).toLocaleString());
@@ -1483,52 +1485,46 @@ function applyStats({balance,refs,cb,user,vaults}){
 function clearStatsCache(){ statsCache={data:null,ts:0,ttl:30000}; }
 
 async function getCatBalances(uid){
-  // Returns spendable balances per earnings category.
-  // Rules:
-  //   depositEarnings  = deposits - vault_purchases paid from deposits - withdrawals from deposits
-  //   referralEarnings = referral bonuses - withdrawals from referral
-  //   taskEarnings     = task_completion rewards - withdrawals from task
-  //   weeklyPrize      = weekly_prize credits - withdrawals from weeklyPrize
-  //   saccoReturn      = sacco_return credits - withdrawals from saccoReturn
-  //   vaultEarnings    REMOVED (task rewards are the vault profits - same pool)
+  // 4 real sub-buckets that always sum to total balance (CU.balance).
+  // Each bucket = credits into it - debits out of it.
+  //
+  //  depositEarnings  : +deposit  -vault_purchase(src=dep) -sacco_deposit(src=dep) -withdrawal(src=dep)
+  //  referralEarnings : +referral +weekly_prize  -vault_purchase(src=ref) -sacco_deposit(src=ref) -withdrawal(src=ref)
+  //  taskEarnings     : +task_completion  -vault_purchase(src=task) -sacco_deposit(src=task) -withdrawal(src=task)
+  //  saccoEarnings    : +sacco_return +sacco_revoke_refund  -vault_purchase(src=sacco) -sacco_deposit(src=sacco) -withdrawal(src=sacco)
+  //
+  // weeklyPrize merges into referralEarnings (same nature).
   try{
     const snap=await db.collection('transactions').where('userId','==',uid).get();
-    const b={depositEarnings:0,referralEarnings:0,taskEarnings:0,weeklyPrize:0,saccoReturn:0};
+    const b={depositEarnings:0,referralEarnings:0,taskEarnings:0,saccoEarnings:0};
     snap.docs.forEach(d=>{
       const t=d.data(), a=Math.abs(t.amount||0);
+      // Map sourceCategory aliases → canonical bucket key
+      const srcMap={
+        depositEarnings:'depositEarnings', deposit:'depositEarnings',
+        referralEarnings:'referralEarnings', referral:'referralEarnings', weeklyPrize:'referralEarnings',
+        taskEarnings:'taskEarnings', task:'taskEarnings',
+        saccoEarnings:'saccoEarnings', saccoReturn:'saccoEarnings', sacco:'saccoEarnings',
+      };
+      const resolveSrc=(src)=>srcMap[src]||'depositEarnings';
+
       switch(t.type){
         case 'deposit':
-          b.depositEarnings+=a;
-          break;
+          b.depositEarnings+=a; break;
         case 'task_completion':
-          b.taskEarnings+=a;
-          break;
+          b.taskEarnings+=a; break;
         case 'referral':
-          b.referralEarnings+=a;
-          break;
         case 'weekly_prize':
-          b.weeklyPrize+=a;
-          break;
+          b.referralEarnings+=a; break;
         case 'sacco_return':
         case 'sacco_revoke_refund':
-          b.saccoReturn+=a;
-          break;
+          b.saccoEarnings+=a; break;
         case 'vault_purchase':
-          // Deduct from whichever earnings source the user chose to pay from
-          { const src=t.sourceCategory||'depositEarnings';
-            if(b[src]!==undefined) b[src]=Math.max(0,b[src]-a);
-            else b.depositEarnings=Math.max(0,b.depositEarnings-a); }
-          break;
         case 'sacco_deposit':
-          // Deduct from whichever earnings source was used
-          { const src=t.sourceCategory||'depositEarnings';
-            if(b[src]!==undefined) b[src]=Math.max(0,b[src]-a); }
-          break;
         case 'withdrawal':
         case 'withdrawal_approved':
-          { const src=t.sourceCategory||'depositEarnings';
-            if(b[src]!==undefined) b[src]=Math.max(0,b[src]-a);
-            else b.depositEarnings=Math.max(0,b.depositEarnings-a); }
+          { const key=resolveSrc(t.sourceCategory);
+            b[key]=Math.max(0,(b[key]||0)-a); }
           break;
       }
     });
@@ -1536,7 +1532,7 @@ async function getCatBalances(uid){
     return b;
   }catch(e){
     console.error('getCatBalances error:',e);
-    return {depositEarnings:0,referralEarnings:0,taskEarnings:0,weeklyPrize:0,saccoReturn:0};
+    return {depositEarnings:0,referralEarnings:0,taskEarnings:0,saccoEarnings:0};
   }
 }
 
@@ -1686,11 +1682,10 @@ async function purchaseVault(){
 async function showCatSelectModal(amount, callback){
   const b=await getCatBalances(CU.id);
   const cats=[
-    {key:'depositEarnings',label:'💰 Deposit Funds',bal:b.depositEarnings},
-    {key:'referralEarnings',label:'👥 Referral Earnings',bal:b.referralEarnings},
-    {key:'taskEarnings',label:'✅ Task Earnings',bal:b.taskEarnings},
-    {key:'saccoReturn',label:'💰 SACCO Returns',bal:b.saccoReturn},
-    {key:'weeklyPrize',label:'🏆 Weekly Prize',bal:b.weeklyPrize},
+    {key:'depositEarnings', label:'💰 Deposit Funds',     bal:b.depositEarnings},
+    {key:'referralEarnings',label:'👥 Referral Earnings', bal:b.referralEarnings},
+    {key:'taskEarnings',    label:'✅ Task Earnings',      bal:b.taskEarnings},
+    {key:'saccoEarnings',   label:'🏦 SACCO Earnings',    bal:b.saccoEarnings},
   ];
   const modal=$('payModal');
   $('payModalDesc').textContent=`Select earnings source for ${amount.toLocaleString()} UGX:`;
@@ -2212,26 +2207,40 @@ async function loadReferrals(){
     const link=$('userRefLink');
     if(link) link.textContent=`${location.origin}${location.pathname}?ref=${CU.referralCode||''}`;
 
-    // Fetch referrals subcollection + all referral-type transactions in parallel
+    // Fetch referrals list and referral transactions in parallel
     const [refSnap, txSnap] = await Promise.all([
       db.collection('users').doc(CU.id).collection('referrals').get(),
-      db.collection('transactions')
-        .where('userId','==',CU.id)
-        .where('type','==','referral')
-        .get()
+      db.collection('transactions').where('userId','==',CU.id).where('type','==','referral').get()
     ]);
 
-    const refs = refSnap.docs.map(d=>d.data());
+    const refs = refSnap.docs.map(d=>({id:d.id,...d.data()}));
 
-    // Total referral earnings = sum of all referral transactions (source of truth)
+    // Total referral earnings from actual transactions
     const totalRefEarnings = txSnap.docs.reduce((s,d)=>s+(d.data().amount||0), 0);
     set('totalRefEarnings', totalRefEarnings.toLocaleString());
 
-    // Only count referrals with an active vault or SACCO plan for level purposes
-    const activeRefs = refs.filter(r=>r.hasPlan||r.hasActiveSacco);
-    const activeCount = activeRefs.length;
+    // Live-check each referred user for active vault or SACCO plan
+    // Batch into 10-at-a-time to avoid overwhelming Firestore
+    const checkActive = async(userId)=>{
+      const [vaultSnap, saccoSnap] = await Promise.all([
+        db.collection('users').doc(userId).collection('vaults').where('status','==','active').limit(1).get(),
+        db.collection('saccoPlans').where('userId','==',userId).where('status','==','active').limit(1).get()
+      ]);
+      return !vaultSnap.empty || !saccoSnap.empty;
+    };
 
-    // Level card - based on active-plan referrals only
+    // Run checks in batches of 5 concurrently
+    const refsWithStatus = [];
+    for(let i=0;i<refs.length;i+=5){
+      const batch=refs.slice(i,i+5);
+      const results=await Promise.all(batch.map(r=>checkActive(r.userId||r.id).then(active=>({...r,liveActive:active}))));
+      refsWithStatus.push(...results);
+    }
+
+    // Count only referrals with a live active plan
+    const activeCount = refsWithStatus.filter(r=>r.liveActive).length;
+
+    // Level card
     const lvl = getRefLevel(activeCount);
     const ni = REF_LEVELS.findIndex(l=>l.title===lvl.title)+1;
     const next = ni<REF_LEVELS.length ? REF_LEVELS[ni] : null;
@@ -2242,8 +2251,8 @@ async function loadReferrals(){
         const pct=Math.min(100,((activeCount-(lvl.min||0))/Math.max(1,(next.min||1)-(lvl.min||0)))*100);
         progress=`<div style="margin-top:10px">
           <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:5px">
-            <span style="color:var(--green);font-weight:600">${activeCount} active</span>
-            <span>Next: ${next.icon} ${next.title} needs ${next.min}</span>
+            <span style="color:var(--green);font-weight:600">${activeCount} with active plans</span>
+            <span>Next: ${next.icon} ${next.title} at ${next.min}</span>
           </div>
           <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
         </div>`;
@@ -2253,17 +2262,17 @@ async function loadReferrals(){
           <div style="font-size:2rem">${lvl.icon}</div>
           <div style="flex:1">
             <div style="font-weight:700;font-size:1rem">${lvl.title}</div>
-            <div style="font-size:.78rem;color:var(--muted)">${refs.length} total · <span style="color:var(--green)">${activeCount} with active plans</span></div>
-            <div style="font-size:.74rem;color:var(--gold);margin-top:2px">${totalRefEarnings.toLocaleString()} UGX total earned</div>
+            <div style="font-size:.78rem;color:var(--muted)">${refs.length} total referred · <span style="color:var(--green)">${activeCount} with active plans</span></div>
+            <div style="font-size:.74rem;color:var(--gold);margin-top:2px">${totalRefEarnings.toLocaleString()} UGX earned</div>
           </div>
         </div>${progress}
         <div style="margin-top:10px;font-size:.7rem;color:var(--dim);padding:6px 8px;background:var(--bg3);border-radius:6px">
-          ⭐ Level counts only referrals with an active vault or SACCO plan
+          ⭐ Your level is based on referrals with an active vault or SACCO plan
         </div>`;
     }
 
     if(!rl) return;
-    if(!refs.length){
+    if(!refsWithStatus.length){
       rl.innerHTML=`<div style="text-align:center;color:var(--muted);padding:24px">
         <div style="font-size:2rem;margin-bottom:8px">👥</div>
         <div style="font-weight:600;margin-bottom:4px">No referrals yet</div>
@@ -2272,29 +2281,28 @@ async function loadReferrals(){
       return;
     }
 
-    // Sort: active plans first, then by join date
-    refs.sort((a,b)=>{
-      const ap=(a.hasPlan||a.hasActiveSacco)?1:0;
-      const bp=(b.hasPlan||b.hasActiveSacco)?1:0;
-      if(bp!==ap) return bp-ap;
+    // Sort: active first, then newest
+    refsWithStatus.sort((a,b)=>{
+      if(b.liveActive!==a.liveActive) return b.liveActive?1:-1;
       return new Date(b.date||0)-new Date(a.date||0);
     });
 
-    // Per-referral earnings: split total evenly as rough estimate
-    // (exact per-user matching not possible without referredUserId in transactions)
-    // Show plan purchase bonus per referral if stored in doc, else show dashes
-    rl.innerHTML=refs.map((r,i)=>{
-      const hasPlan=r.hasPlan||r.hasActiveSacco;
-      const earned=r.earnings||0; // stored when referral bonus was recorded
+    rl.innerHTML=refsWithStatus.map((r,i)=>{
+      const earned=r.earnings||0;
       return `<div class="info-row" style="${i>0?'border-top:1px solid var(--border-s);padding-top:11px;margin-top:0':''}">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:50%;background:${hasPlan?'rgba(29,184,127,.15)':'var(--surface2)'};
-               border:1.5px solid ${hasPlan?'var(--green)':'var(--border-s)'};
-               display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:700;flex-shrink:0;color:${hasPlan?'var(--green)':'var(--muted)'}">${(r.name||'?').charAt(0).toUpperCase()}</div>
+          <div style="width:38px;height:38px;border-radius:50%;
+               background:${r.liveActive?'rgba(29,184,127,.15)':'var(--surface2)'};
+               border:1.5px solid ${r.liveActive?'var(--green)':'var(--border-s)'};
+               display:flex;align-items:center;justify-content:center;
+               font-size:.95rem;font-weight:700;flex-shrink:0;
+               color:${r.liveActive?'var(--green)':'var(--muted)'}">
+            ${(r.name||'?').charAt(0).toUpperCase()}
+          </div>
           <div>
             <div style="font-weight:600;font-size:.88rem">${r.name||'Unknown'}</div>
             <div style="font-size:.7rem;margin-top:2px">
-              ${hasPlan
+              ${r.liveActive
                 ?'<span style="color:var(--green);font-weight:600">✅ Active plan</span>'
                 :'<span style="color:var(--dim)">No active plan</span>'}
               <span style="color:var(--dim);margin-left:6px">${r.date?new Date(r.date).toLocaleDateString():''}</span>
@@ -2303,7 +2311,7 @@ async function loadReferrals(){
         </div>
         <div style="text-align:right;flex-shrink:0">
           ${earned>0
-            ?`<div style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.85rem">+${earned.toLocaleString()}</div><div style="font-size:.65rem;color:var(--dim)">UGX earned</div>`
+            ?`<div style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.85rem">+${earned.toLocaleString()}</div><div style="font-size:.65rem;color:var(--dim)">UGX</div>`
             :`<div style="color:var(--dim);font-size:.78rem">—</div>`}
         </div>
       </div>`;
@@ -2421,7 +2429,7 @@ async function submitWithdrawal(){
   if(!phone){ showAlert('wdAlert','Please enter your phone number','error'); return; }
   if(cat==='task'){ const d=new Date().getDay(); if(d!==5&&d!==6){ showAlert('wdAlert','Task earnings only withdrawable on Friday & Saturday','error'); return; } }
   const b=await getCatBalances(CU.id);
-  const bk=cat==='referral'?'referralEarnings':cat==='task'?'taskEarnings':cat==='weeklyPrize'?'weeklyPrize':cat==='sacco'?'saccoReturn':'depositEarnings';
+  const bk=cat==='referral'?'referralEarnings':cat==='task'?'taskEarnings':cat==='sacco'?'saccoEarnings':'depositEarnings';
   if(b[bk]<amt){ showAlert('wdAlert',`Insufficient ${cat} earnings (available: ${(b[bk]||0).toLocaleString()} UGX)`,'error'); return; }
   const fee=Math.floor(amt*0.05), net=amt-fee;
   try{
@@ -2505,9 +2513,8 @@ async function loadSacco(){
 
     // Show available balance
     const b = await getCatBalances(CU.id);
-    // Available = all spendable earnings categories combined
-    const total = (b.depositEarnings||0)+(b.taskEarnings||0)+(b.referralEarnings||0)+(b.weeklyPrize||0)+(b.saccoReturn||0);
-    set('saccoBal', total.toLocaleString());
+    // Available to invest = total balance (the single source of truth)
+    set('saccoBal', (CU.balance||0).toLocaleString());
 
     // Check for any SACCO that finished countdown but not yet processed
     await checkSaccoMaturity();
@@ -2629,7 +2636,7 @@ async function doSaccoPurchase(p, amt, sourceCategory, categoryName){
     // ── STRICT SOURCE CHECK ──
     // Re-fetch live category balances to prevent spending vault principal
     const liveBalances = await getCatBalances(CU.id);
-    const allowedKeys = ['depositEarnings','referralEarnings','taskEarnings','weeklyPrize','saccoReturn'];
+    const allowedKeys = ['depositEarnings','referralEarnings','taskEarnings','saccoEarnings'];
     if(!allowedKeys.includes(sourceCategory)){
       toast('Invalid payment source. Only earnings may be used for SACCO.','❌','error');
       return;
@@ -2853,8 +2860,9 @@ async function claimSaccoReturn(planId, amount){
     await db.collection('transactions').add({
       userId:CU.id, userName:CU.fullName,
       type:'sacco_return', amount,
-      description:'SACCO savings plan return',
-      date:new Date().toISOString()
+      sourceCategory:'saccoEarnings',
+      description:'SACCO savings plan matured — principal + profit returned',
+      planId, date:new Date().toISOString()
     });
     clearStatsCache();
     toast(`🎉 ${amount.toLocaleString()} UGX added to your balance!`,'💰','success',7000);
@@ -3546,7 +3554,7 @@ async function autoRevokeBadSaccoPlans(){
       .get();
     if(snap.empty) return;
 
-    const VALID = ['depositEarnings','referralEarnings','taskEarnings','weeklyPrize','saccoReturn'];
+    const VALID = ['depositEarnings','referralEarnings','taskEarnings','saccoEarnings'];
     const badPlans = snap.docs.filter(d=>{
       const src = d.data().sourceCategory;
       // Invalid if: no source, source is raw balance, or source is vault_purchase
@@ -3614,7 +3622,7 @@ async function autoRevokeBadSaccoPlans(){
 // ADMIN SACCO — Review and Revoke fraudulent plans
 // ============================================================
 // Legitimate source categories for SACCO (no vault_purchase principal)
-const SACCO_VALID_SOURCES = ['depositEarnings','referralEarnings','taskEarnings','weeklyPrize','saccoReturn'];
+const SACCO_VALID_SOURCES = ['depositEarnings','referralEarnings','taskEarnings','saccoEarnings'];
 
 async function loadAdminSacco(filter='all'){
   const el=$('adminSaccoList');
