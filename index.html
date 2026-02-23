@@ -172,10 +172,15 @@ tr:last-child td{border-bottom:none}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:38px;height:4px;background:var(--border);border-radius:100px;margin:10px auto 18px}
 .modal-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin-bottom:6px}
-.streak-grid{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:14px 0}
-.streak-dot{width:36px;height:36px;border-radius:50%;border:2px solid var(--border-s);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--dim)}
-.streak-dot.done{background:var(--green);border-color:var(--green);color:#fff}
-.streak-dot.today{background:var(--gold);border-color:var(--gold-light);color:#0A0C10;animation:pulse 1.5s ease-in-out infinite}
+/* SACCO */
+.sacco-card{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:18px;margin-bottom:10px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden;padding-left:22px}
+.sacco-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.sacco-card:hover,.sacco-card.selected{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,168,76,.22);background:linear-gradient(135deg,rgba(201,168,76,.05),var(--surface))}
+.sacco-t1::before{background:#1DB87F}.sacco-t2::before{background:#4A7CF7}.sacco-t3::before{background:#C9A84C}
+.sacco-t4::before{background:#ec4899}.sacco-t5::before{background:#ef4444}.sacco-t6::before{background:#8b5cf6}
+.sacco-return{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700}
+.sacco-countdown-ring{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.sacco-active-card{background:linear-gradient(135deg,rgba(29,184,127,.07),rgba(29,184,127,.02));border:1px solid rgba(29,184,127,.25);border-radius:var(--r);padding:20px;margin-bottom:12px}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 .pay-opt{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r);padding:14px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s}
 .pay-opt:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
@@ -418,8 +423,8 @@ body{padding-top:env(safe-area-inset-top)}
     <button class="side-nav-item" onclick="showSection('wallet')" id="sidenav-wallet">
       <span class="side-nav-icon">💰</span><span class="side-nav-label">Wallet</span>
     </button>
-    <button class="side-nav-item" onclick="showSection('streak')" id="sidenav-streak">
-      <span class="side-nav-icon">🔥</span><span class="side-nav-label">Streak</span>
+    <button class="side-nav-item" onclick="showSection('sacco')" id="sidenav-sacco">
+      <span class="side-nav-icon">💰</span><span class="side-nav-label">SACCO</span>
     </button>
     <button class="side-nav-item" onclick="showSection('profile')" id="sidenav-profile">
       <span class="side-nav-icon">👤</span><span class="side-nav-label">Profile</span>
@@ -605,30 +610,74 @@ body{padding-top:env(safe-area-inset-top)}
       <div class="card">
         <div style="font-weight:700;margin-bottom:14px">💰 Deposit Funds</div>
         <div id="depAlert"></div>
-        <div class="card" style="background:rgba(201,168,76,.06);border-color:var(--border);padding:13px;margin-bottom:14px">
-          <div style="font-size:.78rem;line-height:1.75;color:var(--muted)">
-            <strong style="color:var(--gold);display:block;margin-bottom:4px">📱 Payment Instructions</strong>
-            1. Send money to: <strong onclick="navigator.clipboard.writeText('0785000000');toast('Number copied!','📋','info')" style="cursor:pointer;color:var(--gold)">0785 000 000</strong><br>
-            2. Enter amount, select method, enter your number<br>
-            3. Upload a screenshot of your payment confirmation<br>
-            4. Submit — admin approves within 1 hour
+
+        <div class="fg">
+          <label>Payment Method</label>
+          <select id="depMethod" onchange="onDepMethodChange()">
+            <option value="">Select method</option>
+            <option value="mtn">MTN Mobile Money</option>
+            <option value="airtel">Airtel Money</option>
+          </select>
+        </div>
+
+        <!-- Instructions shown after method selected -->
+        <div id="depInstructions" class="hidden" style="margin-bottom:14px">
+          <div id="depMtnInfo" class="hidden" style="background:linear-gradient(135deg,rgba(255,204,0,.08),rgba(255,204,0,.02));border:1px solid rgba(255,204,0,.2);border-radius:var(--rs);padding:14px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <div style="width:36px;height:36px;background:#FFCC00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#000;flex-shrink:0">M</div>
+              <div>
+                <div style="font-weight:700;font-size:.88rem">MTN Mobile Money</div>
+                <div style="font-size:.72rem;color:var(--muted)">Name: <strong style="color:var(--text)">Wafula Kevin</strong></div>
+              </div>
+            </div>
+            <div style="background:var(--bg3);border-radius:var(--rs);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div>
+                <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Send to</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--gold)">0779 710 365</div>
+              </div>
+              <button onclick="navigator.clipboard.writeText('0779710365');toast('Copied!','📋','success')" style="background:var(--surface);border:1px solid var(--border-s);border-radius:var(--rs);padding:8px 12px;color:var(--gold);font-size:.75rem;font-weight:700;cursor:pointer">Copy</button>
+            </div>
+            <div style="font-size:.74rem;color:var(--muted);line-height:1.65">Dial <strong style="color:var(--gold)">*165#</strong> → Send Money → Enter number → Enter amount → Confirm name <strong style="color:var(--green)">Wafula Kevin</strong> → Enter PIN</div>
+          </div>
+
+          <div id="depAirtelInfo" class="hidden" style="background:linear-gradient(135deg,rgba(231,0,18,.07),rgba(231,0,18,.02));border:1px solid rgba(231,0,18,.2);border-radius:var(--rs);padding:14px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <div style="width:36px;height:36px;background:#E70012;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#fff;flex-shrink:0">A</div>
+              <div>
+                <div style="font-weight:700;font-size:.88rem">Airtel Money</div>
+                <div style="font-size:.72rem;color:var(--muted)">Name: <strong style="color:var(--text)">Aisha Nangobi</strong></div>
+              </div>
+            </div>
+            <div style="background:var(--bg3);border-radius:var(--rs);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div>
+                <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Send to</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--gold)">0702 377 999</div>
+              </div>
+              <button onclick="navigator.clipboard.writeText('0702377999');toast('Copied!','📋','success')" style="background:var(--surface);border:1px solid var(--border-s);border-radius:var(--rs);padding:8px 12px;color:var(--gold);font-size:.75rem;font-weight:700;cursor:pointer">Copy</button>
+            </div>
+            <div style="font-size:.74rem;color:var(--muted);line-height:1.65">Dial <strong style="color:var(--gold)">*185#</strong> → Send Money → Enter number → Enter amount → Confirm name <strong style="color:var(--green)">Aisha Nangobi</strong> → Enter PIN</div>
+          </div>
+
+          <div style="margin-top:11px;display:flex;align-items:flex-start;gap:10px;background:rgba(29,184,127,.06);border:1px solid rgba(29,184,127,.2);border-radius:var(--rs);padding:11px 13px">
+            <input type="checkbox" id="depNameConfirm" style="margin-top:2px;flex-shrink:0;accent-color:var(--green)">
+            <label for="depNameConfirm" style="font-size:.78rem;cursor:pointer;line-height:1.55">I confirmed the name matches and sent to the correct number ✅</label>
           </div>
         </div>
-        <div class="fg"><label>Amount (UGX)</label><input type="number" id="depAmount" placeholder="Minimum 1,000"></div>
-        <div class="fg"><label>Payment Method</label>
-          <select id="depMethod"><option value="">Select method</option><option value="mtn">MTN Mobile Money</option><option value="airtel">Airtel Money</option></select>
+
+        <div id="depFormFields" class="hidden">
+          <div class="fg"><label>Amount (UGX)</label><input type="number" id="depAmount" placeholder="Minimum 1,000"></div>
+          <div class="fg"><label>Your Phone Number</label><input type="tel" id="depPhone" placeholder="07XXXXXXXX"></div>
+          <div class="fg">
+            <label>Payment Screenshot <span style="font-size:.7rem;color:var(--muted)">(required)</span></label>
+            <label class="upload-zone" for="depScreenshot">
+              <input type="file" id="depScreenshot" accept="image/*" onchange="previewScreenshot(this,'depPreview')">
+              <div style="font-size:1.8rem;margin-bottom:8px">📸</div>
+              <div style="font-size:.82rem;color:var(--muted)" id="depScreenshotLabel">Tap to upload confirmation screenshot</div>
+              <img id="depPreview" class="upload-preview">
+            </label>
+          </div>
+          <button class="btn btn-green btn-full" id="depSubmitBtn" onclick="submitDeposit()">Submit Deposit Request</button>
         </div>
-        <div class="fg"><label>Your Phone Number</label><input type="tel" id="depPhone" placeholder="07XXXXXXXX"></div>
-        <div class="fg">
-          <label>Payment Screenshot (Required)</label>
-          <label class="upload-zone" for="depScreenshot">
-            <input type="file" id="depScreenshot" accept="image/*" onchange="previewScreenshot(this,'depPreview')">
-            <div style="font-size:1.8rem;margin-bottom:8px">📸</div>
-            <div style="font-size:.82rem;color:var(--muted)" id="depScreenshotLabel">Tap to upload payment screenshot</div>
-            <img id="depPreview" class="upload-preview">
-          </label>
-        </div>
-        <button class="btn btn-green btn-full" id="depSubmitBtn" onclick="submitDeposit()">Submit Deposit Request</button>
       </div>
     </div>
 
@@ -638,7 +687,8 @@ body{padding-top:env(safe-area-inset-top)}
         <div style="font-weight:700;margin-bottom:14px">💸 Withdraw Funds</div>
         <div id="wdAlert"></div>
         <div class="fg"><label>Earnings Category</label>
-          <select id="wdCat"><option value="">Select category</option><option value="referral">Referral Earnings</option><option value="task">Task Earnings (Fri–Sat only)</option><option value="vault">Vault Earnings</option><option value="weeklyPrize">🏆 Weekly Prize</option></select>
+          <select id="wdCat"><option value="">Select category</option><option value="referral">Referral Earnings</option><option value="task">Task Earnings (Fri–Sat only)</option><option value="vault">Vault Earnings</option><option value="weeklyPrize">🏆 Weekly Prize</option>
+            <option value="saccoReturn">💰 SACCO Return</option></select>
         </div>
         <div class="fg"><label>Amount (UGX)</label><input type="number" id="wdAmount" placeholder="Minimum 5,000"></div>
         <div class="fg">
@@ -661,29 +711,66 @@ body{padding-top:env(safe-area-inset-top)}
     </div>
   </div>
 
-  <!-- STREAK -->
-  <div id="streakSection" class="content hidden fade-in">
-    <div class="section-title">Daily Streak</div>
-    <div class="section-sub">Login every day to earn bonus points</div>
-    <div id="streakAlert"></div>
-    <div class="card" style="text-align:center;padding:26px">
-      <div style="font-size:3.2rem;margin-bottom:7px">🔥</div>
-      <div style="font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:800;color:var(--gold)" id="streakCount">0</div>
-      <div style="color:var(--muted);margin-bottom:14px">Day Streak</div>
-      <div class="streak-grid" id="streakDots"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px">
-        <div class="stat-tile"><div class="stat-tile-value" id="streakPts">0</div><div class="stat-tile-label">Points Balance</div></div>
-        <div class="stat-tile"><div class="stat-tile-value" id="bestStreak">0</div><div class="stat-tile-label">Best Streak</div></div>
+  <!-- SACCO -->
+  <div id="saccoSection" class="content hidden fade-in">
+    <div class="section-title">💰 SACCO Savings</div>
+    <div class="section-sub">Save smart. Earn guaranteed returns. Withdraw on Mondays.</div>
+    <div id="saccoAlert"></div>
+
+    <!-- Active SACCO plan (shown when user has one) -->
+    <div id="saccoActiveWrap" class="hidden"></div>
+
+    <!-- Plans (hidden when active plan exists) -->
+    <div id="saccoPlansWrap">
+      <div class="balance-hero" style="margin-bottom:14px">
+        <div class="balance-label">Available to Invest</div>
+        <div class="balance-value" id="saccoBal">0</div>
+        <div class="balance-currency">UGX</div>
       </div>
-    </div>
-    <div class="card">
-      <div style="font-weight:700;margin-bottom:5px">Convert Points</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-bottom:13px">100 points = 1,000 UGX</div>
-      <div style="display:flex;gap:10px;margin-bottom:13px">
-        <div style="flex:1"><label style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:6px">Points</label><input type="number" id="ptsConvert" placeholder="Min 100" style="width:100%;padding:11px;background:var(--bg3);border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem" oninput="document.getElementById('ptsPreview').textContent=((parseInt(this.value)||0)*10).toLocaleString()+' UGX'"></div>
-        <div style="flex:1"><label style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:6px">You Receive</label><div style="padding:11px;background:var(--bg3);border-radius:var(--rs);font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green)" id="ptsPreview">0 UGX</div></div>
+
+      <!-- Amount input -->
+      <div class="card" id="saccoAmtCard" style="display:none">
+        <div style="font-weight:700;margin-bottom:4px" id="saccoSelTitle">Selected Plan</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:13px" id="saccoSelSub">Enter your investment amount below</div>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Amount (UGX)</label>
+          <input type="number" id="saccoAmtInput" placeholder="Enter amount" oninput="saccoPreview()">
+        </div>
+        <div id="saccoPreviewBox" style="display:none;background:var(--bg3);border-radius:var(--rs);padding:14px;margin-bottom:13px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:.84rem">
+            <span style="color:var(--muted)">You invest</span><span id="saccoPreviewIn" style="font-family:'JetBrains Mono',monospace;font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:.84rem">
+            <span style="color:var(--muted)">Return rate</span><span id="saccoPreviewRate" style="color:var(--green);font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:.84rem">
+            <span style="color:var(--muted)">Profit</span><span id="saccoPreviewProfit" style="color:var(--gold);font-weight:700;font-family:'JetBrains Mono',monospace">—</span>
+          </div>
+          <div style="height:1px;background:var(--border-s);margin:10px 0"></div>
+          <div style="display:flex;justify-content:space-between;font-size:.95rem">
+            <span style="font-weight:700">You receive</span><span id="saccoPreviewOut" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--green);font-size:1.05rem">—</span>
+          </div>
+          <div style="margin-top:8px;font-size:.74rem;color:var(--muted);text-align:center" id="saccoPreviewDate">—</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-surface" style="flex:1" onclick="cancelSaccoSelect()">Cancel</button>
+          <button class="btn btn-gold" style="flex:2" id="saccoConfirmBtn" onclick="confirmSaccoPurchase()">💰 Confirm &amp; Save</button>
+        </div>
       </div>
-      <button class="btn btn-green btn-full" onclick="convertPoints()">Convert Points</button>
+
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;margin-top:4px">Choose a Savings Plan</div>
+      <div id="saccoModalsList"></div>
+
+      <div class="card" style="background:rgba(74,124,247,.05);border-color:rgba(74,124,247,.2);margin-top:4px">
+        <div style="font-weight:700;margin-bottom:8px;font-size:.88rem">📌 SACCO Rules</div>
+        <div style="font-size:.76rem;color:var(--muted);line-height:1.75">
+          ✅ One active plan at a time<br>
+          📅 Withdrawals open every <strong style="color:var(--gold)">Monday</strong> after maturity<br>
+          📈 Higher duration = higher return rate<br>
+          🔒 Funds locked until maturity date<br>
+          💳 Pay from any earnings category
+        </div>
+      </div>
     </div>
   </div>
 
@@ -727,8 +814,8 @@ body{padding-top:env(safe-area-inset-top)}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
         <div class="stat-tile"><div class="stat-tile-value" id="profVaults">0</div><div class="stat-tile-label">Vaults</div></div>
         <div class="stat-tile"><div class="stat-tile-value" id="profLevel">—</div><div class="stat-tile-label">Level</div></div>
-        <div class="stat-tile"><div class="stat-tile-value" id="profPts">0</div><div class="stat-tile-label">Points</div></div>
-        <div class="stat-tile"><div class="stat-tile-value" id="profStreak">0</div><div class="stat-tile-label">Streak</div></div>
+        
+        <div class="stat-tile"><div class="stat-tile-value" id="profSacco">—</div><div class="stat-tile-label">SACCO Status</div></div>
       </div>
     </div>
     <div class="card card-gold">
@@ -745,7 +832,7 @@ body{padding-top:env(safe-area-inset-top)}
     <button class="nav-item" data-section="referrals" onclick="showSection('referrals')"><span class="nav-icon">👥</span>Refer</button>
     <button class="nav-item" data-section="tasks" onclick="showSection('tasks')"><span class="nav-icon">✅</span>Tasks</button>
     <button class="nav-item" data-section="wallet" onclick="showSection('wallet')"><span class="nav-icon">💼</span>Wallet</button>
-    <button class="nav-item" data-section="streak" onclick="showSection('streak')"><span class="nav-icon">🔥</span>Streak</button>
+    <button class="nav-item" data-section="sacco" onclick="showSection('sacco')"><span class="nav-icon">💰</span>SACCO</button>
     <button class="nav-item" data-section="profile" onclick="showSection('profile')"><span class="nav-icon">👤</span>Profile</button>
   </nav>
   </div><!-- /#contentArea -->
@@ -925,7 +1012,7 @@ try {
   db = firebase.firestore();
   auth = firebase.auth();
   storage = firebase.storage();
-  FS = firebase.firestore.FieldValue; // safe alias — avoids "firebase is not defined" inside async fns
+  FS = firebase.firestore.FieldValue; // safe alias - avoids "firebase is not defined" inside async fns
   fbReady = true;
 } catch(e) { console.error('Firebase init error:', e); }
 
@@ -940,8 +1027,8 @@ let activeTimers = {};
 let weekTimerInt = null;
 
 // ============================================================
-// VAULT PLANS — Matched exactly to first snippet structure
-// amount, dailyTasks, taskReward → monthly = dailyTasks * taskReward * 30
+// VAULT PLANS - Matched exactly to first snippet structure
+// amount, dailyTasks, taskReward -> monthly = dailyTasks * taskReward * 30
 // profitPct is always 30%
 // ============================================================
 const PLANS = {
@@ -958,12 +1045,12 @@ const PLANS = {
   rising: {
     name:'Rising', emoji:'🌅', amount:600000,
     days:30, dailyTasks:6, taskReward:3333, level:3,
-    monthlyEarnings:180000  // rounded from 3333*6*30=599940≈180K
+    monthlyEarnings:180000  // rounded from 3333*6*30=599940~=180K
   },
   nova: {
     name:'Nova', emoji:'💡', amount:1350000,
     days:30, dailyTasks:11, taskReward:4091, level:4,
-    monthlyEarnings:405000  // 11*4091*30≈405K
+    monthlyEarnings:405000  // 11*4091*30~=405K
   },
   mastermind: {
     name:'Mastermind', emoji:'🧠', amount:4050000,
@@ -978,7 +1065,7 @@ const PLANS = {
   king: {
     name:'King', emoji:'👑', amount:16650000,
     days:30, dailyTasks:34, taskReward:16307, level:7,
-    monthlyEarnings:4995000  // 34*16307*30≈4,995,000
+    monthlyEarnings:4995000  // 34*16307*30~=4,995,000
   },
   emperor: {
     name:'Emperor', emoji:'🦅', amount:29700000,
@@ -988,17 +1075,17 @@ const PLANS = {
   icon: {
     name:'Icon', emoji:'⭐', amount:48600000,
     days:30, dailyTasks:55, taskReward:29455, level:9,
-    monthlyEarnings:14580000  // 55*29455*30≈14,580,000
+    monthlyEarnings:14580000  // 55*29455*30~=14,580,000
   },
   supreme: {
     name:'Supreme', emoji:'👑', amount:74250000,
     days:30, dailyTasks:66, taskReward:37502, level:10,
-    monthlyEarnings:22275000  // 66*37502*30≈22,275,000
+    monthlyEarnings:22275000  // 66*37502*30~=22,275,000
   },
   legendary: {
     name:'Legendary', emoji:'🏆', amount:110000000,
     days:30, dailyTasks:75, taskReward:48888, level:11,
-    monthlyEarnings:33000000  // 75*48888*30≈33,000,000
+    monthlyEarnings:33000000  // 75*48888*30~=33,000,000
   },
 };
 
@@ -1012,14 +1099,14 @@ const REF_LEVELS = [
   {title:'Shareholder',icon:'💎',color:'#06b6d4',min:5000},
 ];
 
-// Referral Career Levels — displayed on home page
+// Referral Career Levels - displayed on home page
 const CAREER_LEVELS = [
   {level:1, title:'Admin',       referrals:100,  salary:50000,         icon:'1️⃣', color:'#6366f1', description:'Entry-level leadership. Manages user activity and assists support.'},
   {level:2, title:'Partner',     referrals:500,  salary:200000,        icon:'2️⃣', color:'#ec4899', description:'Trusted user with a growing community under them.'},
   {level:3, title:'Manager',     referrals:1000, salary:500000,        icon:'3️⃣', color:'#10b981', description:'Mid-level leader managing multiple partners.'},
   {level:4, title:'Chief',       referrals:2000, salary:1000000,       icon:'4️⃣', color:'#f59e0b', description:'High-ranking official overseeing major sections of the network.'},
   {level:5, title:'Partner King',referrals:5000, salary:2000000,       icon:'5️⃣', color:'#ef4444', description:'Top-tier promoter managing large networks.'},
-  {level:6, title:'Shareholder', referrals:10000,salary:'20% of funds',icon:'6️⃣', color:'#8b5cf6', description:'Ultimate recognition — becomes part-owner of the project.'},
+  {level:6, title:'Shareholder', referrals:10000,salary:'20% of funds',icon:'6️⃣', color:'#8b5cf6', description:'Ultimate recognition - becomes part-owner of the project.'},
 ];
 
 // ============================================================
@@ -1068,7 +1155,7 @@ function calcVaultLevel(vaults){
   if(t>=600000)    return {level:'Rising',   icon:'🌅'};
   if(t>=180000)    return {level:'Seed',     icon:'🌱'};
   if(t>=45000)     return {level:'Beginner', icon:'🌱'};
-  return {level:'Newcomer',icon:'—'};
+  return {level:'Newcomer',icon:'-'};
 }
 
 function getRefLevel(refs){
@@ -1085,7 +1172,7 @@ function extractYouTubeId(url){
 }
 
 // ============================================================
-// SCREENSHOT — stored as base64 in Firestore (avoids CORS/Storage rules issues)
+// SCREENSHOT - stored as base64 in Firestore (avoids CORS/Storage rules issues)
 // ============================================================
 function previewScreenshot(input, previewId){
   const f=input.files[0]; if(!f) return;
@@ -1218,9 +1305,9 @@ async function login(){
     const d=await db.collection('users').doc(cred.user.uid).get();
     if(!d.exists){ showAlert('loginAlert','Account not found','error'); await auth.signOut(); return; }
     CU={id:cred.user.uid,...d.data()};
-    await updateStreak(cred.user.uid,CU);
+    // streak removed
   }catch(e){
-    const msgs={'auth/user-not-found':'No account with this email','auth/wrong-password':'Incorrect password','auth/too-many-requests':'Too many attempts — try later','auth/invalid-credential':'Invalid email or password'};
+    const msgs={'auth/user-not-found':'No account with this email','auth/wrong-password':'Incorrect password','auth/too-many-requests':'Too many attempts - try later','auth/invalid-credential':'Invalid email or password'};
     showAlert('loginAlert',msgs[e.code]||'Login failed','error');
   }finally{ btn.disabled=false; btn.textContent='Sign In'; }
 }
@@ -1325,7 +1412,7 @@ function showAdminDashboard(){
 
 function showSection(s){
   if(!CU) return;
-  ['home','vault','referrals','tasks','wallet','streak','profile'].forEach(x=>{
+  ['home','vault','referrals','tasks','wallet','sacco','profile'].forEach(x=>{
     const e=$(x+'Section'); if(e) e.classList.add('hidden');
   });
   const el=$(s+'Section');
@@ -1340,7 +1427,7 @@ function showSection(s){
   else if(s==='referrals'){ loadReferrals(); }
   else if(s==='tasks'){ loadTasks(); }
   else if(s==='wallet'){ loadWallet(); }
-  else if(s==='streak'){ loadStreak(); }
+  else if(s==='sacco'){ loadSacco(); }
   else if(s==='profile'){ refreshCU().then(()=>loadProfile()); }
 }
 
@@ -1365,26 +1452,8 @@ function showAdmin(s, btn){
 }
 
 // ============================================================
-// STREAK
-// ============================================================
-async function updateStreak(uid, user){
-  try{
-    if(user.isAdmin){ await db.collection('users').doc(uid).update({lastLoginDate:new Date().toISOString()}); return; }
-    const today=new Date().toISOString().split('T')[0];
-    const last=user.lastLoginDate?new Date(user.lastLoginDate).toISOString().split('T')[0]:null;
-    if(last===today) return;
-    let streak=user.currentStreak||0, longest=user.longestStreak||0, pts=user.totalPoints||0, bal=user.pointsBalance||0;
-    const yest=new Date(); yest.setDate(yest.getDate()-1);
-    const yestStr=yest.toISOString().split('T')[0];
-    streak=(last===yestStr)?streak+1:1;
-    if(streak>longest) longest=streak;
-    const award=streak>=30?100:streak>=21?75:streak>=14?50:streak>=7?25:streak>=3?15:streak>=2?10:5;
-    pts+=award; bal+=award;
-    await db.collection('users').doc(uid).update({currentStreak:streak,longestStreak:longest,lastLoginDate:new Date().toISOString(),totalPoints:pts,pointsBalance:bal});
-    if(CU) Object.assign(CU,{currentStreak:streak,longestStreak:longest,pointsBalance:bal});
-    setTimeout(()=>toast(`🔥 ${streak} day streak! +${award} points`,`🔥`,'success'),1200);
-  }catch(e){ console.error('Streak:',e); }
-}
+// Streak removed
+async function updateStreak(uid, user){ /* no-op */ }
 
 // ============================================================
 // USER STATS
@@ -1468,7 +1537,7 @@ async function refreshCU(){
 }
 
 // ============================================================
-// VAULT SECTION — Uses PLANS from first snippet
+// VAULT SECTION - Uses PLANS from first snippet
 // ============================================================
 async function loadVaultSection(){
   const vi=await getVaultLevel(CU.id);
@@ -1506,7 +1575,7 @@ async function loadVaultSection(){
 }
 
 // ============================================================
-// SELECT PLAN — Shows confirm panel (sufficient) or deposit prompt (insufficient)
+// SELECT PLAN - Shows confirm panel (sufficient) or deposit prompt (insufficient)
 // ============================================================
 async function selectPlan(key, event){
   if(isPurchasing) return;
@@ -1559,7 +1628,7 @@ async function selectPlan(key, event){
     selectedPlan=key;
     const dailyMax=p.dailyTasks*p.taskReward;
     $('purchaseSumContent').innerHTML=`
-      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:14px">${p.emoji} ${p.name} Plan — Confirm Purchase</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:14px">${p.emoji} ${p.name} Plan - Confirm Purchase</div>
       <div class="sum-row"><span class="sum-label">Investment Cost</span><span class="sum-val">${p.amount.toLocaleString()} UGX</span></div>
       <div class="sum-row"><span class="sum-label">Your Balance</span><span class="sum-val" style="color:var(--green)">${bal.toLocaleString()} UGX ✓</span></div>
       <div class="sum-row"><span class="sum-label">Duration</span><span class="sum-val">${p.days} days</span></div>
@@ -1647,7 +1716,7 @@ async function doVaultPurchase(sourceCategory, categoryName){
       const rd=await db.collection('users').doc(CU.referredBy).get();
       if(rd.exists){
         await db.collection('users').doc(CU.referredBy).update({balance:FS.increment(bonus)});
-        await db.collection('transactions').add({userId:CU.referredBy,userName:rd.data().fullName,type:'referral',amount:bonus,description:`10% bonus from ${CU.fullName} — ${p.name}`,date:new Date().toISOString()});
+        await db.collection('transactions').add({userId:CU.referredBy,userName:rd.data().fullName,type:'referral',amount:bonus,description:`10% bonus from ${CU.fullName} - ${p.name}`,date:new Date().toISOString()});
         await sendNotif(CU.referredBy,'referral_bonus',`You earned ${bonus.toLocaleString()} UGX referral bonus from ${CU.fullName}!`);
       }
     }
@@ -1669,7 +1738,7 @@ async function doVaultPurchase(sourceCategory, categoryName){
 }
 
 // ============================================================
-// TASKS — tasks shown = plan's dailyTasks limit exactly
+// TASKS - tasks shown = plan's dailyTasks limit exactly
 // Timer starts immediately when user clicks Start Task
 // YouTube: hidden iframe revealed + autoplay on click
 // TikTok/Subscribe/Visit: link opens + timer starts simultaneously
@@ -1720,7 +1789,7 @@ async function loadTasks(){
     const encodedUrl=encodeURIComponent(t.url||'');
     const circ=(2*Math.PI*13).toFixed(2);
 
-    // YouTube: show thumbnail preview, iframe hidden until Start clicked
+    // YouTube: show thumbnail preview, YT IFrame API player created on click
     let contentHtml='';
     if(t.type==='youtube'){
       const vid=extractYouTubeId(t.url||'');
@@ -1730,32 +1799,36 @@ async function loadTasks(){
           <div id="ytThumb-${t.id}" style="position:relative;cursor:pointer;background:#000;border-radius:var(--rs) var(--rs) 0 0;overflow:hidden" onclick="startTask('${t.id}','youtube',${reward},${timerSecs},'${encodedUrl}')">
             <img src="https://img.youtube.com/vi/${vid}/hqdefault.jpg" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;opacity:.85">
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-              <div style="width:56px;height:56px;background:rgba(255,0,0,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.5)">
-                <div style="width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:18px solid #fff;margin-left:4px"></div>
+              <div style="width:64px;height:64px;background:rgba(255,0,0,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(0,0,0,.6)">
+                <div style="width:0;height:0;border-top:13px solid transparent;border-bottom:13px solid transparent;border-left:20px solid #fff;margin-left:5px"></div>
               </div>
             </div>
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.72rem;color:rgba(255,255,255,.8)">▶ Tap to play &amp; start timer</div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:.76rem;color:rgba(255,255,255,.9);font-weight:600">▶ Tap to play - timer starts automatically</div>
           </div>
-          <!-- Iframe hidden until start — autoplay enabled -->
-          <iframe id="ytFrame-${t.id}" class="task-embed hidden" src="" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" style="border-radius:var(--rs) var(--rs) 0 0"></iframe>`;
+          <!-- YT player container - hidden until start -->
+          <div id="ytPlayer-${t.id}" class="hidden" style="border-radius:var(--rs) var(--rs) 0 0;overflow:hidden;aspect-ratio:16/9;background:#000"></div>
+          <!-- Pause warning -->
+          <div id="ytPauseWarn-${t.id}" class="hidden" style="background:rgba(232,68,90,.12);border-bottom:2px solid var(--red);padding:9px 14px;font-size:.78rem;color:var(--red);font-weight:600;text-align:center">
+            ⏸️ Timer paused - resume the video to continue earning
+          </div>`;
       }
     } else if(t.type==='youtube_sub'){
       contentHtml=`<div style="background:linear-gradient(135deg,rgba(255,0,0,.08),rgba(0,0,0,.03));border-radius:var(--rs) var(--rs) 0 0;padding:20px;text-align:center;border-bottom:1px solid var(--border-s)">
         <div style="font-size:2rem;margin-bottom:6px">📺</div>
         <div style="font-weight:700;font-size:.88rem;margin-bottom:3px">${t.title}</div>
-        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> — the channel opens &amp; timer begins</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> - the channel opens &amp; timer begins</div>
       </div>`;
     } else if(t.type==='tiktok'){
       contentHtml=`<div style="background:linear-gradient(135deg,rgba(0,0,0,.25),rgba(105,201,208,.05));border-radius:var(--rs) var(--rs) 0 0;padding:20px;text-align:center;border-bottom:1px solid var(--border-s)">
         <div style="font-size:2rem;margin-bottom:6px">🎵</div>
         <div style="font-weight:700;font-size:.88rem;margin-bottom:3px">${t.title}</div>
-        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> — video opens &amp; timer begins</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> - video opens &amp; timer begins</div>
       </div>`;
     } else if(t.type==='visit'){
       contentHtml=`<div style="background:linear-gradient(135deg,rgba(74,124,247,.07),rgba(0,0,0,.02));border-radius:var(--rs) var(--rs) 0 0;padding:20px;text-align:center;border-bottom:1px solid var(--border-s)">
         <div style="font-size:2rem;margin-bottom:6px">🌐</div>
         <div style="font-weight:700;font-size:.88rem;margin-bottom:3px">${t.title}</div>
-        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> — site opens &amp; timer begins</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">Tap <strong style="color:var(--gold)">Start Task</strong> - site opens &amp; timer begins</div>
       </div>`;
     }
 
@@ -1769,7 +1842,7 @@ async function loadTasks(){
         </div>
         ${t.description?`<div class="task-desc">${t.description}</div>`:''}
 
-        <!-- Timer — hidden until started -->
+        <!-- Timer - hidden until started -->
         <div class="task-timer hidden" id="timer-${t.id}" style="margin-bottom:11px">
           <div class="task-timer-circle">
             <svg width="32" height="32" viewBox="0 0 32 32">
@@ -1781,14 +1854,14 @@ async function loadTasks(){
           <span>Counting down… <strong id="timerSec-${t.id}">${timerSecs}s</strong></span>
         </div>
 
-        <!-- Claim button — hidden until timer done -->
+        <!-- Claim button - hidden until timer done -->
         <div id="claimWrap-${t.id}" class="hidden" style="margin-bottom:8px">
           <button class="btn btn-green btn-full" onclick="completeTask('${t.id}','${t.type}',${reward})">
             ✅ Claim ${reward.toLocaleString()} UGX
           </button>
         </div>
 
-        <!-- START button — clicking this does everything at once -->
+        <!-- START button - clicking this does everything at once -->
         ${t.type==='youtube'
           ? '' /* YouTube uses thumbnail click above as the trigger */
           : `<button class="btn btn-gold btn-full" id="taskBtn-${t.id}"
@@ -1805,36 +1878,84 @@ async function loadTasks(){
   $('tasksList').innerHTML=html;
 }
 
+// YT IFrame API setup
+const ytPlayers={};
+const ytTimerPaused={};
+let ytApiReady=false;
+
+function loadYTApi(){
+  if(window.YT&&window.YT.Player){ ytApiReady=true; return; }
+  if(document.getElementById('yt-api-script')) return;
+  const s=document.createElement('script');
+  s.id='yt-api-script';
+  s.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+window.onYouTubeIframeAPIReady=function(){ ytApiReady=true; };
+
 function startTask(taskId, type, reward, timerSecs, encodedUrl){
-  // Hide start button (non-YouTube types)
-  const btn=$(`taskBtn-${taskId}`);
-  if(btn) btn.style.display='none';
+  const url=decodeURIComponent(encodedUrl||'');
 
-  // YouTube: swap thumbnail for autoplay iframe
   if(type==='youtube'){
+    // Show player container, hide thumbnail
     const thumb=$(`ytThumb-${taskId}`);
-    const frame=$(`ytFrame-${taskId}`);
-    const vid=frame?frame.id.replace('ytFrame-',''):null;
+    const playerDiv=$(`ytPlayer-${taskId}`);
     if(thumb) thumb.style.display='none';
-    if(frame){
-      // Extract videoId from the task — stored in data attr via id prefix
-      const allTasks=document.querySelectorAll('[id^="ytFrame-"]');
-      // Re-derive vid from the src we need to set
-      // We stored encoded URL; decode and extract
-      const url=decodeURIComponent(encodedUrl||'');
-      const vidId=extractYouTubeId(url);
-      if(vidId){
-        frame.src=`https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0&modestbranding=1`;
-        frame.classList.remove('hidden');
-      }
-    }
-  } else {
-    // TikTok / Subscribe / Visit — open link in new tab immediately
-    const url=decodeURIComponent(encodedUrl||'');
-    if(url) window.open(url,'_blank');
-  }
+    if(playerDiv) playerDiv.classList.remove('hidden');
 
-  // Start countdown timer immediately
+    const vidId=extractYouTubeId(url);
+    if(!vidId){ toast('Could not load video','❌','error'); return; }
+
+    // Start timer immediately - pause/resume tied to YT player state
+    startCountdownTimer(taskId, type, reward, timerSecs, true);
+
+    // Create YT player
+    loadYTApi();
+    const tryCreate=()=>{
+      if(!window.YT||!window.YT.Player){ setTimeout(tryCreate,300); return; }
+      ytPlayers[taskId]=new YT.Player(`ytPlayer-${taskId}`,{
+        videoId:vidId,
+        playerVars:{autoplay:1,rel:0,modestbranding:1,playsinline:1},
+        events:{
+          onStateChange:(e)=>{
+            const warn=$(`ytPauseWarn-${taskId}`);
+            if(e.data===YT.PlayerState.PLAYING){
+              // Video playing - resume timer
+              ytTimerPaused[taskId]=false;
+              if(warn) warn.classList.add('hidden');
+            } else if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.BUFFERING){
+              // Paused or buffering - freeze timer
+              ytTimerPaused[taskId]=true;
+              if(e.data===YT.PlayerState.PAUSED&&warn) warn.classList.remove('hidden');
+            } else if(e.data===YT.PlayerState.ENDED){
+              // Video ended before timer - keep timer running
+              ytTimerPaused[taskId]=false;
+              if(warn) warn.classList.add('hidden');
+            }
+          }
+        }
+      });
+    };
+    tryCreate();
+
+  } else {
+    // TikTok / Subscribe / Visit
+    // Show in-app overlay for mobile instead of leaving the tab
+    if(type==='tiktok'||type==='visit'){
+      showInAppBrowser(url, taskId);
+    } else {
+      // youtube_sub - must open externally (YouTube blocks iframes)
+      window.open(url,'_blank');
+    }
+    // Hide start button
+    const btn=$(`taskBtn-${taskId}`);
+    if(btn) btn.style.display='none';
+    // Start timer immediately
+    startCountdownTimer(taskId, type, reward, timerSecs, false);
+  }
+}
+
+function startCountdownTimer(taskId, type, reward, timerSecs, useYTPause){
   const timer=$(`timer-${taskId}`);
   if(timer) timer.classList.remove('hidden');
 
@@ -1844,8 +1965,12 @@ function startTask(taskId, type, reward, timerSecs, encodedUrl){
   const circ=2*Math.PI*13;
   let remaining=timerSecs;
   if(circle) circle.style.strokeDashoffset='0';
+  ytTimerPaused[taskId]= useYTPause ? true : false; // YT starts paused until play event
 
   const interval=setInterval(()=>{
+    // If YT video is paused, freeze timer
+    if(useYTPause && ytTimerPaused[taskId]) return;
+
     remaining--;
     const pct=1-(remaining/timerSecs);
     if(circle) circle.style.strokeDashoffset=`${circ*pct}`;
@@ -1855,6 +1980,9 @@ function startTask(taskId, type, reward, timerSecs, encodedUrl){
       clearInterval(interval);
       delete activeTimers[taskId];
       if(timer) timer.classList.add('hidden');
+      // Stop YT player if still running
+      if(ytPlayers[taskId]&&ytPlayers[taskId].pauseVideo) ytPlayers[taskId].pauseVideo();
+      // Show claim button
       const claimWrap=$(`claimWrap-${taskId}`);
       if(claimWrap){
         claimWrap.classList.remove('hidden');
@@ -1865,20 +1993,71 @@ function startTask(taskId, type, reward, timerSecs, encodedUrl){
   activeTimers[taskId]=interval;
 }
 
+// ── In-App Browser overlay (keeps user in the app) ──
+function showInAppBrowser(url, taskId){
+  // Remove any existing
+  const existing=document.getElementById('inAppBrowser');
+  if(existing) existing.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='inAppBrowser';
+  overlay.style.cssText=`position:fixed;inset:0;z-index:5000;background:var(--bg);display:flex;flex-direction:column`;
+  overlay.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--border-s);flex-shrink:0">
+      <button onclick="closeInAppBrowser()" style="background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px">✕</button>
+      <div style="flex:1;background:var(--bg3);border-radius:20px;padding:7px 14px;font-size:.75rem;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${url}</div>
+      <a href="${url}" target="_blank" style="color:var(--gold);font-size:.75rem;font-weight:700;text-decoration:none;white-space:nowrap">Open ↗</a>
+    </div>
+    <iframe src="${url}" style="flex:1;border:none;width:100%" allow="autoplay"></iframe>
+    <div style="padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border-s);text-align:center;flex-shrink:0">
+      <div style="font-size:.74rem;color:var(--muted)">⏱️ Timer is running while you browse. Close when done.</div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closeInAppBrowser(){
+  const el=document.getElementById('inAppBrowser');
+  if(el) el.remove();
+}
+
+const claimingTasks = new Set(); // Prevent double-claim
+
 async function completeTask(taskId, type, reward){
+  // Block if already being claimed
+  if(claimingTasks.has(taskId)) return;
+  claimingTasks.add(taskId);
+
+  // Immediately disable claim button to prevent re-tap
+  const claimBtn = document.querySelector(`#claimWrap-${taskId} button`);
+  if(claimBtn){ claimBtn.disabled=true; claimBtn.textContent='Processing…'; }
+
   try{
-    const today=new Date().toDateString();
-    const col=type==='youtube'||type==='youtube_sub'?'taskSubmissions':'externalTaskSubmissions';
+    // Double-check: make sure not already submitted today
+    const today = new Date().toDateString();
+    const col = type==='youtube'||type==='youtube_sub'?'taskSubmissions':'externalTaskSubmissions';
+    const existing = await db.collection(col)
+      .where('userId','==',CU.id).where('taskId','==',taskId).where('date','==',today).limit(1).get();
+    if(!existing.empty){
+      toast('Task already completed today!','ℹ️','info');
+      claimingTasks.delete(taskId);
+      return;
+    }
+
     await db.collection(col).add({userId:CU.id,userName:CU.fullName,taskId,date:today,reward,completedAt:new Date().toISOString(),type});
     await db.collection('users').doc(CU.id).update({balance:FS.increment(reward)});
     CU.balance=(CU.balance||0)+reward;
     await db.collection('transactions').add({userId:CU.id,userName:CU.fullName,type:'task_completion',amount:reward,date:new Date().toISOString()});
+
     const card=$(`task-${taskId}`);
     if(card){ card.style.opacity='0'; card.style.transition='opacity .4s'; setTimeout(()=>card.remove(),400); }
     clearStatsCache();
     toast(`+${reward.toLocaleString()} UGX earned! 🎉`,'✅','success');
     setTimeout(()=>loadTasks(),600);
-  }catch(e){ toast('Failed to complete task','❌','error'); }
+  }catch(e){
+    toast('Failed to complete task','❌','error');
+    claimingTasks.delete(taskId);
+    if(claimBtn){ claimBtn.disabled=false; claimBtn.textContent=`✅ Claim ${reward.toLocaleString()} UGX`; }
+  }
 }
 
 // ============================================================
@@ -1906,7 +2085,7 @@ async function loadReferrals(){
     }
     const rl=$('referralsList');
     if(!rl) return;
-    if(!refs.length){ rl.innerHTML=`<div style="text-align:center;color:var(--muted);padding:14px">No referrals yet — share your link!</div>`; return; }
+    if(!refs.length){ rl.innerHTML=`<div style="text-align:center;color:var(--muted);padding:14px">No referrals yet - share your link!</div>`; return; }
     rl.innerHTML=refs.map(r=>`<div class="info-row"><div><div style="font-weight:600">${r.name}</div><div style="font-size:.72rem;color:var(--muted)">${new Date(r.date).toLocaleDateString()}</div></div><span style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace">+${(r.earnings||0).toLocaleString()}</span></div>`).join('');
   }catch(e){ console.error('Referrals:',e); }
 }
@@ -1934,23 +2113,40 @@ function showWalletTab(t){
 }
 
 // ============================================================
-// DEPOSIT — base64 screenshot stored in Firestore (fixes admin-side display)
+// DEPOSIT - base64 screenshot stored in Firestore (fixes admin-side display)
 // ============================================================
+function onDepMethodChange(){
+  const meth = $('depMethod').value;
+  const instr = $('depInstructions');
+  const fields = $('depFormFields');
+  const mtnInfo = $('depMtnInfo');
+  const airtelInfo = $('depAirtelInfo');
+  const confirm = $('depNameConfirm');
+  if(!meth){ instr.classList.add('hidden'); fields.classList.add('hidden'); return; }
+  instr.classList.remove('hidden');
+  mtnInfo.classList.toggle('hidden', meth !== 'mtn');
+  airtelInfo.classList.toggle('hidden', meth !== 'airtel');
+  if(confirm) confirm.checked = false;
+  fields.classList.remove('hidden');
+}
+
 async function submitDeposit(){
   const amt=parseInt($('depAmount').value);
   const meth=$('depMethod').value;
   const phone=$('depPhone').value.trim();
   const screenshotInput=$('depScreenshot');
   const submitBtn=$('depSubmitBtn');
+  const nameConfirm=$('depNameConfirm');
 
-  if(!amt||amt<1000){ showAlert('depAlert','Minimum deposit is 1,000 UGX','error'); return; }
   if(!meth){ showAlert('depAlert','Please select a payment method','error'); return; }
+  if(!nameConfirm||!nameConfirm.checked){ showAlert('depAlert','Please confirm the recipient name first','warning'); return; }
+  if(!amt||amt<1000){ showAlert('depAlert','Minimum deposit is 1,000 UGX','error'); return; }
   if(!phone){ showAlert('depAlert','Please enter your phone number','error'); return; }
   if(!screenshotInput.files[0]){ showAlert('depAlert','Please upload a payment screenshot','error'); return; }
 
   submitBtn.disabled=true; submitBtn.textContent='Uploading…';
   try{
-    // Convert screenshot to compressed base64 — stored directly in Firestore
+    // Convert screenshot to compressed base64 - stored directly in Firestore
     // This avoids Firebase Storage CORS issues and ensures admin can always see it
     let screenshotData=null;
     const file=screenshotInput.files[0];
@@ -1976,7 +2172,7 @@ async function submitDeposit(){
       method:meth,
       phone,
       screenshotBase64:screenshotData,  // stored as base64 string
-      screenshotUrl:null,               // legacy field — null for new submissions
+      screenshotUrl:null,               // legacy field - null for new submissions
       status:'pending',
       date:new Date().toISOString()
     });
@@ -2031,38 +2227,392 @@ async function loadTxHistory(){
 }
 
 // ============================================================
-// STREAK
 // ============================================================
-async function loadStreak(){
+// SACCO - Savings & Credit Co-operative
+// ============================================================
+const SACCO_PLANS = [
+  { id:'s14',  days:14,  label:'14 Days',  emoji:'🌱', tier:'sacco-t1', rate:0.08, minAmount:3000000,   color:'#1DB87F', desc:'Quick save, fast return' },
+  { id:'s30',  days:30,  label:'30 Days',  emoji:'📅', tier:'sacco-t2', rate:0.14, minAmount:1500000,   color:'#4A7CF7', desc:'One month, solid growth' },
+  { id:'s60',  days:60,  label:'60 Days',  emoji:'📈', tier:'sacco-t3', rate:0.22, minAmount:600000,    color:'#C9A84C', desc:'Two months of steady gains' },
+  { id:'s90',  days:90,  label:'90 Days',  emoji:'💎', tier:'sacco-t4', rate:0.30, minAmount:600000,    color:'#ec4899', desc:'90-day premium saver' },
+  { id:'s120', days:120, label:'120 Days', emoji:'🚀', tier:'sacco-t5', rate:0.40, minAmount:290000,    color:'#ef4444', desc:'4 months, high reward' },
+  { id:'s365', days:365, label:'1 Year',   emoji:'👑', tier:'sacco-t6', rate:0.50, minAmount:80000,     color:'#8b5cf6', desc:'Maximum return, ultimate growth' },
+];
+
+let selectedSaccoPlan = null;
+let saccoTimerInterval = null;
+
+function nextMonday(fromDate){
+  const d = new Date(fromDate);
+  const day = d.getDay(); // 0=Sun,1=Mon...
+  const daysUntilMonday = day===1 ? 7 : (8 - day) % 7 || 7;
+  d.setDate(d.getDate() + daysUntilMonday);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+async function loadSacco(){
   try{
-    const ud=await db.collection('users').doc(CU.id).get();
-    const u=ud.data();
-    const s=u.currentStreak||0, lng=u.longestStreak||0, pts=u.pointsBalance||0;
-    set('streakCount',s); set('streakPts',pts); set('bestStreak',lng);
-    const de=$('streakDots'); if(!de) return;
-    let h='';
-    for(let i=0;i<7;i++){
-      const a=i<Math.min(s,7), isToday=i===Math.min(s-1,6)&&s>0;
-      h+=`<div class="streak-dot ${isToday?'today':a?'done':''}">${i+1}</div>`;
+    const ud = await db.collection('users').doc(CU.id).get();
+    const u = ud.data();
+    // Check for active SACCO
+    const snap = await db.collection('saccoPlans')
+      .where('userId','==',CU.id).where('status','==','active').limit(1).get();
+
+    if(!snap.empty){
+      const plan = {id:snap.docs[0].id, ...snap.docs[0].data()};
+      showSaccoActivePlan(plan);
+      return;
     }
-    de.innerHTML=h;
+
+    // Check for matured SACCO awaiting withdrawal
+    const matSnap = await db.collection('saccoPlans')
+      .where('userId','==',CU.id).where('status','==','matured').limit(1).get();
+    if(!matSnap.empty){
+      const plan = {id:matSnap.docs[0].id, ...matSnap.docs[0].data()};
+      showSaccoMatured(plan);
+      return;
+    }
+
+    // No active plan - show plan picker
+    $('saccoActiveWrap').classList.add('hidden');
+    $('saccoPlansWrap').style.display='';
+    renderSaccoPlans();
+
+    // Show available balance
+    const b = await getCatBalances(CU.id);
+    const total = (b.depositEarnings||0)+(b.taskEarnings||0)+(b.referralEarnings||0)+(b.vaultEarnings||0);
+    set('saccoBal', total.toLocaleString());
+
+    // Check for any SACCO that finished countdown but not yet processed
+    await checkSaccoMaturity();
+  }catch(e){ console.error('SACCO load:',e); }
+}
+
+async function checkSaccoMaturity(){
+  try{
+    const snap = await db.collection('saccoPlans')
+      .where('userId','==',CU.id).where('status','==','active').get();
+    for(const doc of snap.docs){
+      const plan = doc.data();
+      const matDate = new Date(plan.maturityDate);
+      if(new Date() >= matDate){
+        await db.collection('saccoPlans').doc(doc.id).update({status:'matured'});
+      }
+    }
   }catch(e){}
 }
 
-async function convertPoints(){
-  const pts=parseInt($('ptsConvert').value);
-  if(!pts||pts<100){ showAlert('streakAlert','Minimum 100 points','error'); return; }
-  const ud=await db.collection('users').doc(CU.id).get();
-  const cur=ud.data().pointsBalance||0;
-  if(cur<pts){ showAlert('streakAlert',`Insufficient points (you have ${cur})`,'error'); return; }
-  const ugx=pts*10;
-  await db.collection('users').doc(CU.id).update({pointsBalance:FS.increment(-pts),balance:FS.increment(ugx)});
-  await db.collection('transactions').add({userId:CU.id,type:'points_conversion',amount:ugx,description:`${pts} points converted`,date:new Date().toISOString()});
-  CU.pointsBalance=cur-pts; CU.balance=(CU.balance||0)+ugx;
-  clearStatsCache();
-  toast(`${pts} points → ${ugx.toLocaleString()} UGX`,'🔄','success');
-  loadStreak();
+function renderSaccoPlans(){
+  const el = $('saccoModalsList'); if(!el) return;
+  el.innerHTML = SACCO_PLANS.map(p => {
+    const exampleAmt = p.minAmount;
+    const profit = Math.floor(exampleAmt * p.rate);
+    return `<div class="sacco-card ${p.tier}" onclick="selectSaccoPlan('${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px">
+        <div>
+          <div style="font-size:1.1rem;margin-bottom:2px">${p.emoji} <strong style="font-size:.95rem">${p.label}</strong></div>
+          <div style="font-size:.73rem;color:var(--muted)">${p.desc}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="sacco-return" style="color:${p.color}">${(p.rate*100).toFixed(0)}%</div>
+          <div style="font-size:.65rem;color:var(--muted);font-weight:600;letter-spacing:.04em">RETURN</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;font-size:.75rem">
+        <div style="flex:1;background:var(--bg3);border-radius:6px;padding:7px 10px">
+          <div style="color:var(--muted);margin-bottom:2px">Min. Amount</div>
+          <div style="font-weight:700;font-family:'JetBrains Mono',monospace">${(p.minAmount/1000).toFixed(0)}K UGX</div>
+        </div>
+        <div style="flex:1;background:var(--bg3);border-radius:6px;padding:7px 10px">
+          <div style="color:var(--muted);margin-bottom:2px">Example profit</div>
+          <div style="font-weight:700;color:${p.color};font-family:'JetBrains Mono',monospace">+${(profit/1000).toFixed(0)}K</div>
+        </div>
+        <div style="flex:1;background:var(--bg3);border-radius:6px;padding:7px 10px">
+          <div style="color:var(--muted);margin-bottom:2px">Duration</div>
+          <div style="font-weight:700">${p.days}d</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
+
+function selectSaccoPlan(id){
+  selectedSaccoPlan = SACCO_PLANS.find(p=>p.id===id);
+  if(!selectedSaccoPlan) return;
+  document.querySelectorAll('.sacco-card').forEach(c=>c.classList.remove('selected'));
+  const cards = document.querySelectorAll('.sacco-card');
+  const idx = SACCO_PLANS.findIndex(p=>p.id===id);
+  if(cards[idx]) cards[idx].classList.add('selected');
+
+  const p = selectedSaccoPlan;
+  const amtCard = $('saccoAmtCard');
+  amtCard.style.display='';
+  $('saccoSelTitle').textContent = `${p.emoji} ${p.label} - ${(p.rate*100).toFixed(0)}% return`;
+  $('saccoSelSub').textContent = `Minimum: ${p.minAmount.toLocaleString()} UGX · Lock period: ${p.days} days`;
+  $('saccoAmtInput').value='';
+  $('saccoPreviewBox').style.display='none';
+  amtCard.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function cancelSaccoSelect(){
+  selectedSaccoPlan = null;
+  $('saccoAmtCard').style.display='none';
+  document.querySelectorAll('.sacco-card').forEach(c=>c.classList.remove('selected'));
+}
+
+function saccoPreview(){
+  const p = selectedSaccoPlan; if(!p) return;
+  const amt = parseInt($('saccoAmtInput').value)||0;
+  if(amt < p.minAmount){
+    $('saccoPreviewBox').style.display='none';
+    return;
+  }
+  const profit = Math.floor(amt * p.rate);
+  const total = amt + profit;
+  const matDate = new Date(); matDate.setDate(matDate.getDate()+p.days);
+  const withdrawDate = nextMonday(matDate);
+  const withdrawStr = withdrawDate.toLocaleDateString('en-UG',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  $('saccoPreviewIn').textContent = amt.toLocaleString()+' UGX';
+  $('saccoPreviewRate').textContent = (p.rate*100).toFixed(0)+'% return';
+  $('saccoPreviewProfit').textContent = '+'+profit.toLocaleString()+' UGX';
+  $('saccoPreviewOut').textContent = total.toLocaleString()+' UGX';
+  $('saccoPreviewDate').innerHTML = `📅 Matures: <strong>${matDate.toLocaleDateString()}</strong> &nbsp;·&nbsp; 💰 Withdrawable from: <strong style="color:var(--green)">${withdrawStr}</strong>`;
+  $('saccoPreviewBox').style.display='';
+}
+
+let saccoConfirming = false;
+async function confirmSaccoPurchase(){
+  if(saccoConfirming) return;
+  const p = selectedSaccoPlan; if(!p) return;
+  const amt = parseInt($('saccoAmtInput').value)||0;
+  if(amt < p.minAmount){
+    showAlert('saccoAlert',`Minimum amount for ${p.label} is ${p.minAmount.toLocaleString()} UGX`,'error');
+    return;
+  }
+  // Show payment source modal
+  showCatSelectModal(amt, (cat,catName)=>doSaccoPurchase(p,amt,cat,catName));
+}
+
+async function doSaccoPurchase(p, amt, sourceCategory, categoryName){
+  if(saccoConfirming) return;
+  saccoConfirming = true;
+  const btn = $('saccoConfirmBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Processing…'; }
+  try{
+    // Deduct from user balance
+    await db.collection('users').doc(CU.id).update({balance:FS.increment(-amt)});
+    CU.balance = (CU.balance||0)-amt;
+
+    const start = new Date();
+    const matDate = new Date(start.getTime()+p.days*86400000);
+    const withdrawDate = nextMonday(matDate);
+    const profit = Math.floor(amt*p.rate);
+
+    const saccoDoc = await db.collection('saccoPlans').add({
+      userId: CU.id,
+      userName: CU.fullName,
+      planId: p.id,
+      planLabel: p.label,
+      days: p.days,
+      rate: p.rate,
+      principal: amt,
+      profit: profit,
+      totalReturn: amt+profit,
+      sourceCategory, categoryName,
+      startDate: start.toISOString(),
+      maturityDate: matDate.toISOString(),
+      withdrawableFrom: withdrawDate.toISOString(),
+      status: 'active',
+    });
+
+    await db.collection('transactions').add({
+      userId:CU.id, userName:CU.fullName,
+      type:'sacco_deposit', amount:amt,
+      description:`SACCO ${p.label} savings plan`,
+      planId:p.id, sourceCategory,
+      date:start.toISOString()
+    });
+
+    clearStatsCache();
+    toast(`${p.emoji} SACCO ${p.label} activated! ${amt.toLocaleString()} UGX locked in.`,'💰','success',6000);
+    cancelSaccoSelect();
+    loadSacco();
+  }catch(e){
+    toast('Failed: '+e.message,'❌','error');
+  }finally{
+    saccoConfirming=false;
+    if(btn){ btn.disabled=false; btn.textContent='💰 Confirm & Save'; }
+  }
+}
+
+function showSaccoActivePlan(plan){
+  $('saccoPlansWrap').style.display='none';
+  const wrap = $('saccoActiveWrap');
+  wrap.classList.remove('hidden');
+  renderSaccoCountdown(plan, wrap);
+}
+
+function renderSaccoCountdown(plan, container){
+  if(saccoTimerInterval) clearInterval(saccoTimerInterval);
+  const planInfo = SACCO_PLANS.find(p=>p.id===plan.planId)||{emoji:'💰',label:plan.planLabel,color:'#C9A84C'};
+  const matDate = new Date(plan.maturityDate);
+  const withdrawDate = new Date(plan.withdrawableFrom);
+  const totalMs = matDate - new Date(plan.startDate);
+
+  function getTimeLeft(){
+    const now = new Date();
+    const diff = matDate - now;
+    if(diff<=0) return null;
+    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000);
+    const m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+    return {d,h,m,s,diff,pct:Math.max(0,Math.min(100,(1-(diff/totalMs))*100))};
+  }
+
+  function render(){
+    const tl = getTimeLeft();
+    const pct = tl ? tl.pct : 100;
+    const circumference = 2*Math.PI*54;
+    const offset = circumference*(1-(pct/100));
+
+    container.innerHTML = `
+      <div class="sacco-active-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="font-size:1.6rem">${planInfo.emoji}</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:1rem">${plan.planLabel} SACCO</div>
+            <div style="font-size:.74rem;color:var(--muted)">Active · ${(plan.rate*100).toFixed(0)}% return</div>
+          </div>
+          <span class="badge badge-success">🔒 Active</span>
+        </div>
+
+        <!-- Circular progress -->
+        <div style="display:flex;justify-content:center;margin-bottom:18px">
+          <div style="position:relative;width:128px;height:128px">
+            <svg width="128" height="128" style="transform:rotate(-90deg)">
+              <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+              <circle id="saccoRingFill" cx="64" cy="64" r="54" fill="none" stroke="${planInfo.color}" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="${circumference.toFixed(2)}"
+                stroke-dashoffset="${offset.toFixed(2)}" style="transition:stroke-dashoffset 1s linear"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              ${tl
+                ? `<div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:${planInfo.color}">${tl.d}d</div>
+                   <div style="font-size:.68rem;color:var(--muted)">${tl.h}h ${tl.m}m</div>`
+                : `<div style="font-size:1.5rem">🎉</div><div style="font-size:.68rem;color:var(--green);font-weight:700">Matured!</div>`
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Saved</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700">${(plan.principal/1000).toFixed(0)}K</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Profit</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;color:var(--green)">+${(plan.profit/1000).toFixed(0)}K</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Total</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;color:var(--gold)">${(plan.totalReturn/1000).toFixed(0)}K</div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:12px;font-size:.76rem;line-height:1.75">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Started</span><span>${new Date(plan.startDate).toLocaleDateString()}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Matures</span><span style="font-weight:700">${matDate.toLocaleDateString()}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Withdrawable</span><span style="color:var(--green);font-weight:700">${withdrawDate.toLocaleDateString('en-UG',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span></div>
+        </div>
+
+        ${!tl ? `
+        <div class="alert alert-success" style="margin-top:12px;margin-bottom:0">
+          🎉 Your savings have matured! You will receive <strong>${plan.totalReturn.toLocaleString()} UGX</strong> on <strong>${withdrawDate.toLocaleDateString('en-UG',{weekday:'long',day:'numeric',month:'long'})}</strong>.
+        </div>` : `
+        <div style="margin-top:12px;font-size:.74rem;color:var(--dim);text-align:center">
+          ⏳ ${tl.d}d ${tl.h}h ${tl.m}m ${tl.s}s remaining
+        </div>`}
+      </div>
+    `;
+
+    // Update ring dynamically after render
+    if(tl){
+      saccoTimerInterval = setInterval(()=>{
+        const t=getTimeLeft();
+        if(!t){ clearInterval(saccoTimerInterval); loadSacco(); return; }
+        const o=circumference*(1-(t.pct/100));
+        const ring=document.getElementById('saccoRingFill');
+        const timeEl=container.querySelector('[data-sacco-time]');
+        if(ring) ring.setAttribute('stroke-dashoffset',o.toFixed(2));
+        // Update the inner text
+        const inner=container.querySelector('.sacco-inner-time');
+        if(inner) inner.innerHTML=`<div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:${planInfo.color}">${t.d}d</div><div style="font-size:.68rem;color:var(--muted)">${t.h}h ${t.m}m</div>`;
+        const footer=container.querySelector('.sacco-footer-time');
+        if(footer) footer.textContent=`⏳ ${t.d}d ${t.h}h ${t.m}m ${t.s}s remaining`;
+      },1000);
+    }
+  }
+
+  render();
+}
+
+function showSaccoMatured(plan){
+  $('saccoPlansWrap').style.display='none';
+  const wrap=$('saccoActiveWrap');
+  wrap.classList.remove('hidden');
+  const planInfo=SACCO_PLANS.find(p=>p.id===plan.planId)||{emoji:'💰',label:plan.planLabel,color:'#C9A84C'};
+  const withdrawDate=new Date(plan.withdrawableFrom);
+  const now=new Date();
+  const canWithdrawNow=now>=withdrawDate;
+
+  wrap.innerHTML=`
+    <div class="sacco-active-card" style="border-color:rgba(29,184,127,.4)">
+      <div style="text-align:center;padding:10px 0 16px">
+        <div style="font-size:3rem;margin-bottom:8px">🎉</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--green)">Plan Matured!</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:4px">${planInfo.emoji} ${plan.planLabel} · ${(plan.rate*100).toFixed(0)}% return</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--rs);padding:16px;margin-bottom:14px;text-align:center">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Total payout</div>
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:800;color:var(--gold)">${plan.totalReturn.toLocaleString()}</div>
+        <div style="font-size:.72rem;color:var(--muted)">UGX &nbsp;·&nbsp; Principal: ${plan.principal.toLocaleString()} + Profit: <span style="color:var(--green)">+${plan.profit.toLocaleString()}</span></div>
+      </div>
+      ${canWithdrawNow
+        ? `<button class="btn btn-green btn-full" onclick="claimSaccoReturn('${plan.id}',${plan.totalReturn})">💰 Claim ${plan.totalReturn.toLocaleString()} UGX</button>`
+        : `<div class="alert alert-warning" style="margin-bottom:12px">⏳ Withdrawable from <strong>${withdrawDate.toLocaleDateString('en-UG',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</strong></div>
+           <button class="btn btn-surface btn-full" disabled>📅 Come back on Monday</button>`
+      }
+    </div>`;
+}
+
+let saccoClaimPending=false;
+async function claimSaccoReturn(planId, amount){
+  if(saccoClaimPending) return;
+  saccoClaimPending=true;
+  try{
+    await db.collection('saccoPlans').doc(planId).update({status:'completed',completedAt:new Date().toISOString()});
+    await db.collection('users').doc(CU.id).update({balance:FS.increment(amount)});
+    CU.balance=(CU.balance||0)+amount;
+    await db.collection('transactions').add({
+      userId:CU.id, userName:CU.fullName,
+      type:'sacco_return', amount,
+      description:'SACCO savings plan return',
+      date:new Date().toISOString()
+    });
+    clearStatsCache();
+    toast(`🎉 ${amount.toLocaleString()} UGX added to your balance!`,'💰','success',7000);
+    loadSacco();
+  }catch(e){ toast('Claim failed: '+e.message,'❌','error'); }
+  finally{ saccoClaimPending=false; }
+}
+
+// stub to avoid errors from old references
+function loadStreak(){}
+function convertPoints(){}
 
 // ============================================================
 // PROFILE
@@ -2072,15 +2622,15 @@ async function loadProfile(){
   const init=$('profileInitials'), img=$('profileImg'), av=$('profileAvatar');
   if(u.profilePicture){ img.src=u.profilePicture; img.style.display='block'; if(av) av.style.display='none'; }
   else { if(init) init.textContent=(u.fullName||'U').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2); if(av) av.style.display='flex'; img.style.display='none'; }
-  set('profileName',u.fullName||'—'); set('profileEmail',u.email||'—');
-  set('profileNameVal',u.fullName||'—'); set('profileEmailVal',u.email||'—');
+  set('profileName',u.fullName||'-'); set('profileEmail',u.email||'-');
+  set('profileNameVal',u.fullName||'-'); set('profileEmailVal',u.email||'-');
   set('profilePhoneVal',u.phone||'Not set');
-  set('profileJoined',u.joinedDate?new Date(u.joinedDate).toLocaleDateString():'—');
+  set('profileJoined',u.joinedDate?new Date(u.joinedDate).toLocaleDateString():'-');
   const sv=$('profileStatus');
   if(sv){ sv.textContent=u.isActivated?'Active':'Pending'; sv.style.color=u.isActivated?'var(--green)':'var(--red)'; }
-  set('profRefCode',u.referralCode||'—');
-  set('profStreak',u.currentStreak||0);
-  set('profPts',u.pointsBalance||0);
+  set('profRefCode',u.referralCode||'-');
+  // streak removed
+  // points removed
   const lvl=getRefLevel(u.totalReferrals||0);
   const lb=$('profileLvlBadge');
   if(lb) lb.innerHTML=`<span class="badge badge-warning" style="font-size:.78rem;padding:5px 12px">${lvl.icon} ${lvl.title}</span>`;
@@ -2130,7 +2680,7 @@ async function uploadPic(ev){
 }
 
 // ============================================================
-// CAREER LEVELS — Renders the referral career progression on home
+// CAREER LEVELS - Renders the referral career progression on home
 // ============================================================
 function renderCareerLevels(){
   const el=$('refLevelsHomeList'); if(!el) return;
@@ -2141,7 +2691,7 @@ function renderCareerLevels(){
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <span style="font-size:1.3rem">${c.icon}</span>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:.9rem">Level ${c.level} — ${c.title}</div>
+          <div style="font-weight:700;font-size:.9rem">Level ${c.level} - ${c.title}</div>
           <div style="font-size:.7rem;color:var(--muted);margin-top:1px">${c.referrals.toLocaleString()}+ referrals with active plans</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -2186,10 +2736,10 @@ function updateWeekTimer(){
 }
 
 // ============================================================
-// WEEKLY PRIZE — fully automatic
+// WEEKLY PRIZE - fully automatic
 // Requires 8+ referrals THIS WEEK where each referred user has an active vault plan
 // Prize auto-credited to balance; user can then request withdrawal
-// Admin only approves the withdrawal request — not the prize itself
+// Admin only approves the withdrawal request - not the prize itself
 // ============================================================
 async function runWeeklyPrize(){ await awardWeeklyWinner(true); }
 
@@ -2217,7 +2767,7 @@ async function awardWeeklyWinner(manual=false){
     }
 
     if(!topCandidate||topCount<MIN_REFS){
-      if(manual) toast(`No qualified winner — need ${MIN_REFS}+ referrals with active plans`,'⚠️','warning');
+      if(manual) toast(`No qualified winner - need ${MIN_REFS}+ referrals with active plans`,'⚠️','warning');
       return;
     }
 
@@ -2235,11 +2785,11 @@ async function awardWeeklyWinner(manual=false){
     await db.collection('transactions').add({
       userId:topCandidate.userId, userName:topCandidate.userName,
       type:'weekly_prize', amount:PRIZE, qualifiedReferrals:topCount,
-      description:`🏆 Weekly Top Referrer — ${topCount} qualified referrals`,
+      description:`🏆 Weekly Top Referrer - ${topCount} qualified referrals`,
       date:new Date().toISOString()
     });
     await sendNotif(topCandidate.userId,'referral_bonus',
-      `🏆 You won this week's referral prize: ${PRIZE.toLocaleString()} UGX! (${topCount} qualified referrals) — go to Wallet → Withdraw to claim it.`
+      `🏆 You won this week's referral prize: ${PRIZE.toLocaleString()} UGX! (${topCount} qualified referrals) - go to Wallet -> Withdraw to claim it.`
     );
     if(manual) toast(`🏆 ${PRIZE.toLocaleString()} UGX auto-credited to ${topCandidate.userName}`,'🏆','success',7000);
     if(manual) loadAdminStats();
@@ -2338,7 +2888,7 @@ async function loadAdminUsers(){
     const el=$('adminUsersList');
     if(!el) return;
     if(snap.empty){ el.innerHTML=`<p style="padding:14px;color:var(--muted)">No users yet</p>`; return; }
-    el.innerHTML=`<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Balance</th><th>Status</th><th>Joined</th></tr></thead><tbody>${snap.docs.map(d=>{const u=d.data();return`<tr><td>${u.fullName}</td><td>${u.email}</td><td>${u.phone||'—'}</td><td style="font-family:'JetBrains Mono',monospace">${(u.balance||0).toLocaleString()}</td><td><span class="badge ${u.isActivated?'badge-success':'badge-warning'}">${u.isActivated?'Active':'Pending'}</span></td><td>${u.joinedDate?new Date(u.joinedDate).toLocaleDateString():'N/A'}</td></tr>`;}).join('')}</tbody></table>`;
+    el.innerHTML=`<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Balance</th><th>Status</th><th>Joined</th></tr></thead><tbody>${snap.docs.map(d=>{const u=d.data();return`<tr><td>${u.fullName}</td><td>${u.email}</td><td>${u.phone||'-'}</td><td style="font-family:'JetBrains Mono',monospace">${(u.balance||0).toLocaleString()}</td><td><span class="badge ${u.isActivated?'badge-success':'badge-warning'}">${u.isActivated?'Active':'Pending'}</span></td><td>${u.joinedDate?new Date(u.joinedDate).toLocaleDateString():'N/A'}</td></tr>`;}).join('')}</tbody></table>`;
   }catch(e){}
 }
 
@@ -2421,7 +2971,7 @@ function editTask(id){
 }
 
 // ============================================================
-// ADMIN DEPOSITS — pending on top, history in collapsible dropdown
+// ADMIN DEPOSITS - pending on top, history in collapsible dropdown
 // ============================================================
 async function loadAdminDeposits(){
   try{
@@ -2443,7 +2993,7 @@ async function loadAdminDeposits(){
       return `<div class="dep-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
-            <div style="font-weight:700">${d.userName||'—'}</div>
+            <div style="font-weight:700">${d.userName||'-'}</div>
             <div style="font-size:.73rem;color:var(--muted)">${d.phone||''} · ${d.method||''} · ${new Date(d.date).toLocaleDateString()}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
@@ -2509,7 +3059,7 @@ async function loadAdminWithdrawals(){
       return `<div class="dep-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
-            <div style="font-weight:700">${w.userName||'—'}</div>
+            <div style="font-weight:700">${w.userName||'-'}</div>
             <div style="font-size:.73rem;color:var(--muted)">${w.phone||''} · ${w.category||''} · ${new Date(w.date).toLocaleDateString()}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
@@ -2559,7 +3109,7 @@ function toggleWdHistory(){
   if(caret) caret.style.transform=isOpen?'':'rotate(180deg)';
 }
 
-// Lightbox — handles both base64 and URL
+// Lightbox - handles both base64 and URL
 function showImgLightbox(src){
   $('lightboxImg').src=src;
   $('imgLightbox').style.display='flex';
@@ -2612,7 +3162,7 @@ async function loadAdminTransactions(){
     const tb=$('adminTxList');
     if(!tb) return;
     if(snap.empty){ tb.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--muted)">No transactions</td></tr>`; return; }
-    tb.innerHTML=snap.docs.map(d=>{const t=d.data();return`<tr><td>${t.userName||'—'}</td><td>${t.type}</td><td style="font-family:'JetBrains Mono',monospace">${(t.amount||0).toLocaleString()}</td><td>${new Date(t.date).toLocaleDateString()}</td></tr>`;}).join('');
+    tb.innerHTML=snap.docs.map(d=>{const t=d.data();return`<tr><td>${t.userName||'-'}</td><td>${t.type}</td><td style="font-family:'JetBrains Mono',monospace">${(t.amount||0).toLocaleString()}</td><td>${new Date(t.date).toLocaleDateString()}</td></tr>`;}).join('');
   }catch(e){}
 }
 
@@ -2642,10 +3192,10 @@ function listenForWithdrawalApproval(){
 // ============================================================
 // BOOT
 // ============================================================
-window.addEventListener('load', init);
+window.addEventListener('load', ()=>{ init(); loadYTApi(); });
 
 // ============================================================
-// PWA — Service Worker + Install Prompt
+// PWA - Service Worker + Install Prompt
 // ============================================================
 let deferredInstallPrompt = null;
 
@@ -2687,7 +3237,7 @@ function dismissInstall(){
   localStorage.setItem('vp_install_dismissed','1');
 }
 
-// Register Service Worker (inline via blob URL — works in single-file apps)
+// Register Service Worker (inline via blob URL - works in single-file apps)
 if('serviceWorker' in navigator){
   const swCode = `
 const CACHE='vaultpro-v1';
@@ -2746,15 +3296,15 @@ self.addEventListener('notificationclick', e=>{
 }
 
 // ============================================================
-// SIDEBAR — sync active state with current section
+// SIDEBAR - sync active state with current section
 // ============================================================
 function updateSidebarActive(section){
   // User sidebar
   document.querySelectorAll('[id^="sidenav-"]').forEach(el=>{
     el.classList.remove('active');
   });
-  const active = $(`sidenav-${section}`);
-  if(active) active.classList.add('active');
+  const active = $(`sidenav-${section}`) || $(`sidenav-sacco`);
+  if($(`sidenav-${section}`)) $(`sidenav-${section}`).classList.add('active');
 
   // Bottom nav
   document.querySelectorAll('.nav-item').forEach(el=>{
