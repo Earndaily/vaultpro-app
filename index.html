@@ -694,9 +694,19 @@ body{padding-top:env(safe-area-inset-top)}
       <div class="card">
         <div style="font-weight:700;margin-bottom:14px">💸 Withdraw Funds</div>
         <div id="wdAlert"></div>
-        <div class="fg"><label>Earnings Category</label>
-          <select id="wdCat"><option value="">Select category</option><option value="referral">Referral Earnings</option><option value="task">Task Earnings (Fri–Sat only)</option><option value="vault">Vault Earnings</option><option value="weeklyPrize">🏆 Weekly Prize</option>
-            <option value="saccoReturn">💰 SACCO Return</option></select>
+        <div class="fg">
+          <label>Earnings Category</label>
+          <select id="wdCat" onchange="onWdCatChange()">
+            <option value="">Select category</option>
+            <option value="depositEarnings">💰 Deposit Funds</option>
+            <option value="referralEarnings">👥 Referral Earnings</option>
+            <option value="taskEarnings">✅ Task Earnings (Fri–Sat only)</option>
+            <option value="saccoEarnings">🏦 SACCO Earnings</option>
+          </select>
+        </div>
+        <!-- Live available balance for selected category -->
+        <div id="wdCatBal" style="display:none;margin:-8px 0 14px;padding:10px 13px;background:var(--bg3);border-radius:var(--rs);font-size:.8rem">
+          Available: <strong id="wdCatBalAmt" style="color:var(--green);font-family:'JetBrains Mono',monospace">0</strong> UGX
         </div>
         <div class="fg"><label>Amount (UGX)</label><input type="number" id="wdAmount" placeholder="Minimum 5,000"></div>
         <div class="fg">
@@ -704,7 +714,12 @@ body{padding-top:env(safe-area-inset-top)}
           <input type="tel" id="wdPhone" placeholder="07XXXXXXXX">
         </div>
         <div class="card" style="background:rgba(232,68,90,.06);border-color:rgba(232,68,90,.2);padding:13px;margin-bottom:14px">
-          <div style="font-size:.78rem;color:var(--muted);line-height:1.7"><strong style="color:var(--red);display:block;margin-bottom:3px">⚠️ Withdrawal Rules</strong>Task earnings: Friday &amp; Saturday only<br>Admin fee: 5% · Minimum: 5,000 UGX</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+            <strong style="color:var(--red);display:block;margin-bottom:3px">⚠️ Withdrawal Rules</strong>
+            Task earnings: Friday &amp; Saturday only<br>
+            Admin fee: 5% deducted · Minimum: 5,000 UGX<br>
+            Balance deducted immediately on request
+          </div>
         </div>
         <button class="btn btn-gold btn-full" onclick="submitWithdrawal()">Request Withdrawal</button>
       </div>
@@ -1530,6 +1545,12 @@ async function getCatBalances(uid){
         case 'withdrawal_approved':
           { const key=resolveSrc(t.sourceCategory);
             b[key]=Math.max(0,(b[key]||0)-a); }
+          break;
+        case 'withdrawal_refund':
+        case 'withdrawal_rejected':
+          // Rejected withdrawal: credit back to original source bucket
+          { const key=resolveSrc(t.sourceCategory);
+            b[key]=(b[key]||0)+a; }
           break;
       }
     });
@@ -2427,25 +2448,110 @@ async function submitDeposit(){
   }
 }
 
+// Show live available balance when category is selected
+async function onWdCatChange(){
+  const cat=$('wdCat').value;
+  const balDiv=$('wdCatBal'), balAmt=$('wdCatBalAmt');
+  if(!cat||!balDiv){ if(balDiv) balDiv.style.display='none'; return; }
+  balDiv.style.display='block';
+  if(balAmt) balAmt.textContent='...';
+  const b=await getCatBalances(CU.id);
+  const available=b[cat]||0;
+  if(balAmt) balAmt.textContent=available.toLocaleString();
+  // Warn if empty
+  if(available===0 && balDiv){
+    balDiv.style.background='rgba(232,68,90,.06)';
+    balDiv.style.borderLeft='3px solid var(--red)';
+  } else {
+    balDiv.style.background='var(--bg3)';
+    balDiv.style.borderLeft='none';
+  }
+}
+
 async function submitWithdrawal(){
-  const cat=$('wdCat').value, amt=parseInt($('wdAmount').value), phone=$('wdPhone').value.trim();
-  if(!cat){ showAlert('wdAlert','Please select a category','error'); return; }
+  const sourceCategory=$('wdCat').value;
+  const amt=parseInt($('wdAmount').value);
+  const phone=$('wdPhone').value.trim();
+
+  if(!sourceCategory){ showAlert('wdAlert','Please select a category','error'); return; }
   if(!amt||amt<5000){ showAlert('wdAlert','Minimum withdrawal is 5,000 UGX','error'); return; }
   if(!phone){ showAlert('wdAlert','Please enter your phone number','error'); return; }
-  if(cat==='task'){ const d=new Date().getDay(); if(d!==5&&d!==6){ showAlert('wdAlert','Task earnings only withdrawable on Friday & Saturday','error'); return; } }
+
+  // Task earnings: Friday & Saturday only
+  if(sourceCategory==='taskEarnings'){
+    const d=new Date().getDay();
+    if(d!==5&&d!==6){ showAlert('wdAlert','Task earnings can only be withdrawn on Friday & Saturday','error'); return; }
+  }
+
+  // SACCO earnings: only if there are matured returns (saccoEarnings > 0)
+  // Fetch live balances and check the exact bucket
   const b=await getCatBalances(CU.id);
-  const bk=cat==='referral'?'referralEarnings':cat==='task'?'taskEarnings':cat==='sacco'?'saccoEarnings':'depositEarnings';
-  if(b[bk]<amt){ showAlert('wdAlert',`Insufficient ${cat} earnings (available: ${(b[bk]||0).toLocaleString()} UGX)`,'error'); return; }
-  const fee=Math.floor(amt*0.05), net=amt-fee;
+  const available=b[sourceCategory]||0;
+  if(available<amt){
+    showAlert('wdAlert',`Insufficient balance in this category. Available: ${available.toLocaleString()} UGX`,'error');
+    return;
+  }
+
+  const fee=Math.floor(amt*0.05);
+  const net=amt-fee;
+  const categoryLabels={
+    depositEarnings:'Deposit Funds',
+    referralEarnings:'Referral Earnings',
+    taskEarnings:'Task Earnings',
+    saccoEarnings:'SACCO Earnings'
+  };
+
+  const btn=document.querySelector('#wdPanel .btn-gold');
+  if(btn){ btn.disabled=true; btn.textContent='Processing…'; }
+
   try{
-    await db.collection('withdrawalRequests').add({
-      userId:CU.id,userName:CU.fullName,phone,
-      amount:amt,netAmount:net,adminFee:fee,
-      category:cat,status:'pending',date:new Date().toISOString()
+    // 1. Deduct from user balance immediately
+    await db.collection('users').doc(CU.id).update({balance:FS.increment(-amt)});
+    CU.balance=(CU.balance||0)-amt;
+
+    // 2. Write pending withdrawal transaction — this immediately debits the right category bucket
+    const txRef=await db.collection('transactions').add({
+      userId:CU.id, userName:CU.fullName,
+      type:'withdrawal',
+      amount:amt,
+      netAmount:net,
+      adminFee:fee,
+      sourceCategory,
+      categoryName:categoryLabels[sourceCategory]||sourceCategory,
+      status:'pending',
+      date:new Date().toISOString()
     });
-    showAlert('wdAlert',`Withdrawal of ${net.toLocaleString()} UGX requested (5% fee: ${fee.toLocaleString()} UGX). Processing soon.`,'success');
+
+    // 3. Create withdrawal request for admin (carries sourceCategory for approval)
+    await db.collection('withdrawalRequests').add({
+      userId:CU.id, userName:CU.fullName, phone,
+      amount:amt, netAmount:net, adminFee:fee,
+      sourceCategory,
+      categoryName:categoryLabels[sourceCategory]||sourceCategory,
+      transactionId:txRef.id,
+      status:'pending',
+      date:new Date().toISOString()
+    });
+
+    clearStatsCache();
+    showAlert('wdAlert',
+      `✅ Withdrawal of ${net.toLocaleString()} UGX requested from ${categoryLabels[sourceCategory]}. Fee: ${fee.toLocaleString()} UGX. Your balance has been updated.`,
+      'success'
+    );
     $('wdAmount').value='';
-  }catch(e){ showAlert('wdAlert','Failed: '+e.message,'error'); }
+    $('wdCat').value='';
+    const bd=$('wdCatBal'); if(bd) bd.style.display='none';
+    updateUserStats(true);
+  }catch(e){
+    // Refund on error
+    try{
+      await db.collection('users').doc(CU.id).update({balance:FS.increment(amt)});
+      CU.balance=(CU.balance||0)+amt;
+    }catch(_){}
+    showAlert('wdAlert','Failed: '+e.message,'error');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='Request Withdrawal'; }
+  }
 }
 
 async function loadTxHistory(){
@@ -3523,21 +3629,78 @@ async function rejectDeposit(id, uid){
 async function approveWithdrawal(wdId, uid, net, fee){
   if(!confirm(`Approve withdrawal of ${net.toLocaleString()} UGX?`)) return;
   try{
-    await db.collection('withdrawalRequests').doc(wdId).update({status:'approved',approvedDate:new Date().toISOString()});
-    await db.collection('users').doc(uid).update({balance:FS.increment(-(net+fee))});
-    await db.collection('transactions').add({userId:uid,type:'withdrawal_approved',amount:net,adminFee:fee,date:new Date().toISOString()});
-    await sendNotif(uid,'withdrawal_approved',`Your withdrawal of ${net.toLocaleString()} UGX has been processed! 💰`);
-    toast('Withdrawal approved','✅','success');
+    // Read the request to get sourceCategory
+    const wdDoc=await db.collection('withdrawalRequests').doc(wdId).get();
+    const wdData=wdDoc.exists?wdDoc.data():{};
+    const sourceCategory=wdData.sourceCategory||'depositEarnings';
+    const transactionId=wdData.transactionId||null;
+
+    // Mark request approved
+    await db.collection('withdrawalRequests').doc(wdId).update({
+      status:'approved', approvedDate:new Date().toISOString()
+    });
+
+    // Update the original pending withdrawal transaction to approved status
+    if(transactionId){
+      await db.collection('transactions').doc(transactionId).update({
+        status:'approved', type:'withdrawal_approved', approvedDate:new Date().toISOString()
+      });
+    } else {
+      // Fallback: write a new transaction if no transactionId (old requests)
+      await db.collection('transactions').add({
+        userId:uid, type:'withdrawal_approved',
+        amount:net+fee, netAmount:net, adminFee:fee,
+        sourceCategory,
+        date:new Date().toISOString()
+      });
+    }
+
+    // NOTE: Balance was already deducted when user submitted the request.
+    // No second deduction needed.
+
+    await sendNotif(uid,'withdrawal_approved',`Your withdrawal of ${net.toLocaleString()} UGX has been processed and sent to your mobile money! 💰`);
+    toast('Withdrawal approved and processed','✅','success');
     loadAdminWithdrawals(); loadAdminStats();
   }catch(e){ toast('Error: '+e.message,'❌','error'); }
 }
 
 async function rejectWithdrawal(id, uid){
-  if(!confirm('Reject this withdrawal?')) return;
-  await db.collection('withdrawalRequests').doc(id).update({status:'rejected'});
-  await sendNotif(uid,'withdrawal_rejected','Your withdrawal request was rejected. Please contact support.');
-  toast('Rejection sent','','warning');
-  loadAdminWithdrawals();
+  if(!confirm('Reject this withdrawal? The amount will be refunded to the user.')) return;
+  try{
+    const wdDoc=await db.collection('withdrawalRequests').doc(id).get();
+    const wdData=wdDoc.exists?wdDoc.data():{};
+    const refundAmt=wdData.amount||0;
+    const sourceCategory=wdData.sourceCategory||'depositEarnings';
+    const transactionId=wdData.transactionId||null;
+
+    // Mark request rejected
+    await db.collection('withdrawalRequests').doc(id).update({
+      status:'rejected', rejectedDate:new Date().toISOString()
+    });
+
+    // Refund balance to user
+    if(refundAmt>0){
+      await db.collection('users').doc(uid).update({balance:FS.increment(refundAmt)});
+      // Write a reversal transaction so the category bucket gets credited back
+      await db.collection('transactions').add({
+        userId:uid, type:'withdrawal_refund',
+        amount:refundAmt,
+        sourceCategory,
+        description:'Withdrawal rejected — amount refunded',
+        date:new Date().toISOString()
+      });
+      // Mark original pending transaction as rejected
+      if(transactionId){
+        await db.collection('transactions').doc(transactionId).update({
+          status:'rejected', type:'withdrawal_rejected'
+        });
+      }
+    }
+
+    await sendNotif(uid,'withdrawal_rejected',`Your withdrawal request was rejected. ${refundAmt>0?`${refundAmt.toLocaleString()} UGX has been refunded to your balance. `:''}Please contact support if you have questions.`);
+    toast('Withdrawal rejected and refunded','','warning');
+    loadAdminWithdrawals(); loadAdminStats();
+  }catch(e){ toast('Error: '+e.message,'❌','error'); }
 }
 
 async function loadAdminTransactions(){
