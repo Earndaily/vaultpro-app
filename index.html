@@ -698,7 +698,6 @@ body{padding-top:env(safe-area-inset-top)}
           <label>Earnings Category</label>
           <select id="wdCat" onchange="onWdCatChange()">
             <option value="">Select category</option>
-            <option value="depositEarnings">💰 Deposit Funds</option>
             <option value="referralEarnings">👥 Referral Earnings</option>
             <option value="taskEarnings">✅ Task Earnings (Fri–Sat only)</option>
             <option value="saccoEarnings">🏦 SACCO Earnings</option>
@@ -2495,11 +2494,15 @@ async function submitWithdrawal(){
   const fee=Math.floor(amt*0.05);
   const net=amt-fee;
   const categoryLabels={
-    depositEarnings:'Deposit Funds',
     referralEarnings:'Referral Earnings',
     taskEarnings:'Task Earnings',
     saccoEarnings:'SACCO Earnings'
   };
+  // Deposits are not withdrawable — they fund vault/SACCO plans
+  if(sourceCategory==='depositEarnings'){
+    showAlert('wdAlert','Deposit funds cannot be withdrawn directly. Use them to purchase vault or SACCO plans.','error');
+    return;
+  }
 
   const btn=document.querySelector('#wdPanel .btn-gold');
   if(btn){ btn.disabled=true; btn.textContent='Processing…'; }
@@ -3882,27 +3885,35 @@ async function loadAdminSacco(filter='all'){
 async function revokeSaccoPlan(planId, userId, principal, userName){
   if(!confirm(`Revoke this SACCO plan and refund ${(+principal).toLocaleString()} UGX to ${userName}?`)) return;
   try{
+    // Fetch the plan document to get the real sourceCategory
+    const planDoc = await db.collection('saccoPlans').doc(planId).get();
+    if(!planDoc.exists){ toast('Plan not found','❌','error'); return; }
+    const planData = planDoc.data();
+    const sourceCategory = planData.sourceCategory || 'referralEarnings';
+
     // Void the plan
     await db.collection('saccoPlans').doc(planId).update({
       status:'revoked',
       revokedAt:new Date().toISOString(),
       revokedBy:'admin',
-      revokeReason:'Invalid source — vault principal used instead of earnings',
+      revokeReason:'Revoked by admin',
     });
+
     // Refund the principal back to user balance
     await db.collection('users').doc(userId).update({balance:FS.increment(+principal)});
-    // Record the reversal transaction
-    // Store the originalSourceCategory so getCatBalances can refund to the right bucket
+
+    // Reversal transaction — credits back to the original source bucket
     await db.collection('transactions').add({
-      userId, type:'sacco_revoke_refund',
+      userId,
+      type:'sacco_revoke_refund',
       amount:+principal,
-      sourceCategory: planDoc?.sourceCategory||'depositEarnings',
-      description:`SACCO plan revoked by admin — principal refunded to original source`,
+      sourceCategory,
+      description:`SACCO plan revoked by admin — principal refunded to ${sourceCategory}`,
       date:new Date().toISOString()
     });
-    // Notify user
+
     await sendNotif(userId,'withdrawal_rejected',
-      `Your SACCO savings plan has been reviewed and revoked by admin. Your principal of ${(+principal).toLocaleString()} UGX has been refunded to your balance. Only earnings (deposits, referrals, task rewards, vault profits) may be used for SACCO plans.`
+      `Your SACCO savings plan has been revoked by admin. Your principal of ${(+principal).toLocaleString()} UGX has been refunded to your balance.`
     );
     toast(`Plan revoked. ${(+principal).toLocaleString()} UGX refunded to ${userName}.`,'✅','success',6000);
     loadAdminSacco('all');
