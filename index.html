@@ -1308,17 +1308,18 @@ async function init(){
   if(urlRef){ storeRef(urlRef); window.history.replaceState({},'',window.location.pathname); }
   auth.onAuthStateChanged(async user=>{
     if(user){
-      // If email/password user with unverified email, show verification screen
-      const isPasswordUser = user.providerData.some(p=>p.providerId==='password');
-      if(isPasswordUser && !user.emailVerified){
-        $('loadingScreen').classList.add('hidden');
-        showVerifyEmailModal(user);
-        return;
-      }
       try{
         const d=await db.collection('users').doc(user.uid).get();
         if(d.exists){
-          CU={id:user.uid,...d.data()};
+          const userData=d.data();
+          // Only enforce email verification for non-admin email/password users
+          const isPasswordUser=user.providerData.some(p=>p.providerId==='password');
+          if(isPasswordUser && !user.emailVerified && !userData.isAdmin){
+            $('loadingScreen').classList.add('hidden');
+            showVerifyEmailModal(user);
+            return;
+          }
+          CU={id:user.uid,...userData};
           $('loadingScreen').classList.add('hidden');
           if(CU.isAdmin) showAdminDashboard();
           else{ showUserDashboard(); initNotifListener(); initUserDocListener(); }
@@ -1387,14 +1388,15 @@ async function login(){
     const email=$('loginEmail').value.trim(), pwd=$('loginPassword').value;
     if(!email||!pwd){ showAlert('loginAlert','Please enter email and password','error'); return; }
     const cred=await auth.signInWithEmailAndPassword(email,pwd);
-    // Check email verification
-    if(!cred.user.emailVerified){
+    const d=await db.collection('users').doc(cred.user.uid).get();
+    if(!d.exists){ showAlert('loginAlert','Account not found','error'); await auth.signOut(); return; }
+    const userData=d.data();
+    // Only block unverified email for regular users, not admins
+    if(!cred.user.emailVerified && !userData.isAdmin){
       showVerifyEmailModal(cred.user);
       return;
     }
-    const d=await db.collection('users').doc(cred.user.uid).get();
-    if(!d.exists){ showAlert('loginAlert','Account not found','error'); await auth.signOut(); return; }
-    CU={id:cred.user.uid,...d.data()};
+    CU={id:cred.user.uid,...userData};
     // streak removed
   }catch(e){
     const msgs={'auth/user-not-found':'No account with this email','auth/wrong-password':'Incorrect password','auth/too-many-requests':'Too many attempts - try later','auth/invalid-credential':'Invalid email or password'};
