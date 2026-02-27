@@ -338,7 +338,11 @@ body{padding-top:env(safe-area-inset-top)}
     <div class="invite-code-val" id="landingCode">——</div>
   </div>
   <div style="display:flex;flex-direction:column;gap:9px;width:100%;max-width:360px">
-    <button class="btn btn-gold btn-full" onclick="showRegisterFromReferral()">Create Account →</button>
+    <button class="btn btn-gold btn-full" onclick="showRegisterFromReferral()">✉️ Create Account with Email</button>
+    <button class="btn btn-surface btn-full" onclick="signupWithGoogle()" style="gap:10px">
+      <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.1 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.6-13.46-8.9l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Sign up with Google
+    </button>
     <button class="btn btn-outline btn-full" onclick="showLogin()">Already have an account</button>
   </div>
   <div style="margin-top:24px;display:flex;flex-direction:column;gap:9px;width:100%">
@@ -353,13 +357,22 @@ body{padding-top:env(safe-area-inset-top)}
   <div class="auth-header"><div class="auth-logo">VaultPro</div><div class="auth-sub">Create your account</div></div>
   <div class="auth-body">
     <div id="registerAlert"></div>
-    <div class="fg"><label>Invitation Code</label><input type="text" id="inviteCode" placeholder="Enter your code" style="text-transform:uppercase;letter-spacing:.1em"></div>
-    <div class="fg"><label>Full Name</label><input type="text" id="fullName" placeholder="Your full name"></div>
-    <div class="fg"><label>Email Address</label><input type="email" id="email" placeholder="you@example.com"></div>
-    <div class="fg"><label>Phone Number (for withdrawals)</label><input type="tel" id="regPhone" placeholder="07XXXXXXXX"></div>
-    <div class="fg"><label>Password</label><input type="password" id="password" placeholder="At least 6 characters"></div>
-    <div class="fg"><label>Confirm Password</label><input type="password" id="confirmPassword" placeholder="Repeat password"></div>
+    <div class="fg"><label>Invitation Code *</label><input type="text" id="inviteCode" placeholder="Enter your code" style="text-transform:uppercase;letter-spacing:.1em"></div>
+    <div class="fg"><label>Full Name *</label><input type="text" id="fullName" placeholder="Your full name"></div>
+    <div class="fg"><label>Email Address *</label><input type="email" id="email" placeholder="you@example.com"></div>
+    <div class="fg"><label>Phone Number * <span style="font-size:.7rem;color:var(--dim)">(used for withdrawals — must be unique)</span></label><input type="tel" id="regPhone" placeholder="07XXXXXXXX"></div>
+    <div class="fg"><label>Password *</label><input type="password" id="password" placeholder="At least 6 characters"></div>
+    <div class="fg"><label>Confirm Password *</label><input type="password" id="confirmPassword" placeholder="Repeat password"></div>
     <button class="btn btn-gold btn-full" id="registerBtn" onclick="register()">Create Account</button>
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0">
+      <div style="flex:1;height:1px;background:var(--border-s)"></div>
+      <span style="font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">or</span>
+      <div style="flex:1;height:1px;background:var(--border-s)"></div>
+    </div>
+    <button class="btn btn-surface btn-full" id="registerGoogleBtn" onclick="signupWithGoogle()" style="gap:10px">
+      <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.1 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.6-13.46-8.9l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Sign up with Google
+    </button>
     <p style="text-align:center;margin-top:18px;font-size:.875rem;color:var(--muted)">Already have an account? <a href="#" onclick="showLogin()" style="color:var(--gold);text-decoration:none;font-weight:600">Sign in</a></p>
   </div>
 </div>
@@ -388,6 +401,28 @@ body{padding-top:env(safe-area-inset-top)}
     <button class="btn btn-gold btn-full" onclick="checkEmailVerified()" id="verifyCheckBtn">I've Verified — Continue</button>
     <button class="btn btn-surface btn-full" style="margin-top:10px" onclick="resendVerificationEmail()">Resend Email</button>
     <button class="btn" style="margin-top:8px;color:var(--dim);font-size:.78rem;background:none" onclick="auth.signOut();closeVerifyModal();showLogin()">Sign out</button>
+  </div>
+</div>
+
+<!-- COMPLETE PROFILE MODAL (Google signup — fill missing fields) -->
+<div id="completeProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;width:100%;max-width:400px;margin:auto">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <img id="cpGoogleAvatar" src="" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--gold);display:none">
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.1rem;margin-bottom:2px">Complete Your Profile</h3>
+        <p style="font-size:.75rem;color:var(--muted)">Just a few more details to finish signup</p>
+      </div>
+    </div>
+    <div id="cpAlert"></div>
+    <!-- Name pre-filled from Google but editable -->
+    <div class="fg"><label>Full Name *</label><input type="text" id="cpName" placeholder="Your full name"></div>
+    <!-- Invite code — auto-filled if from referral link -->
+    <div class="fg"><label>Invitation Code *</label><input type="text" id="cpInviteCode" placeholder="Enter your invite code" style="text-transform:uppercase;letter-spacing:.1em"></div>
+    <!-- Phone — always required, must be unique -->
+    <div class="fg"><label>Phone Number * <span style="font-size:.7rem;color:var(--dim)">(for withdrawals — must be unique)</span></label><input type="tel" id="cpPhone" placeholder="07XXXXXXXX"></div>
+    <button class="btn btn-gold btn-full" id="cpSubmitBtn" onclick="completeGoogleProfile()" style="margin-top:4px">Finish & Enter VaultPro</button>
+    <button class="btn" style="width:100%;margin-top:10px;color:var(--dim);font-size:.78rem;background:none" onclick="cancelGoogleSignup()">Cancel — sign in differently</button>
   </div>
 </div>
 
@@ -1315,15 +1350,19 @@ async function register(){
     const phone=$('regPhone').value.trim();
     const pwd=$('password').value;
     const cpwd=$('confirmPassword').value;
-    if(!code||!name||!email||!pwd){ showAlert('registerAlert','Please fill in all fields','error'); return; }
+    if(!code||!name||!email||!phone||!pwd){ showAlert('registerAlert','Please fill in all required fields','error'); return; }
+    if(!/^[0-9+\s\-]{7,15}$/.test(phone)){ showAlert('registerAlert','Please enter a valid phone number','error'); return; }
     if(pwd.length<6){ showAlert('registerAlert','Password must be at least 6 characters','error'); return; }
     if(pwd!==cpwd){ showAlert('registerAlert','Passwords do not match','error'); return; }
+    // Check phone uniqueness
+    const phoneQ=await db.collection('users').where('phone','==',phone).get();
+    if(!phoneQ.empty){ showAlert('registerAlert','This phone number is already registered','error'); return; }
     const refQ=await db.collection('users').where('referralCode','==',code).get();
     if(refQ.empty){ showAlert('registerAlert','Invalid invitation code','error'); return; }
     const refId=refQ.docs[0].id;
     const cred=await auth.createUserWithEmailAndPassword(email,pwd);
     const uid=cred.user.uid;
-    const newUser={id:uid,fullName:name,email,phone:phone||'',balance:0,referredBy:refId,
+    const newUser={id:uid,fullName:name,email,phone,balance:0,referredBy:refId,
       referralCode:Math.random().toString(36).substring(2,8).toUpperCase(),
       joinedDate:new Date().toISOString(),isAdmin:false,isActivated:true,
       activationDate:new Date().toISOString(),currentStreak:0,longestStreak:0,
@@ -1365,31 +1404,131 @@ async function login(){
 async function logout(){ if(!confirm('Sign out?'))return; await auth.signOut(); CU=null; clearInterval(weekTimerInt); Object.values(activeTimers).forEach(clearInterval); showLogin(); }
 
 // ============================================================
-// GOOGLE SIGN-IN
+// GOOGLE AUTH — smart 2-step flow
 // ============================================================
-async function loginWithGoogle(){
-  const btn=$('googleLoginBtn'); btn.disabled=true; btn.textContent='Opening Google…';
+let pendingGoogleCred = null; // holds the Firebase user after Google popup
+
+async function signupWithGoogle(){
+  // Works from both the login page (sign-in) and register/landing page (sign-up)
   try{
-    const provider=new firebase.auth.GoogleAuthProvider();
+    const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({prompt:'select_account'});
-    const cred=await auth.signInWithPopup(provider);
-    const user=cred.user;
-    const docRef=db.collection('users').doc(user.uid);
-    const d=await docRef.get();
-    if(d.exists){
-      CU={id:user.uid,...d.data()};
+    const cred = await auth.signInWithPopup(provider);
+    const user = cred.user;
+    const docSnap = await db.collection('users').doc(user.uid).get();
+
+    if(docSnap.exists){
+      // Returning Google user — go straight to dashboard
+      CU = {id:user.uid, ...docSnap.data()};
       if(CU.isAdmin) showAdminDashboard();
       else{ showUserDashboard(); initNotifListener(); initUserDocListener(); }
     } else {
-      // New Google user — needs an invite code to register
-      await auth.signOut();
-      showAlert('loginAlert','Google account not found. Please register with an invitation code first.','warning');
-      showLogin();
+      // Brand new Google user — collect missing fields
+      pendingGoogleCred = user;
+      showCompleteProfileModal(user);
     }
   }catch(e){
-    const msgs={'auth/popup-closed-by-user':'Sign-in cancelled','auth/cancelled-popup-request':'Sign-in cancelled','auth/network-request-failed':'Network error — check connection'};
-    showAlert('loginAlert',msgs[e.code]||'Google sign-in failed: '+e.message,'error');
-  }finally{ btn.disabled=false; btn.innerHTML='<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.1 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.6-13.46-8.9l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Continue with Google'; }
+    const msgs = {
+      'auth/popup-closed-by-user':'Sign-in cancelled',
+      'auth/cancelled-popup-request':'Sign-in cancelled',
+      'auth/network-request-failed':'Network error — check your connection'
+    };
+    const errTarget = document.getElementById('loginAlert') || document.getElementById('registerAlert');
+    if(errTarget) showAlert(errTarget.id, msgs[e.code]||'Google sign-in failed: '+e.message, 'error');
+    else toast(msgs[e.code]||'Google sign-in failed','❌','error');
+  }
+}
+
+// Keep loginWithGoogle as alias for the login page button
+async function loginWithGoogle(){ return signupWithGoogle(); }
+
+function showCompleteProfileModal(user){
+  // Pre-fill what Google gave us
+  $('cpName').value = user.displayName || '';
+  // Auto-fill invite code if user came via referral link
+  const storedCode = getStoredRef();
+  const cpCodeField = $('cpInviteCode');
+  if(storedCode){ cpCodeField.value = storedCode; cpCodeField.readOnly = true; cpCodeField.style.borderColor = 'var(--green)'; }
+  else { cpCodeField.readOnly = false; cpCodeField.style.borderColor = ''; }
+  // Show avatar if available
+  const avatar = $('cpGoogleAvatar');
+  if(user.photoURL){ avatar.src = user.photoURL; avatar.style.display = 'block'; }
+  else { avatar.style.display = 'none'; }
+  $('cpAlert').innerHTML = '';
+  $('cpPhone').value = '';
+  $('completeProfileModal').style.display = 'flex';
+}
+
+function closeCompleteProfileModal(){ $('completeProfileModal').style.display = 'none'; }
+
+async function cancelGoogleSignup(){
+  closeCompleteProfileModal();
+  if(pendingGoogleCred){ await auth.signOut(); pendingGoogleCred = null; }
+  showLogin();
+}
+
+async function completeGoogleProfile(){
+  const btn = $('cpSubmitBtn'); btn.disabled = true; btn.textContent = 'Saving…';
+  try{
+    const name  = $('cpName').value.trim();
+    const code  = $('cpInviteCode').value.trim().toUpperCase();
+    const phone = $('cpPhone').value.trim();
+
+    if(!name||!code||!phone){ showAlert('cpAlert','Please fill in all fields','error'); return; }
+    if(!/^[0-9+\s\-]{7,15}$/.test(phone)){ showAlert('cpAlert','Please enter a valid phone number','error'); return; }
+
+    // Phone uniqueness check
+    const phoneQ = await db.collection('users').where('phone','==',phone).get();
+    if(!phoneQ.empty){ showAlert('cpAlert','This phone number is already registered','error'); return; }
+
+    // Validate invite code
+    const refQ = await db.collection('users').where('referralCode','==',code).get();
+    if(refQ.empty){ showAlert('cpAlert','Invalid invitation code','error'); return; }
+    const refId = refQ.docs[0].id;
+
+    const user = pendingGoogleCred || auth.currentUser;
+    if(!user){ showAlert('cpAlert','Session expired — please try again','error'); closeCompleteProfileModal(); showLogin(); return; }
+
+    const newUser = {
+      id: user.uid,
+      fullName: name,
+      email: user.email,
+      phone,
+      balance: 0,
+      referredBy: refId,
+      referralCode: Math.random().toString(36).substring(2,8).toUpperCase(),
+      joinedDate: new Date().toISOString(),
+      isAdmin: false,
+      isActivated: true,
+      activationDate: new Date().toISOString(),
+      currentStreak: 0,
+      longestStreak: 0,
+      lastLoginDate: null,
+      totalPoints: 0,
+      pointsBalance: 0,
+      totalTaskEarnings: 0,
+      signupMethod: 'google'
+    };
+
+    await db.collection('users').doc(user.uid).set(newUser);
+    await db.collection('users').doc(refId).collection('referrals').doc(user.uid).set({
+      userId: user.uid, name, email: user.email,
+      date: new Date().toISOString(), earnings: 0
+    });
+
+    clearRef();
+    pendingGoogleCred = null;
+    closeCompleteProfileModal();
+
+    CU = {id: user.uid, ...newUser};
+    showUserDashboard();
+    initNotifListener();
+    initUserDocListener();
+    toast('🎉 Welcome to VaultPro, '+name.split(' ')[0]+'!','✅','success');
+
+  }catch(e){
+    showAlert('cpAlert','Failed to save profile: '+e.message,'error');
+  }finally{ btn.disabled=false; btn.textContent='Finish & Enter VaultPro'; }
 }
 
 // ============================================================
