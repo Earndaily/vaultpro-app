@@ -396,7 +396,8 @@ body{padding-top:env(safe-area-inset-top)}
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;width:100%;max-width:380px;text-align:center">
     <div style="font-size:3rem;margin-bottom:12px">📧</div>
     <h3 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:8px;font-size:1.2rem">Verify Your Email</h3>
-    <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">We sent a verification link to <strong id="verifyEmailAddr" style="color:var(--text)"></strong>. Please check your inbox and click the link to continue.</p>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:8px">We sent a verification link to <strong id="verifyEmailAddr" style="color:var(--text)"></strong>. Please check your inbox and click the link to continue.</p>
+    <div class="alert alert-warning" style="margin-bottom:14px;font-size:.8rem">📁 Can't find it? Check your <strong>Spam</strong> or <strong>Junk</strong> folder — it sometimes lands there.</div>
     <div id="verifyAlert"></div>
     <button class="btn btn-gold btn-full" onclick="checkEmailVerified()" id="verifyCheckBtn">I've Verified — Continue</button>
     <button class="btn btn-surface btn-full" style="margin-top:10px" onclick="resendVerificationEmail()">Resend Email</button>
