@@ -364,6 +364,33 @@ body{padding-top:env(safe-area-inset-top)}
   </div>
 </div>
 
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotPasswordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;width:100%;max-width:380px">
+    <h3 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:6px;font-size:1.2rem">Reset Password</h3>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px">Enter your email and we'll send you a reset link.</p>
+    <div id="forgotAlert"></div>
+    <div class="fg"><label>Email Address</label><input type="email" id="forgotEmail" placeholder="you@example.com"></div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeForgotPassword()">Cancel</button>
+      <button class="btn btn-gold" style="flex:1" id="forgotBtn" onclick="sendPasswordReset()">Send Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL VERIFICATION BANNER -->
+<div id="verifyEmailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;width:100%;max-width:380px;text-align:center">
+    <div style="font-size:3rem;margin-bottom:12px">📧</div>
+    <h3 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:8px;font-size:1.2rem">Verify Your Email</h3>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">We sent a verification link to <strong id="verifyEmailAddr" style="color:var(--text)"></strong>. Please check your inbox and click the link to continue.</p>
+    <div id="verifyAlert"></div>
+    <button class="btn btn-gold btn-full" onclick="checkEmailVerified()" id="verifyCheckBtn">I've Verified — Continue</button>
+    <button class="btn btn-surface btn-full" style="margin-top:10px" onclick="resendVerificationEmail()">Resend Email</button>
+    <button class="btn" style="margin-top:8px;color:var(--dim);font-size:.78rem;background:none" onclick="auth.signOut();closeVerifyModal();showLogin()">Sign out</button>
+  </div>
+</div>
+
 <!-- LOGIN -->
 <div id="loginPage" class="auth-page hidden">
   <div class="auth-header"><div class="auth-logo">VaultPro</div><div class="auth-sub">Sign in to your account</div></div>
@@ -371,9 +398,19 @@ body{padding-top:env(safe-area-inset-top)}
     <div id="loginAlert"></div>
     <div class="fg"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com"></div>
     <div class="fg"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password"></div>
+    <div style="text-align:right;margin-top:-8px;margin-bottom:12px"><a href="#" onclick="showForgotPassword()" style="color:var(--muted);font-size:.78rem;text-decoration:none">Forgot password?</a></div>
     <button class="btn btn-gold btn-full" id="loginBtn" onclick="login()" style="margin-top:6px">Sign In</button>
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0">
+      <div style="flex:1;height:1px;background:var(--border-s)"></div>
+      <span style="font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">or</span>
+      <div style="flex:1;height:1px;background:var(--border-s)"></div>
+    </div>
+    <button class="btn btn-surface btn-full" id="googleLoginBtn" onclick="loginWithGoogle()" style="gap:10px">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.1 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.6-13.46-8.9l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Continue with Google
+    </button>
     <p style="text-align:center;margin-top:18px;font-size:.875rem;color:var(--muted)">Don't have an account? <a href="#" onclick="showRegister()" style="color:var(--gold);text-decoration:none;font-weight:600">Join now</a></p>
-    <p style="text-align:center;margin-top:10px;font-size:.75rem;color:var(--dim)"><a href="#" onclick="checkAndShowAdminSetup()" style="color:var(--dim);text-decoration:none">First time? ⚙️ Admin setup</a></p>
+    <p style="text-align:center;margin-top:10px;font-size:.75rem;color:var(--dim)"><a href="#" onclick="checkAndShowAdminSetup()" style="color:var(--dim);text-decoration:none">First time? &#9881;&#65039; Admin setup</a></p>
   </div>
 </div>
 
@@ -1032,6 +1069,7 @@ body{padding-top:env(safe-area-inset-top)}
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 // ============================================================
 // FIREBASE CONFIG
@@ -1234,6 +1272,13 @@ async function init(){
   if(urlRef){ storeRef(urlRef); window.history.replaceState({},'',window.location.pathname); }
   auth.onAuthStateChanged(async user=>{
     if(user){
+      // If email/password user with unverified email, show verification screen
+      const isPasswordUser = user.providerData.some(p=>p.providerId==='password');
+      if(isPasswordUser && !user.emailVerified){
+        $('loadingScreen').classList.add('hidden');
+        showVerifyEmailModal(user);
+        return;
+      }
       try{
         const d=await db.collection('users').doc(user.uid).get();
         if(d.exists){
@@ -1286,7 +1331,10 @@ async function register(){
     await db.collection('users').doc(uid).set(newUser);
     await db.collection('users').doc(refId).collection('referrals').doc(uid).set({userId:uid,name,email,date:new Date().toISOString(),earnings:0});
     clearRef();
-    showAlert('registerAlert','🎉 Account created! Signing you in…','success');
+    // Send email verification
+    try{ await cred.user.sendEmailVerification(); }catch(ve){ console.warn('Verification email error:',ve); }
+    showAlert('registerAlert','🎉 Account created! Check your email to verify your address.','success');
+    setTimeout(()=>showVerifyEmailModal(cred.user),1500);
   }catch(e){
     const msgs={'auth/email-already-in-use':'Email already registered','auth/weak-password':'Password too weak','auth/invalid-email':'Invalid email'};
     showAlert('registerAlert',msgs[e.code]||'Registration failed: '+e.message,'error');
@@ -1299,6 +1347,11 @@ async function login(){
     const email=$('loginEmail').value.trim(), pwd=$('loginPassword').value;
     if(!email||!pwd){ showAlert('loginAlert','Please enter email and password','error'); return; }
     const cred=await auth.signInWithEmailAndPassword(email,pwd);
+    // Check email verification
+    if(!cred.user.emailVerified){
+      showVerifyEmailModal(cred.user);
+      return;
+    }
     const d=await db.collection('users').doc(cred.user.uid).get();
     if(!d.exists){ showAlert('loginAlert','Account not found','error'); await auth.signOut(); return; }
     CU={id:cred.user.uid,...d.data()};
@@ -1310,6 +1363,103 @@ async function login(){
 }
 
 async function logout(){ if(!confirm('Sign out?'))return; await auth.signOut(); CU=null; clearInterval(weekTimerInt); Object.values(activeTimers).forEach(clearInterval); showLogin(); }
+
+// ============================================================
+// GOOGLE SIGN-IN
+// ============================================================
+async function loginWithGoogle(){
+  const btn=$('googleLoginBtn'); btn.disabled=true; btn.textContent='Opening Google…';
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    const cred=await auth.signInWithPopup(provider);
+    const user=cred.user;
+    const docRef=db.collection('users').doc(user.uid);
+    const d=await docRef.get();
+    if(d.exists){
+      CU={id:user.uid,...d.data()};
+      if(CU.isAdmin) showAdminDashboard();
+      else{ showUserDashboard(); initNotifListener(); initUserDocListener(); }
+    } else {
+      // New Google user — needs an invite code to register
+      await auth.signOut();
+      showAlert('loginAlert','Google account not found. Please register with an invitation code first.','warning');
+      showLogin();
+    }
+  }catch(e){
+    const msgs={'auth/popup-closed-by-user':'Sign-in cancelled','auth/cancelled-popup-request':'Sign-in cancelled','auth/network-request-failed':'Network error — check connection'};
+    showAlert('loginAlert',msgs[e.code]||'Google sign-in failed: '+e.message,'error');
+  }finally{ btn.disabled=false; btn.innerHTML='<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.1 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.6-13.46-8.9l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Continue with Google'; }
+}
+
+// ============================================================
+// FORGOT PASSWORD
+// ============================================================
+function showForgotPassword(){
+  const modal=$('forgotPasswordModal');
+  modal.style.display='flex';
+  $('forgotEmail').value=$('loginEmail').value||'';
+  $('forgotAlert').innerHTML='';
+}
+function closeForgotPassword(){ $('forgotPasswordModal').style.display='none'; }
+
+async function sendPasswordReset(){
+  const btn=$('forgotBtn'); btn.disabled=true; btn.textContent='Sending…';
+  const email=$('forgotEmail').value.trim();
+  if(!email){ showAlert('forgotAlert','Please enter your email address','error'); btn.disabled=false; btn.textContent='Send Link'; return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    showAlert('forgotAlert','✅ Reset link sent! Check your inbox (and spam folder).','success');
+    btn.textContent='Sent!';
+    setTimeout(()=>closeForgotPassword(),4000);
+  }catch(e){
+    const msgs={'auth/user-not-found':'No account found with this email','auth/invalid-email':'Invalid email address','auth/too-many-requests':'Too many requests — try again later'};
+    showAlert('forgotAlert',msgs[e.code]||'Failed to send reset email','error');
+    btn.disabled=false; btn.textContent='Send Link';
+  }
+}
+
+// ============================================================
+// EMAIL VERIFICATION
+// ============================================================
+let pendingVerifyUser=null;
+
+function showVerifyEmailModal(user){
+  pendingVerifyUser=user;
+  $('verifyEmailAddr').textContent=user.email;
+  $('verifyAlert').innerHTML='';
+  $('verifyEmailModal').style.display='flex';
+}
+function closeVerifyModal(){ $('verifyEmailModal').style.display='none'; pendingVerifyUser=null; }
+
+async function checkEmailVerified(){
+  const btn=$('verifyCheckBtn'); btn.disabled=true; btn.textContent='Checking…';
+  try{
+    await auth.currentUser.reload();
+    const user=auth.currentUser;
+    if(user && user.emailVerified){
+      closeVerifyModal();
+      const d=await db.collection('users').doc(user.uid).get();
+      if(d.exists){
+        CU={id:user.uid,...d.data()};
+        if(CU.isAdmin) showAdminDashboard();
+        else{ showUserDashboard(); initNotifListener(); initUserDocListener(); }
+      } else {
+        showLogin();
+      }
+    } else {
+      showAlert('verifyAlert','Email not verified yet. Please click the link in your inbox.','warning');
+    }
+  }catch(e){ showAlert('verifyAlert','Error checking verification: '+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent="I've Verified — Continue"; }
+}
+
+async function resendVerificationEmail(){
+  try{
+    const user=auth.currentUser;
+    if(user){ await user.sendEmailVerification(); showAlert('verifyAlert','✅ Verification email resent! Check your inbox.','success'); }
+  }catch(e){ showAlert('verifyAlert','Could not resend: '+e.message,'error'); }
+}
 
 // ============================================================
 // NAVIGATION
